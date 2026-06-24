@@ -1,8 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Stethoscope, Mail } from "lucide-react";
-import { siteConfig } from "@/lib/site-config";
+import { useLang } from "@/lib/i18n";
+import { useContent } from "@/lib/content";
 
 export function SiteFooter() {
+  const { lang } = useLang();
+  const t = useContent(lang).site;
   return (
     <footer className="border-t border-border/60 bg-surface/60">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -12,19 +15,15 @@ export function SiteFooter() {
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
                 <Stethoscope className="h-5 w-5" />
               </span>
-              <span className="font-display text-lg font-bold tracking-tight">
-                {siteConfig.name}
-              </span>
+              <span className="font-display text-lg font-bold tracking-tight">{t.name}</span>
             </Link>
-            <p className="mt-4 max-w-md text-sm text-muted-foreground">
-              {siteConfig.description}
-            </p>
+            <p className="mt-4 max-w-md text-sm text-muted-foreground">{t.description}</p>
           </div>
 
           <div>
-            <h4 className="font-display text-sm font-semibold">Navigation</h4>
+            <h4 className="font-display text-sm font-semibold">{t.footerNavTitle}</h4>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              {siteConfig.nav.map((item) => (
+              {t.nav.map((item) => (
                 <li key={item.to}>
                   <Link to={item.to} className="hover:text-foreground transition-colors">
                     {item.label}
@@ -35,20 +34,20 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h4 className="font-display text-sm font-semibold">Contact</h4>
+            <h4 className="font-display text-sm font-semibold">{t.footerContactTitle}</h4>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li>
                 <a
-                  href={`mailto:${siteConfig.email}`}
+                  href={`mailto:${t.email}`}
                   className="inline-flex items-center gap-2 hover:text-foreground transition-colors"
                 >
                   <Mail className="h-4 w-4" />
-                  {siteConfig.email}
+                  {t.email}
                 </a>
               </li>
               <li>
                 <Link to="/contact" className="hover:text-foreground transition-colors">
-                  Formulaire de contact
+                  {t.footerContactForm}
                 </Link>
               </li>
             </ul>
@@ -56,8 +55,10 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} {siteConfig.name}. Tous droits réservés.</p>
-          <p>Conçu pour les médecins, résidents et thésards francophones.</p>
+          <p>
+            © {new Date().getFullYear()} {t.name}. {t.footerRights}
+          </p>
+          <p>{t.footerTagline}</p>
         </div>
       </div>
     </footer>
