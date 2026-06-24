@@ -1,10 +1,10 @@
 export const siteConfig = {
-  name: "Insights Medics",
+  name: "Insight Medics",
   tagline: "L'analyse statistique pensée pour les thèses de médecine.",
   description:
-    "Insights Medics réalise l'analyse statistique de vos bases de données médicales. Audit IA gratuit de votre base, puis prestation humaine pour vos résultats de thèse.",
-  url: "https://insights-medics.com",
-  email: "contact@insights-medics.com",
+    "Insight Medics réalise l'analyse statistique de vos bases de données médicales. Audit IA gratuit de votre base, puis prestation humaine pour vos résultats de thèse.",
+  url: "https://insight-medics.com",
+  email: "helpinsightmedics@gmail.com",
   nav: [
     { to: "/", label: "Accueil" },
     { to: "/services", label: "Services" },

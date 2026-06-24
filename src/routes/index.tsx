@@ -20,13 +20,13 @@ import { siteConfig } from "@/lib/site-config";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Insights Medics — Analyse statistique pour vos thèses de médecine" },
+      { title: "Insight Medics — Analyse statistique pour vos thèses de médecine" },
       {
         name: "description",
         content:
           "Audit IA gratuit de votre base de données médicale, puis prestation humaine pour vos résultats de thèse. Délais respectés, qualité experte.",
       },
-      { property: "og:title", content: "Insights Medics — Analyse statistique médicale" },
+      { property: "og:title", content: "Insight Medics — Analyse statistique médicale" },
       {
         property: "og:description",
         content:

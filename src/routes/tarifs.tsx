@@ -9,13 +9,13 @@ import { siteConfig } from "@/lib/site-config";
 export const Route = createFileRoute("/tarifs")({
   head: () => ({
     meta: [
-      { title: "Tarifs — Insights Medics" },
+      { title: "Tarifs — Insight Medics" },
       {
         name: "description",
         content:
           "Audit IA gratuit. Prestation humaine sur devis, calibrée selon la complexité de votre base et vos délais. Tarifs transparents.",
       },
-      { property: "og:title", content: "Tarifs — Insights Medics" },
+      { property: "og:title", content: "Tarifs — Insight Medics" },
       {
         property: "og:description",
         content:
