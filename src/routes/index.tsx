@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
-import { siteConfig } from "@/lib/site-config";
+import { useLang } from "@/lib/i18n";
+import { useContent } from "@/lib/content";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -52,6 +53,8 @@ function HomePage() {
 }
 
 function Hero() {
+  const { lang } = useLang();
+  const t = useContent(lang).home.hero;
   return (
     <section className="relative overflow-hidden border-b border-border/60">
       <div className="absolute inset-0 bg-grid-soft opacity-40 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
@@ -60,52 +63,47 @@ function Hero() {
 
       <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-32">
         <div className="max-w-3xl">
-          <Badge
-            variant="outline"
-            className="border-brand/30 bg-brand/5 text-brand"
-          >
+          <Badge variant="outline" className="border-brand/30 bg-brand/5 text-brand">
             <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-            Nouveau · Audit IA gratuit de votre base
+            {t.badge}
           </Badge>
           <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-balance">
-            Votre thèse de médecine,{" "}
-            <span className="text-brand">prête en 2 semaines</span>.
+            {t.titleMain} <span className="text-brand">{t.titleAccent}</span>.
             <span className="block text-2xl font-semibold text-muted-foreground sm:text-3xl mt-3">
-              Sans compromis sur la rigueur.
+              {t.titleSub}
             </span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl text-balance">
-            Vos stats vous bloquent ? Votre discussion piétine ? La deadline
-            vous écrase ? On reprend la main : <strong className="text-foreground">audit IA gratuit</strong> de
-            votre base, puis rédaction scientifique, analyse statistique et
-            data visualisation par des experts.
+            {t.desc.map((part, i) =>
+              typeof part === "string" ? (
+                <span key={i}>{part}</span>
+              ) : (
+                <strong key={i} className="text-foreground">
+                  {part.strong}
+                </strong>
+              ),
+            )}
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand/90">
-              <Link to={siteConfig.cta.audit.to}>
-                {siteConfig.cta.audit.label}
+              <Link to="/audit">
+                {t.ctaPrimary}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link to="/services">Voir nos services</Link>
+              <Link to="/services">{t.ctaSecondary}</Link>
             </Button>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-brand" />
-              Audit gratuit, sans engagement
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-brand" />
-              Base anonymisée avant analyse
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-brand" />
-              Spécialisé thèses de médecine
-            </span>
+            {t.bullets.map((b) => (
+              <span key={b} className="inline-flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-brand" />
+                {b}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -114,12 +112,8 @@ function Hero() {
 }
 
 function TrustBar() {
-  const items = [
-    { label: "Délai annoncé pour une thèse", value: "2 sem." },
-    { label: "Audit IA de votre base", value: "Gratuit" },
-    { label: "Périmètre", value: "Rédaction · Stats · Dataviz" },
-    { label: "Basé à", value: "Sousse, Tunisie" },
-  ];
+  const { lang } = useLang();
+  const items = useContent(lang).home.trust;
   return (
     <div className="border-b border-border/60 bg-surface/60">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-8 sm:grid-cols-4 sm:px-6">
@@ -139,23 +133,20 @@ function TrustBar() {
 }
 
 function ProblemSolution() {
+  const { lang } = useLang();
+  const { problem, solution } = useContent(lang).home;
   return (
     <Section>
       <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
-            Le problème
+            {problem.eyebrow}
           </p>
           <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl text-balance">
-            Vos stats bloquent. Votre discussion piétine. La deadline approche.
+            {problem.title}
           </h2>
           <ul className="mt-6 space-y-4 text-base text-muted-foreground">
-            {[
-              "Une base SPSS qui dort dans un .sav, sans savoir par où commencer.",
-              "Des heures sur SPSS pour des résultats dont vous n'êtes pas sûr.",
-              "Une discussion qui ne décolle pas, faute de temps pour la littérature.",
-              "Un directeur de thèse exigeant et une soutenance qui se rapproche.",
-            ].map((t) => (
+            {problem.points.map((t) => (
               <li key={t} className="flex gap-3">
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-destructive/70" />
                 <span>{t}</span>
@@ -166,18 +157,13 @@ function ProblemSolution() {
 
         <div className="lg:pl-8">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
-            Notre approche
+            {solution.eyebrow}
           </p>
           <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl text-balance">
-            On reprend la main. Vous gardez la signature.
+            {solution.title}
           </h2>
           <ul className="mt-6 space-y-4 text-base text-muted-foreground">
-            {[
-              "Audit IA gratuit : qualité de la base, structure, pistes d'ajustement.",
-              "Tous les chiffres sortent de code Python exécuté — zéro valeur hallucinée.",
-              "Rédaction scientifique, analyse statistique et data visualisation prises en charge.",
-              "Délais calés sur une soutenance : version exploitable en 2 semaines.",
-            ].map((t) => (
+            {solution.points.map((t) => (
               <li key={t} className="flex gap-3">
                 <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-brand" />
                 <span>{t}</span>
@@ -191,51 +177,36 @@ function ProblemSolution() {
 }
 
 function AuditTeaser() {
+  const { lang } = useLang();
+  const t = useContent(lang).home.audit;
+  const icons = [
+    <ShieldCheck className="h-5 w-5" />,
+    <Cpu className="h-5 w-5" />,
+    <FileBarChart2 className="h-5 w-5" />,
+    <Lock className="h-5 w-5" />,
+  ];
   return (
     <Section className="bg-surface/60 border-y border-border/60">
       <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
         <div>
-          <SectionHeader
-            eyebrow="Module Audit · gratuit"
-            title="Votre base, radiographiée en quelques minutes."
-            description="Téléversez votre base (.sav, .xlsx, .csv). Notre IA pilote des analyses Python réelles sur vos données anonymisées et vous renvoie un rapport PDF avec un score de qualité /100."
-          />
+          <SectionHeader eyebrow={t.eyebrow} title={t.title} description={t.desc} />
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand/90">
-              <Link to={siteConfig.cta.audit.to}>
-                {siteConfig.cta.audit.label}
+              <Link to="/audit">
+                {t.ctaPrimary}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="ghost">
-              <Link to="/methode">
-                Comment ça marche
-              </Link>
+              <Link to="/methode">{t.ctaSecondary}</Link>
             </Button>
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <FeatureCard
-            icon={<ShieldCheck className="h-5 w-5" />}
-            title="Anonymisation automatique"
-            text="Identifiants, noms, dates de naissance pseudonymisés avant toute analyse."
-          />
-          <FeatureCard
-            icon={<Cpu className="h-5 w-5" />}
-            title="LLM + exécution réelle"
-            text="Le modèle génère du code Python ; les chiffres viennent du code, pas du LLM."
-          />
-          <FeatureCard
-            icon={<FileBarChart2 className="h-5 w-5" />}
-            title="Rapport PDF brandé"
-            text="Score /100, tableaux par variable, recommandations priorisées."
-          />
-          <FeatureCard
-            icon={<Lock className="h-5 w-5" />}
-            title="Stockage chiffré + purge"
-            text="Fichiers chiffrés au repos, supprimés automatiquement après la prestation."
-          />
+          {t.features.map((f, i) => (
+            <FeatureCard key={f.title} icon={icons[i]} title={f.title} text={f.text} />
+          ))}
         </div>
       </div>
     </Section>
@@ -263,49 +234,23 @@ function FeatureCard({
 }
 
 function HowItWorks() {
-  const steps = [
-    {
-      n: "01",
-      title: "Vous téléversez votre base",
-      text: "Formats acceptés : .sav (SPSS), .xlsx, .csv. La base est chiffrée et anonymisée avant toute lecture.",
-      icon: <ClipboardCheck className="h-5 w-5" />,
-    },
-    {
-      n: "02",
-      title: "Cadrage en 2 minutes",
-      text: "Type d'étude, variable principale, confusion, taille d'échantillon attendue. Le contexte oriente l'audit.",
-      icon: <Sparkles className="h-5 w-5" />,
-    },
-    {
-      n: "03",
-      title: "Audit IA piloté par code",
-      text: "Qualité, structure, pistes d'ajustement. Toutes les valeurs proviennent de calculs Python réels.",
-      icon: <Cpu className="h-5 w-5" />,
-    },
-    {
-      n: "04",
-      title: "Rapport PDF + score /100",
-      text: "Résumé exécutif, tableaux variable par variable, recommandations priorisées, CTA vers la prestation humaine.",
-      icon: <FileBarChart2 className="h-5 w-5" />,
-    },
+  const { lang } = useLang();
+  const t = useContent(lang).home.how;
+  const icons = [
+    <ClipboardCheck className="h-5 w-5" />,
+    <Sparkles className="h-5 w-5" />,
+    <Cpu className="h-5 w-5" />,
+    <FileBarChart2 className="h-5 w-5" />,
   ];
   return (
     <Section>
-      <SectionHeader
-        align="center"
-        eyebrow="Comment ça marche"
-        title="Quatre étapes, zéro chiffre halluciné."
-        description="L'IA orchestre, le code calcule, l'expert humain valide. C'est ce qui rend nos rapports utilisables dans une thèse."
-      />
+      <SectionHeader align="center" eyebrow={t.eyebrow} title={t.title} description={t.desc} />
       <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-        {steps.map((s) => (
-          <div
-            key={s.n}
-            className="relative rounded-xl border border-border bg-card p-6 shadow-sm"
-          >
+        {t.steps.map((s, i) => (
+          <div key={s.n} className="relative rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/5 text-primary">
-                {s.icon}
+                {icons[i]}
               </div>
               <span className="font-display text-sm font-semibold tracking-wider text-muted-foreground">
                 {s.n}
@@ -321,35 +266,21 @@ function HowItWorks() {
 }
 
 function ForWho() {
-  const audiences = [
-    {
-      icon: <GraduationCap className="h-5 w-5" />,
-      title: "Thésards en médecine",
-      text: "Vous voulez livrer une thèse propre, dans les temps, sans devenir biostatisticien.",
-    },
-    {
-      icon: <Stethoscope className="h-5 w-5" />,
-      title: "Médecins & résidents",
-      text: "Vous publiez un article, un poster ou un mémoire. Vous avez besoin de fiabilité statistique.",
-    },
-    {
-      icon: <FileBarChart2 className="h-5 w-5" />,
-      title: "Équipes hospitalières",
-      text: "Vous gérez une cohorte ou un registre. Vous voulez auditer la base avant de la valoriser.",
-    },
+  const { lang } = useLang();
+  const t = useContent(lang).home.who;
+  const icons = [
+    <GraduationCap className="h-5 w-5" />,
+    <Stethoscope className="h-5 w-5" />,
+    <FileBarChart2 className="h-5 w-5" />,
   ];
   return (
     <Section className="bg-surface/60 border-y border-border/60">
-      <SectionHeader
-        eyebrow="Pour qui"
-        title="Conçu pour les francophones qui manipulent du vrai patient."
-        description="Notre cible : la Tunisie, le Maghreb, la France. Vos données restent les vôtres ; nous travaillons sur une copie anonymisée."
-      />
+      <SectionHeader eyebrow={t.eyebrow} title={t.title} description={t.desc} />
       <div className="mt-12 grid gap-5 md:grid-cols-3">
-        {audiences.map((a) => (
+        {t.audiences.map((a, i) => (
           <div key={a.title} className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
-              {a.icon}
+              {icons[i]}
             </div>
             <h3 className="mt-4 font-display text-lg font-semibold">{a.title}</h3>
             <p className="mt-1.5 text-sm text-muted-foreground">{a.text}</p>
@@ -361,6 +292,8 @@ function ForWho() {
 }
 
 function FinalCta() {
+  const { lang } = useLang();
+  const t = useContent(lang).home.finalCta;
   return (
     <Section>
       <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-primary text-primary-foreground">
@@ -368,22 +301,14 @@ function FinalCta() {
         <div className="relative grid gap-8 p-8 sm:p-12 lg:grid-cols-[1.4fr_1fr] lg:items-center">
           <div>
             <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl text-balance">
-              Audit gratuit aujourd'hui. Thèse prête en 2 semaines.
+              {t.title}
             </h2>
-            <p className="mt-3 text-base text-primary-foreground/80 sm:text-lg">
-              En 10 minutes, vous saurez si votre base est exploitable, ce
-              qu'il faut corriger, et comment on peut prendre le relais sur la
-              rédaction et la dataviz.
-            </p>
+            <p className="mt-3 text-base text-primary-foreground/80 sm:text-lg">{t.desc}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
-            <Button
-              asChild
-              size="lg"
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
-            >
-              <Link to={siteConfig.cta.audit.to}>
-                {siteConfig.cta.audit.label}
+            <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand/90">
+              <Link to="/audit">
+                {t.primary}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -393,7 +318,7 @@ function FinalCta() {
               variant="outline"
               className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
             >
-              <Link to="/contact">Commander une analyse complète</Link>
+              <Link to="/contact">{t.secondary}</Link>
             </Button>
           </div>
         </div>
