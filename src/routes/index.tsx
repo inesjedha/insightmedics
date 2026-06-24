@@ -20,17 +20,17 @@ import { siteConfig } from "@/lib/site-config";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Insight Medics — Analyse statistique pour vos thèses de médecine" },
+      { title: "Insight Medics — Votre thèse de médecine, prête en 2 semaines" },
       {
         name: "description",
         content:
-          "Audit IA gratuit de votre base de données médicale, puis prestation humaine pour vos résultats de thèse. Délais respectés, qualité experte.",
+          "Rédaction scientifique, analyse statistique et data visualisation pour les thèses de médecine. Audit IA gratuit de votre base, puis prise en charge humaine — sans compromis sur la rigueur.",
       },
-      { property: "og:title", content: "Insight Medics — Analyse statistique médicale" },
+      { property: "og:title", content: "Insight Medics — Thèse de médecine, prête en 2 semaines" },
       {
         property: "og:description",
         content:
-          "Audit IA gratuit de votre base médicale, puis analyse humaine pour vos résultats de thèse.",
+          "Stats qui bloquent, discussion qui piétine, deadline qui écrase ? On reprend la main : audit IA gratuit, puis rédaction et analyse par des experts.",
       },
     ],
   }),
@@ -68,13 +68,17 @@ function Hero() {
             Nouveau · Audit IA gratuit de votre base
           </Badge>
           <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-balance">
-            L'analyse statistique pensée pour les{" "}
-            <span className="text-brand">thèses de médecine</span>.
+            Votre thèse de médecine,{" "}
+            <span className="text-brand">prête en 2 semaines</span>.
+            <span className="block text-2xl font-semibold text-muted-foreground sm:text-3xl mt-3">
+              Sans compromis sur la rigueur.
+            </span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl text-balance">
-            Vous avez collecté votre base, vous n'avez ni le temps ni l'envie de
-            vous battre avec SPSS ? Lancez d'abord un <strong className="text-foreground">audit IA gratuit</strong>{" "}
-            de votre base, puis confiez vos résultats à nos experts.
+            Vos stats vous bloquent ? Votre discussion piétine ? La deadline
+            vous écrase ? On reprend la main : <strong className="text-foreground">audit IA gratuit</strong> de
+            votre base, puis rédaction scientifique, analyse statistique et
+            data visualisation par des experts.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -85,14 +89,14 @@ function Hero() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link to="/methode">Voir notre méthode</Link>
+              <Link to="/services">Voir nos services</Link>
             </Button>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-brand" />
-              Sans engagement
+              Audit gratuit, sans engagement
             </span>
             <span className="inline-flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-brand" />
@@ -100,7 +104,7 @@ function Hero() {
             </span>
             <span className="inline-flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-brand" />
-              Rapport PDF en quelques minutes
+              Spécialisé thèses de médecine
             </span>
           </div>
         </div>
@@ -111,17 +115,17 @@ function Hero() {
 
 function TrustBar() {
   const items = [
-    { label: "Thèses accompagnées", value: "200+" },
-    { label: "Spécialités couvertes", value: "30+" },
-    { label: "Note moyenne clients", value: "4.9/5" },
-    { label: "Délai moyen audit", value: "< 10 min" },
+    { label: "Délai annoncé pour une thèse", value: "2 sem." },
+    { label: "Audit IA de votre base", value: "Gratuit" },
+    { label: "Périmètre", value: "Rédaction · Stats · Dataviz" },
+    { label: "Basé à", value: "Sousse, Tunisie" },
   ];
   return (
     <div className="border-b border-border/60 bg-surface/60">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-8 sm:grid-cols-4 sm:px-6">
         {items.map((s) => (
           <div key={s.label} className="text-center sm:text-left">
-            <div className="font-display text-2xl font-bold text-foreground sm:text-3xl">
+            <div className="font-display text-xl font-bold text-foreground sm:text-2xl">
               {s.value}
             </div>
             <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
@@ -143,14 +147,14 @@ function ProblemSolution() {
             Le problème
           </p>
           <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl text-balance">
-            Vous avez les données. Pas le temps de devenir biostatisticien.
+            Vos stats bloquent. Votre discussion piétine. La deadline approche.
           </h2>
           <ul className="mt-6 space-y-4 text-base text-muted-foreground">
             {[
-              "Une base SPSS qui dort dans un fichier .sav, sans savoir par où commencer.",
-              "Des manquants, des doublons, des incohérences invisibles à l'œil nu.",
-              "Une deadline de thèse qui se rapproche, et un directeur exigeant.",
-              "La peur d'écrire un résultat faux dans un manuscrit officiel.",
+              "Une base SPSS qui dort dans un .sav, sans savoir par où commencer.",
+              "Des heures sur SPSS pour des résultats dont vous n'êtes pas sûr.",
+              "Une discussion qui ne décolle pas, faute de temps pour la littérature.",
+              "Un directeur de thèse exigeant et une soutenance qui se rapproche.",
             ].map((t) => (
               <li key={t} className="flex gap-3">
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-destructive/70" />
@@ -165,14 +169,14 @@ function ProblemSolution() {
             Notre approche
           </p>
           <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl text-balance">
-            IA pour le cadrage, expert humain pour les résultats.
+            On reprend la main. Vous gardez la signature.
           </h2>
           <ul className="mt-6 space-y-4 text-base text-muted-foreground">
             {[
-              "Audit automatique de votre base : qualité, structure, pistes d'ajustement.",
-              "Tous les chiffres viennent de code Python exécuté — aucune valeur hallucinée.",
-              "Relecture humaine experte pour vos analyses définitives et votre rédaction.",
-              "Délais cadrés sur les contraintes d'une soutenance de thèse.",
+              "Audit IA gratuit : qualité de la base, structure, pistes d'ajustement.",
+              "Tous les chiffres sortent de code Python exécuté — zéro valeur hallucinée.",
+              "Rédaction scientifique, analyse statistique et data visualisation prises en charge.",
+              "Délais calés sur une soutenance : version exploitable en 2 semaines.",
             ].map((t) => (
               <li key={t} className="flex gap-3">
                 <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-brand" />
