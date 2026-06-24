@@ -368,11 +368,12 @@ function FinalCta() {
         <div className="relative grid gap-8 p-8 sm:p-12 lg:grid-cols-[1.4fr_1fr] lg:items-center">
           <div>
             <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl text-balance">
-              Commencez par l'audit gratuit. C'est sans risque.
+              Audit gratuit aujourd'hui. Thèse prête en 2 semaines.
             </h2>
             <p className="mt-3 text-base text-primary-foreground/80 sm:text-lg">
-              En 10 minutes vous saurez si votre base est exploitable, ce qu'il
-              faut corriger, et comment nous pouvons prendre le relais.
+              En 10 minutes, vous saurez si votre base est exploitable, ce
+              qu'il faut corriger, et comment on peut prendre le relais sur la
+              rédaction et la dataviz.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
