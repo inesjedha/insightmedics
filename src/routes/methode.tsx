@@ -18,13 +18,13 @@ import { siteConfig } from "@/lib/site-config";
 export const Route = createFileRoute("/methode")({
   head: () => ({
     meta: [
-      { title: "Méthode — Insights Medics" },
+      { title: "Méthode — Insight Medics" },
       {
         name: "description",
         content:
           "Notre méthode garantit qu'aucun chiffre n'est inventé : le LLM orchestre, le code Python calcule, l'humain valide. Détails techniques et engagements éthiques.",
       },
-      { property: "og:title", content: "Méthode — Insights Medics" },
+      { property: "og:title", content: "Méthode — Insight Medics" },
       {
         property: "og:description",
         content:
@@ -136,7 +136,7 @@ function MethodePage() {
           <blockquote className="mt-4 rounded-lg border-l-4 border-brand bg-surface/70 p-4 text-sm italic text-foreground/90">
             « Je certifie être responsable de cette base de données et
             habilité(e) à la traiter. Je m'engage à fournir une base dont j'ai
-            le droit de disposer. Insights Medics anonymise le fichier pour
+            le droit de disposer. Insight Medics anonymise le fichier pour
             l'analyse, le conserve de façon sécurisée le temps de la
             prestation, puis le supprime. »
           </blockquote>

@@ -77,15 +77,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Insights Medics — Analyse statistique pour vos thèses de médecine" },
+      { title: "Insight Medics — Analyse statistique pour vos thèses de médecine" },
       {
         name: "description",
         content:
-          "Insights Medics réalise l'analyse statistique de vos bases de données médicales. Audit IA gratuit, puis prestation humaine pour les résultats de thèse.",
+          "Insight Medics réalise l'analyse statistique de vos bases de données médicales. Audit IA gratuit, puis prestation humaine pour les résultats de thèse.",
       },
-      { name: "author", content: "Insights Medics" },
+      { name: "author", content: "Insight Medics" },
       { name: "theme-color", content: "#0f1f3d" },
-      { property: "og:site_name", content: "Insights Medics" },
+      { property: "og:site_name", content: "Insight Medics" },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "fr_FR" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -8,13 +8,13 @@ import { Section } from "@/components/site/Section";
 export const Route = createFileRoute("/audit")({
   head: () => ({
     meta: [
-      { title: "Audit IA — Insights Medics" },
+      { title: "Audit IA — Insight Medics" },
       {
         name: "description",
         content:
           "Lancez un audit IA gratuit de votre base de données médicale. Anonymisation automatique, rapport PDF, score de qualité /100.",
       },
-      { property: "og:title", content: "Audit IA — Insights Medics" },
+      { property: "og:title", content: "Audit IA — Insight Medics" },
       {
         property: "og:description",
         content: "Audit gratuit de votre base médicale, rapport PDF brandé en quelques minutes.",

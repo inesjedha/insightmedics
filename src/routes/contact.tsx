@@ -13,13 +13,13 @@ import { siteConfig } from "@/lib/site-config";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Insights Medics" },
+      { title: "Contact — Insight Medics" },
       {
         name: "description",
         content:
           "Discutez de votre projet de thèse, de votre base de données ou de notre prestation d'analyse statistique. Réponse sous 48h.",
       },
-      { property: "og:title", content: "Contact — Insights Medics" },
+      { property: "og:title", content: "Contact — Insight Medics" },
       {
         property: "og:description",
         content: "Réponse sous 48h. Décrivez votre projet et nous revenons vers vous.",

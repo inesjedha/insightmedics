@@ -17,13 +17,13 @@ import { siteConfig } from "@/lib/site-config";
 export const Route = createFileRoute("/services")({
   head: () => ({
     meta: [
-      { title: "Services — Insights Medics" },
+      { title: "Services — Insight Medics" },
       {
         name: "description",
         content:
           "Audit IA gratuit de votre base, analyse statistique complète, accompagnement rédaction des résultats de thèse. Tous nos services.",
       },
-      { property: "og:title", content: "Services — Insights Medics" },
+      { property: "og:title", content: "Services — Insight Medics" },
       {
         property: "og:description",
         content:
