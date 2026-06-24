@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
+import { useLang } from "@/lib/i18n";
+import { useContent } from "@/lib/content";
 
 export const Route = createFileRoute("/audit")({
   head: () => ({
@@ -25,30 +27,28 @@ export const Route = createFileRoute("/audit")({
 });
 
 function AuditPlaceholder() {
+  const { lang } = useLang();
+  const t = useContent(lang).audit;
   return (
     <SiteLayout>
       <Section>
         <div className="mx-auto max-w-2xl text-center">
           <Badge variant="outline" className="border-brand/30 bg-brand/5 text-brand">
             <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-            Bientôt disponible
+            {t.badge}
           </Badge>
           <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight sm:text-5xl text-balance">
-            Le module Audit arrive très bientôt.
+            {t.title}
           </h1>
-          <p className="mt-4 text-base text-muted-foreground sm:text-lg text-balance">
-            Nous mettons la dernière main au pipeline d'anonymisation,
-            d'exécution Python sandboxée et de génération du rapport PDF. En
-            attendant, vous pouvez nous contacter pour discuter de votre projet.
-          </p>
+          <p className="mt-4 text-base text-muted-foreground sm:text-lg text-balance">{t.desc}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand/90">
-              <Link to="/contact">Discuter de mon projet</Link>
+              <Link to="/contact">{t.ctaPrimary}</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link to="/">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour à l'accueil
+                {t.ctaBack}
               </Link>
             </Button>
           </div>
