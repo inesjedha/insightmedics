@@ -84,67 +84,8 @@ function MethodePage() {
 
 
 
-      <Section>
-        <SectionHeader
-          eyebrow="Données & confidentialité"
-          title="Vos données patients, protégées par des mesures strictes."
-          description="Nous travaillons depuis la Tunisie. Plutôt que de nous limiter au minimum légal local, nous appliquons volontairement des mesures strictes, adaptées à la sensibilité des données de santé que vous nous confiez."
-        />
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          <DataCard
-            icon={<ShieldCheck className="h-5 w-5" />}
-            title="Anonymisation à l'import"
-            text="Nous identifions et pseudonymisons les colonnes identifiantes (noms, identifiants directs, dates de naissance) avant l'analyse."
-          />
-          <DataCard
-            icon={<Lock className="h-5 w-5" />}
-            title="Transmission et stockage sécurisés"
-            text="Vos fichiers sont transmis via une connexion sécurisée et stockés chiffrés. Nous évitons toute donnée patient identifiante dans nos journaux techniques."
-          />
-          <DataCard
-            icon={<Trash2 className="h-5 w-5" />}
-            title="Suppression après la prestation"
-            text="Vos fichiers et la table de correspondance sont supprimés à l'issue de la prestation, selon une politique définie."
-          />
-        </div>
 
-        <div className="mt-10 rounded-2xl border border-border bg-card p-6 sm:p-8">
-          <h3 className="font-display text-lg font-semibold">
-            Votre engagement de responsabilité
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Avant chaque upload, vous certifiez ceci :
-          </p>
-          <blockquote className="mt-4 rounded-lg border-l-4 border-brand bg-surface/70 p-4 text-sm italic text-foreground/90">
-            « Je certifie être responsable de cette base de données et
-            habilité(e) à la traiter. Je m'engage à fournir une base dont j'ai
-            le droit de disposer. Insight Medics anonymise le fichier pour
-            l'analyse, le conserve de façon sécurisée le temps de la
-            prestation, puis le supprime. »
-          </blockquote>
-        </div>
 
-        <details className="mt-6 rounded-2xl border border-border bg-card p-6 sm:p-8">
-          <summary className="cursor-pointer font-display text-base font-semibold">
-            Détails techniques
-          </summary>
-          <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-            <p>
-              Les calculs s'exécutent dans un environnement isolé avec une
-              pile standard de l'analyse statistique scientifique
-              (pandas, pyreadstat, scipy). Le code et le barème du score sont
-              versionnés ; chaque rapport indique la version utilisée.
-            </p>
-            <p>
-              L'orchestration des analyses s'appuie sur un modèle d'IA pour
-              proposer le plan d'analyse à partir de votre cadrage. Le modèle
-              n'écrit jamais de valeur dans le rapport : il ne génère que la
-              sélection des tests et la rédaction. Tous les chiffres
-              proviennent exclusivement des sorties de code.
-            </p>
-          </div>
-        </details>
-      </Section>
 
       <Section>
         <div className="rounded-2xl border border-primary/20 bg-primary p-8 text-primary-foreground sm:p-12">
