@@ -2,10 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   ShieldCheck,
-  FileCheck2,
   Lock,
   Trash2,
-  AlertTriangle,
   UserCheck,
   Target,
   Calculator,
