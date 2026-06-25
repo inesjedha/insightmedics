@@ -299,6 +299,7 @@ function ContactPage() {
                   onSubmit={onSubmit}
                   className="space-y-10"
                   noValidate
+                  aria-busy={submitting}
                 >
                   {/* Honeypot anti-bot — invisible aux humains */}
                   <input
