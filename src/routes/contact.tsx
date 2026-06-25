@@ -21,6 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
@@ -49,7 +56,20 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
 });
 
-const phoneLocalRegex = /^\d{8}$/;
+const phoneLocalRegex = /^\d{6,12}$/;
+
+const COUNTRY_CODES = [
+  { code: "+216", flag: "🇹🇳", name: "Tunisie" },
+  { code: "+213", flag: "🇩🇿", name: "Algérie" },
+  { code: "+212", flag: "🇲🇦", name: "Maroc" },
+  { code: "+221", flag: "🇸🇳", name: "Sénégal" },
+  { code: "+225", flag: "🇨🇮", name: "Côte d'Ivoire" },
+  { code: "+237", flag: "🇨🇲", name: "Cameroun" },
+  { code: "+223", flag: "🇲🇱", name: "Mali" },
+  { code: "+226", flag: "🇧🇫", name: "Burkina Faso" },
+  { code: "+224", flag: "🇬🇳", name: "Guinée" },
+  { code: "+227", flag: "🇳🇪", name: "Niger" },
+] as const;
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Nom trop court").max(100, "Nom trop long"),
@@ -57,7 +77,7 @@ const contactSchema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(phoneLocalRegex, "Numéro tunisien à 8 chiffres requis"),
+    .regex(phoneLocalRegex, "Numéro à 6-12 chiffres requis"),
   subject: z.string().trim().min(3, "Sujet trop court").max(150, "Sujet trop long"),
   problem: z
     .string()
@@ -118,6 +138,7 @@ function ContactPage() {
   const [showErrorBanner, setShowErrorBanner] = useState(false);
   const [projectType, setProjectType] = useState<string>("Thèse");
   const [urgency, setUrgency] = useState<string>("2-4 semaines");
+  const [dialCode, setDialCode] = useState<string>("+216");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -130,7 +151,7 @@ function ContactPage() {
   };
 
   const setPhone = (raw: string) => {
-    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    const digits = raw.replace(/\D/g, "").slice(0, 12);
     setValue("phone", digits);
   };
 
@@ -167,7 +188,7 @@ function ContactPage() {
         source: "contact",
         name: parsed.data.name,
         email: parsed.data.email,
-        phone: `+216 ${parsed.data.phone}`,
+        phone: `${dialCode} ${parsed.data.phone}`,
         subject: parsed.data.subject,
         problem: parsed.data.problem,
         objective: parsed.data.objective,
@@ -250,12 +271,36 @@ function ContactPage() {
                         hint="Prioritaire pour vous recontacter"
                       >
                         <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
-                          <span className="flex items-center gap-1.5 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80">
-                            <span aria-hidden className="text-base leading-none">
-                              🇹🇳
-                            </span>
-                            +216
-                          </span>
+                          <Select value={dialCode} onValueChange={setDialCode}>
+                            <SelectTrigger
+                              aria-label="Indicatif pays"
+                              className="h-11 w-auto gap-1.5 rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0"
+                            >
+                              <SelectValue aria-label={dialCode}>
+                                <span className="flex items-center gap-1.5">
+                                  <span aria-hidden className="text-base leading-none">
+                                    {COUNTRY_CODES.find((c) => c.code === dialCode)?.flag}
+                                  </span>
+                                  {dialCode}
+                                </span>
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {COUNTRY_CODES.map((c) => (
+                                <SelectItem key={c.code} value={c.code}>
+                                  <span className="flex items-center gap-2">
+                                    <span aria-hidden className="text-base leading-none">
+                                      {c.flag}
+                                    </span>
+                                    <span className="font-medium">{c.code}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {c.name}
+                                    </span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Input
                             id="phone"
                             name="phone"
@@ -263,8 +308,8 @@ function ContactPage() {
                             inputMode="numeric"
                             autoComplete="tel-national"
                             required
-                            maxLength={8}
-                            placeholder="12 345 678"
+                            maxLength={12}
+                            placeholder="Numéro local"
                             value={values.phone}
                             onChange={(e) => setPhone(e.target.value)}
                             className="h-11 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
