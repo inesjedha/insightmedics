@@ -308,7 +308,6 @@ function ContactPage() {
                   </p>
 
 
-
                   {showErrorBanner && (
                     <div
                       role="alert"
