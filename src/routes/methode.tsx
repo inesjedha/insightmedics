@@ -90,7 +90,7 @@ function MethodePage() {
         <SectionHeader
           eyebrow="Garde-fou structurel"
           title="Les chiffres viennent du calcul, jamais de la rédaction."
-          description="Nos modèles de rapport vont chercher les nombres directement dans les sorties de code. La partie rédigée n'a aucun accès aux tableaux ni aux scores : impossible d'y glisser une valeur à la main."
+          description="Nos modèles de rapport vont chercher les nombres directement dans les sorties de code. La partie rédigée n'a pas accès aux tableaux ni aux scores : les valeurs ne sont jamais saisies à la main."
         />
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -103,7 +103,7 @@ function MethodePage() {
             <p className="mt-2 text-sm text-muted-foreground">
               Le score qualité suit une formule fixe, à partir de critères
               objectifs : complétude, cohérence, structure, taille
-              d'échantillon. Le barème est public et affiché dans votre rapport.
+              d'échantillon. Le barème est affiché dans votre rapport.
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
