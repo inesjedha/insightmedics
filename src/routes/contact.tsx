@@ -383,20 +383,17 @@ function ContactPage() {
                       </div>
                     </Field>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <PillsField
-                        label="Type de projet"
-                        options={[...PROJECT_TYPES]}
-                        value={projectType}
-                        onChange={setProjectType}
-                      />
-                      <PillsField
-                        label="Délai souhaité"
-                        options={[...URGENCIES]}
-                        value={urgency}
-                        onChange={setUrgency}
-                      />
-                    </div>
+                    <OffersField
+                      value={selectedOffers}
+                      onChange={setSelectedOffers}
+                    />
+
+                    <PillsField
+                      label="Délai souhaité"
+                      options={[...URGENCIES]}
+                      value={urgency}
+                      onChange={setUrgency}
+                    />
                   </FormSection>
 
                   <FormSection number="03" title="Problématique & objectif">
