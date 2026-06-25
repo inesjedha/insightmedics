@@ -102,13 +102,20 @@ type ContactValues = z.infer<typeof contactSchema>;
 type FieldName = keyof ContactValues;
 type FieldErrors = Partial<Record<FieldName, string>>;
 
-const PROJECT_TYPES = [
-  "Thèse",
-  "Article",
-  "Mémoire",
-  "Analyse seule",
-  "Autre",
-] as const;
+type ServiceOffer = {
+  id: string;
+  name: string;
+  price: string;
+  tier: string;
+  featured?: boolean;
+};
+
+const SERVICE_OFFERS: ServiceOffer[] = [
+  { id: "audit", name: "Audit IA", price: "0", tier: "Gratuit" },
+  { id: "analyses", name: "Analyses + résultats", price: "500", tier: "Essentiel" },
+  { id: "discussion", name: "Discussion", price: "500", tier: "Expertise" },
+  { id: "imrad", name: "IMRAD complet", price: "1 200", tier: "Le plus choisi", featured: true },
+];
 
 const URGENCIES = [
   "< 2 semaines",
