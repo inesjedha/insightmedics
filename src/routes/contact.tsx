@@ -260,7 +260,7 @@ function ContactPage() {
                             value={values.name}
                             onChange={(e) => setValue("name", e.target.value)}
                             className="h-11 pl-10 transition-colors"
-                            placeholder="Karim Ben Salah"
+                            placeholder="Ibn Sina"
                           />
                         </IconInput>
                       </Field>
