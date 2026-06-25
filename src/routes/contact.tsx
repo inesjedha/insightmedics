@@ -385,7 +385,7 @@ function ContactPage() {
                             placeholder="Numéro local"
                             value={values.phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            className="h-11 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                            className="h-11 w-full min-w-0 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
                         </div>
                       </Field>
