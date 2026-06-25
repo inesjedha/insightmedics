@@ -56,7 +56,20 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
 });
 
-const phoneLocalRegex = /^\d{8}$/;
+const phoneLocalRegex = /^\d{6,12}$/;
+
+const COUNTRY_CODES = [
+  { code: "+216", flag: "🇹🇳", name: "Tunisie" },
+  { code: "+213", flag: "🇩🇿", name: "Algérie" },
+  { code: "+212", flag: "🇲🇦", name: "Maroc" },
+  { code: "+221", flag: "🇸🇳", name: "Sénégal" },
+  { code: "+225", flag: "🇨🇮", name: "Côte d'Ivoire" },
+  { code: "+237", flag: "🇨🇲", name: "Cameroun" },
+  { code: "+223", flag: "🇲🇱", name: "Mali" },
+  { code: "+226", flag: "🇧🇫", name: "Burkina Faso" },
+  { code: "+224", flag: "🇬🇳", name: "Guinée" },
+  { code: "+227", flag: "🇳🇪", name: "Niger" },
+] as const;
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Nom trop court").max(100, "Nom trop long"),
@@ -64,7 +77,7 @@ const contactSchema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(phoneLocalRegex, "Numéro tunisien à 8 chiffres requis"),
+    .regex(phoneLocalRegex, "Numéro à 6-12 chiffres requis"),
   subject: z.string().trim().min(3, "Sujet trop court").max(150, "Sujet trop long"),
   problem: z
     .string()
