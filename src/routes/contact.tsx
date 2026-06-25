@@ -187,7 +187,15 @@ function ContactPage() {
     setErrors({});
     setShowErrorBanner(false);
     setSubmitting(true);
-    const meta = `[Type: ${projectType}] [Deadline: ${urgency}]`;
+    const offersLabel = selectedOffers
+      .map((id) => SERVICE_OFFERS.find((o) => o.id === id)?.name)
+      .filter(Boolean)
+      .join(", ");
+    const metaParts = [
+      offersLabel ? `Offres : ${offersLabel}` : null,
+      `Délai : ${urgency}`,
+    ].filter(Boolean);
+    const meta = metaParts.join(" | ");
     const finalMessage = parsed.data.message
       ? `${meta}\n${parsed.data.message}`
       : meta;
