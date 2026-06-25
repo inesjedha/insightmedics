@@ -111,7 +111,6 @@ type ServiceOffer = {
 };
 
 const SERVICE_OFFERS: ServiceOffer[] = [
-  { id: "audit", name: "Audit IA", price: "0", tier: "Gratuit" },
   { id: "analyses", name: "Analyses + résultats", price: "500", tier: "Essentiel" },
   { id: "discussion", name: "Discussion", price: "500", tier: "Expertise" },
   { id: "imrad", name: "IMRAD complet", price: "1 200", tier: "Le plus choisi", featured: true },
