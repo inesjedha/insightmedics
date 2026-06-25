@@ -770,18 +770,18 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <Label htmlFor={id} className="flex items-center gap-1">
-          {label}
-          {required && (
-            <span aria-hidden className="text-destructive">
-              *
-            </span>
-          )}
-        </Label>
-        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
-      </div>
+      <Label htmlFor={id} className="flex h-5 items-center gap-1 leading-none">
+        {label}
+        {required && (
+          <span aria-hidden className="text-destructive">
+            *
+          </span>
+        )}
+      </Label>
       {children}
+      {hint && (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      )}
     </div>
   );
 }
