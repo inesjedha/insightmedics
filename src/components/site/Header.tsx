@@ -2,15 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { Menu, X, Stethoscope } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useLang } from "@/lib/i18n";
-import { useContent } from "@/lib/content";
-import { LangToggle } from "./LangToggle";
+import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const { lang } = useLang();
-  const t = useContent(lang).site;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -19,11 +15,13 @@ export function SiteHeader() {
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
             <Stethoscope className="h-5 w-5" />
           </span>
-          <span className="font-display text-lg font-bold tracking-tight">{t.name}</span>
+          <span className="font-display text-lg font-bold tracking-tight">
+            {siteConfig.name}
+          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {t.nav.map((item) => (
+          {siteConfig.nav.map((item) => (
             <Link
               key={item.to}
               to={item.to}
@@ -37,27 +35,23 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <LangToggle />
           <Button asChild variant="ghost" size="sm">
-            <Link to="/contact">{t.ctaOrderShort}</Link>
+            <Link to={siteConfig.cta.order.to}>Commander</Link>
           </Button>
           <Button asChild size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90">
-            <Link to="/audit">{t.ctaAuditLabel}</Link>
+            <Link to={siteConfig.cta.audit.to}>{siteConfig.cta.audit.label}</Link>
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <LangToggle />
-          <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-            onClick={() => setOpen((v) => !v)}
-            aria-label={lang === "fr" ? "Ouvrir le menu" : "Eftah el menu"}
-            aria-expanded={open}
-          >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Ouvrir le menu"
+          aria-expanded={open}
+        >
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
 
       <div
@@ -67,7 +61,7 @@ export function SiteHeader() {
         )}
       >
         <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3 sm:px-6">
-          {t.nav.map((item) => (
+          {siteConfig.nav.map((item) => (
             <Link
               key={item.to}
               to={item.to}
@@ -81,7 +75,7 @@ export function SiteHeader() {
           ))}
           <div className="mt-2 flex flex-col gap-2 pt-2 border-t border-border/60">
             <Button asChild variant="outline" size="sm" onClick={() => setOpen(false)}>
-              <Link to="/contact">{t.ctaOrderLabel}</Link>
+              <Link to={siteConfig.cta.order.to}>Commander une analyse</Link>
             </Button>
             <Button
               asChild
@@ -89,7 +83,7 @@ export function SiteHeader() {
               className="bg-brand text-brand-foreground hover:bg-brand/90"
               onClick={() => setOpen(false)}
             >
-              <Link to="/audit">{t.ctaAuditLabel}</Link>
+              <Link to={siteConfig.cta.audit.to}>{siteConfig.cta.audit.label}</Link>
             </Button>
           </div>
         </div>

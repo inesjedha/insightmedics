@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { Mail, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
-import { useLang } from "@/lib/i18n";
-import { useContent } from "@/lib/content";
+import { siteConfig } from "@/lib/site-config";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -30,34 +29,33 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
 });
 
-type ContactValues = {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-};
+const contactSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Nom trop court")
+    .max(100, "Nom trop long"),
+  email: z
+    .string()
+    .trim()
+    .email("Email invalide")
+    .max(255, "Email trop long"),
+  subject: z
+    .string()
+    .trim()
+    .min(3, "Sujet trop court")
+    .max(150, "Sujet trop long"),
+  message: z
+    .string()
+    .trim()
+    .min(20, "Détaillez un peu plus (min. 20 caractères)")
+    .max(2000, "Message trop long (max. 2000 caractères)"),
+});
+
+type ContactValues = z.infer<typeof contactSchema>;
 type FieldErrors = Partial<Record<keyof ContactValues, string>>;
 
 function ContactPage() {
-  const { lang } = useLang();
-  const t = useContent(lang).contact;
-  const email = useContent(lang).site.email;
-
-  const schema = useMemo(
-    () =>
-      z.object({
-        name: z.string().trim().min(2, t.errors.nameMin).max(100, t.errors.nameMax),
-        email: z.string().trim().email(t.errors.emailInvalid).max(255, t.errors.emailMax),
-        subject: z.string().trim().min(3, t.errors.subjectMin).max(150, t.errors.subjectMax),
-        message: z
-          .string()
-          .trim()
-          .min(20, t.errors.messageMin)
-          .max(2000, t.errors.messageMax),
-      }),
-    [t.errors],
-  );
-
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -66,7 +64,7 @@ function ContactPage() {
     e.preventDefault();
     const form = e.currentTarget;
     const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
-    const parsed = schema.safeParse(data);
+    const parsed = contactSchema.safeParse(data);
     if (!parsed.success) {
       const fe: FieldErrors = {};
       for (const issue of parsed.error.issues) {
@@ -88,7 +86,11 @@ function ContactPage() {
   return (
     <SiteLayout>
       <Section className="pb-6">
-        <SectionHeader eyebrow={t.eyebrow} title={t.title} description={t.desc} />
+        <SectionHeader
+          eyebrow="Contact"
+          title="Parlons de votre projet."
+          description="Décrivez en quelques lignes votre étude, l'état de votre base et vos délais. Nous revenons vers vous sous 48h."
+        />
       </Section>
 
       <Section className="pt-4">
@@ -100,20 +102,27 @@ function ContactPage() {
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-display text-xl font-bold">{t.successTitle}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{t.successDesc}</p>
+                  <h3 className="font-display text-xl font-bold">Message envoyé.</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Merci. Nous vous répondons sous 48h ouvrées à l'adresse
+                    indiquée.
+                  </p>
                 </div>
                 <Button variant="outline" onClick={() => setSubmitted(false)}>
-                  {t.successAgain}
+                  Envoyer un autre message
                 </Button>
               </div>
             ) : (
               <form onSubmit={onSubmit} className="space-y-5" noValidate>
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <Field id="name" label={t.fields.name} error={errors.name}>
+                  <Field
+                    id="name"
+                    label="Nom complet"
+                    error={errors.name}
+                  >
                     <Input id="name" name="name" autoComplete="name" required maxLength={100} />
                   </Field>
-                  <Field id="email" label={t.fields.email} error={errors.email}>
+                  <Field id="email" label="Email" error={errors.email}>
                     <Input
                       id="email"
                       name="email"
@@ -125,39 +134,36 @@ function ContactPage() {
                   </Field>
                 </div>
 
-                <Field id="subject" label={t.fields.subject} error={errors.subject}>
+                <Field id="subject" label="Sujet" error={errors.subject}>
                   <Input
                     id="subject"
                     name="subject"
                     required
                     maxLength={150}
-                    placeholder={t.fields.subjectPh}
+                    placeholder="Ex. Analyse statistique pour thèse en cardiologie"
                   />
                 </Field>
 
-                <Field id="message" label={t.fields.message} error={errors.message}>
+                <Field id="message" label="Votre message" error={errors.message}>
                   <Textarea
                     id="message"
                     name="message"
                     rows={7}
                     required
                     maxLength={2000}
-                    placeholder={t.fields.messagePh}
+                    placeholder="Type d'étude, taille de la base, deadline, attentes…"
                   />
                 </Field>
 
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-muted-foreground">{t.consent}</p>
-                  <Button
-                    type="submit"
-                    disabled={submitting}
-                    className="bg-brand text-brand-foreground hover:bg-brand/90"
-                  >
-                    {submitting ? (
-                      t.submitting
-                    ) : (
+                  <p className="text-xs text-muted-foreground">
+                    En envoyant ce message, vous acceptez d'être recontacté(e)
+                    par email.
+                  </p>
+                  <Button type="submit" disabled={submitting} className="bg-brand text-brand-foreground hover:bg-brand/90">
+                    {submitting ? "Envoi…" : (
                       <>
-                        {t.submit} <Send className="ml-2 h-4 w-4" />
+                        Envoyer <Send className="ml-2 h-4 w-4" />
                       </>
                     )}
                   </Button>
@@ -168,24 +174,36 @@ function ContactPage() {
 
           <aside className="space-y-6">
             <div className="rounded-2xl border border-border bg-surface/60 p-6">
-              <h3 className="font-display text-base font-semibold">{t.asideEmailTitle}</h3>
+              <h3 className="font-display text-base font-semibold">
+                Email direct
+              </h3>
               <a
-                href={`mailto:${email}`}
+                href={`mailto:${siteConfig.email}`}
                 className="mt-2 inline-flex items-center gap-2 text-sm text-foreground hover:text-brand"
               >
                 <Mail className="h-4 w-4" />
-                {email}
+                {siteConfig.email}
               </a>
             </div>
 
             <div className="rounded-2xl border border-border bg-surface/60 p-6">
-              <h3 className="font-display text-base font-semibold">{t.asideDelayTitle}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{t.asideDelayText}</p>
+              <h3 className="font-display text-base font-semibold">
+                Délais de réponse
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Réponse sous 48h ouvrées. Pour les soutenances imminentes,
+                signalez-le dès le premier message — nous traitons en priorité.
+              </p>
             </div>
 
             <div className="rounded-2xl border border-border bg-surface/60 p-6">
-              <h3 className="font-display text-base font-semibold">{t.asideConfTitle}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{t.asideConfText}</p>
+              <h3 className="font-display text-base font-semibold">
+                Confidentialité
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Ne joignez pas votre base ici. Si nous lançons une prestation,
+                vous nous l'enverrez via notre canal sécurisé d'upload.
+              </p>
             </div>
           </aside>
         </div>
