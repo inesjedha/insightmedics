@@ -281,6 +281,16 @@ function ContactPage() {
                   className="space-y-8"
                   noValidate
                 >
+                  {/* Honeypot anti-bot — invisible aux humains */}
+                  <input
+                    type="text"
+                    name={HONEYPOT_FIELD}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    style={honeypotStyle}
+                    defaultValue=""
+                  />
                   <p className="text-xs text-muted-foreground">
                     Les champs marqués d'un{" "}
                     <span className="text-destructive">*</span> sont obligatoires.
@@ -498,28 +508,67 @@ function ContactPage() {
                       En envoyant ce message, vous acceptez d'être recontacté(e)
                       par téléphone ou email.
                     </p>
-                    <Button
-                      type="submit"
-                      disabled={submitting}
-                      className="group w-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Envoi…
-                        </>
-                      ) : (
-                        <>
-                          Envoyer
-                          <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                        </>
+                  <div className="space-y-4 border-t border-border pt-6">
+                    <label
+                      className={cn(
+                        "flex items-start gap-3 rounded-xl border bg-surface/40 p-3.5 text-sm transition-colors",
+                        consentError
+                          ? "border-destructive/40 bg-destructive/5"
+                          : "border-border",
                       )}
-                    </Button>
+                    >
+                      <Checkbox
+                        id="contact-consent"
+                        checked={consent}
+                        onCheckedChange={(v) => {
+                          const next = v === true;
+                          setConsent(next);
+                          if (next) setConsentError(false);
+                        }}
+                        className="mt-0.5"
+                      />
+                      <span className="leading-relaxed text-foreground/90">
+                        <span aria-hidden className="mr-0.5 text-destructive">*</span>
+                        J'accepte d'être recontacté(e) par {siteConfig.name} au
+                        sujet de ma demande et le traitement de mes données
+                        comme décrit dans la{" "}
+                        <a
+                          href="/confidentialite"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand underline-offset-2 hover:underline"
+                        >
+                          politique de confidentialité
+                        </a>
+                        .
+                      </span>
+                    </label>
+
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+                      <Button
+                        type="submit"
+                        disabled={submitting}
+                        className="group w-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Envoi…
+                          </>
+                        ) : (
+                          <>
+                            Envoyer
+                            <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </form>
               )}
             </div>
           </div>
+
 
           <aside className="space-y-4">
             <div className="flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-2 text-xs font-medium text-brand">
