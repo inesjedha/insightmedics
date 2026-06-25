@@ -73,17 +73,14 @@ function MethodePage() {
 
       <Section>
         <SectionHeader
-          eyebrow="Le pipeline, étape par étape"
-          title="De votre fichier brut au rapport signé."
+          eyebrow="Le déroulé, étape par étape"
+          title="De votre fichier brut au rapport final."
+          description="Six étapes, deux points d'échange avec vous, une validation humaine systématique avant livraison."
         />
-        <ol className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <PipelineStep n={1} icon={<Upload className="h-4 w-4" />} label="Upload" />
-          <PipelineStep n={2} icon={<EyeOff className="h-4 w-4" />} label="Anonymisation" />
-          <PipelineStep n={3} icon={<ClipboardList className="h-4 w-4" />} label="Cadrage" />
-          <PipelineStep n={4} icon={<PlayCircle className="h-4 w-4" />} label="Calcul" />
-          <PipelineStep n={5} icon={<UserCheck className="h-4 w-4" />} label="Validation" />
-          <PipelineStep n={6} icon={<PackageCheck className="h-4 w-4" />} label="Livraison" />
-        </ol>
+        <PipelineTimeline />
+        <p className="mt-6 rounded-lg border border-dashed border-border bg-surface/40 p-4 text-sm text-muted-foreground">
+          Deux allers-retours avec vous sont inclus dans la prestation complète : un pour cadrer le plan d'analyse, un pour ajuster après restitution.
+        </p>
       </Section>
 
       <Section className="border-y border-border/60 bg-surface/60">
@@ -255,24 +252,129 @@ function DataCard({
   );
 }
 
-function PipelineStep({
-  n,
-  icon,
-  label,
-}: {
-  n: number;
-  icon: React.ReactNode;
-  label: string;
-}) {
+function PipelineTimeline() {
+  const steps = [
+    {
+      n: 1,
+      icon: <Upload className="h-4 w-4" />,
+      role: "client" as const,
+      roleLabel: "Vous",
+      title: "Upload",
+      text: "Vous déposez votre base (Excel, CSV, SPSS). Chiffrement avant envoi : aucun nom ne quitte votre poste en clair.",
+    },
+    {
+      n: 2,
+      icon: <EyeOff className="h-4 w-4" />,
+      role: "team" as const,
+      roleLabel: "Insight Medics",
+      title: "Anonymisation",
+      text: "Les colonnes identifiantes sont détectées et pseudonymisées automatiquement. La table de correspondance reste isolée.",
+    },
+    {
+      n: 3,
+      icon: <ClipboardList className="h-4 w-4" />,
+      role: "exchange" as const,
+      roleLabel: "Échange avec vous",
+      title: "Cadrage",
+      text: "Court questionnaire et appel si besoin : objectif de la thèse, hypothèses, variables clés. C'est vous qui orientez l'analyse.",
+    },
+    {
+      n: 4,
+      icon: <PlayCircle className="h-4 w-4" />,
+      role: "team" as const,
+      roleLabel: "Insight Medics",
+      title: "Calculs",
+      text: "Analyses statistiques exécutées sur vos données réelles : descriptives, tests, modèles. Les sorties brutes sont conservées et traçables.",
+    },
+    {
+      n: 5,
+      icon: <UserCheck className="h-4 w-4" />,
+      role: "team" as const,
+      roleLabel: "Revue humaine",
+      title: "Revue biostat + médecin",
+      text: "Un biostatisticien relit les analyses, ajuste les choix de tests, vérifie les hypothèses. Un médecin relit la cohérence clinique.",
+    },
+    {
+      n: 6,
+      icon: <PackageCheck className="h-4 w-4" />,
+      role: "exchange" as const,
+      roleLabel: "Échange avec vous",
+      title: "Restitution & livraison",
+      text: "On vous présente les résultats, on répond à vos questions, on intègre vos retours, puis on livre le rapport final et les scripts.",
+    },
+  ];
+
+  const roleBadge: Record<"client" | "team" | "exchange", string> = {
+    client: "bg-muted text-foreground/70",
+    team: "bg-primary/10 text-primary",
+    exchange: "bg-brand/10 text-brand ring-1 ring-brand/30",
+  };
+
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm">
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 font-display text-sm font-semibold text-primary">
-        {n}
-      </span>
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-        {icon}
-      </span>
-      <span className="font-display text-sm font-semibold">{label}</span>
-    </li>
+    <div className="mt-10">
+      {/* Desktop: horizontal timeline */}
+      <ol className="relative hidden lg:grid lg:grid-cols-6 lg:gap-4">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-0 right-0 top-5 h-px bg-border"
+        />
+        {steps.map((s) => (
+          <li key={s.n} className="relative flex flex-col">
+            <div className="relative z-10 flex justify-center">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card font-display text-sm font-semibold text-primary shadow-sm">
+                {s.n}
+              </span>
+            </div>
+            <div className="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                  {s.icon}
+                </span>
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${roleBadge[s.role]}`}
+                >
+                  {s.roleLabel}
+                </span>
+              </div>
+              <h3 className="mt-3 font-display text-sm font-semibold">
+                {s.title}
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {s.text}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      {/* Mobile: vertical timeline */}
+      <ol className="relative ml-4 space-y-5 border-l border-border pl-6 lg:hidden">
+        {steps.map((s) => (
+          <li key={s.n} className="relative">
+            <span className="absolute -left-[34px] inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card font-display text-xs font-semibold text-primary shadow-sm">
+              {s.n}
+            </span>
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                  {s.icon}
+                </span>
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${roleBadge[s.role]}`}
+                >
+                  {s.roleLabel}
+                </span>
+              </div>
+              <h3 className="mt-3 font-display text-sm font-semibold">
+                {s.title}
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                {s.text}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
