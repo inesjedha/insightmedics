@@ -422,7 +422,7 @@ function ContactPage() {
                           className="h-11 pl-10 transition-colors"
                         />
                       </IconInput>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
                         <span className="text-xs text-muted-foreground">
                           Inspirations :
                         </span>
@@ -431,12 +431,13 @@ function ContactPage() {
                             key={ex}
                             type="button"
                             onClick={() => setValue("subject", ex)}
-                            className="rounded-full border border-border bg-surface/60 px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:border-brand/40 hover:text-brand"
+                            className="rounded-full border border-border bg-surface/60 px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-brand/40 hover:text-brand"
                           >
                             {ex}
                           </button>
                         ))}
                       </div>
+
                     </Field>
 
                     <OffersField
