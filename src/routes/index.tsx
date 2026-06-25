@@ -584,6 +584,88 @@ function ServicesTeaser() {
   );
 }
 
+function Testimonials() {
+  const items = [
+    {
+      quote:
+        "L'audit a tout de suite repéré les variables mal codées dans ma base. J'ai gagné trois semaines sur ma thèse.",
+      name: "Yosra",
+      role: "Interne en médecine interne",
+      city: "Sousse",
+    },
+    {
+      quote:
+        "Analyses propres, tableaux directement utilisables et une discussion solide. Mon jury n'avait aucune question piège sur la méthode.",
+      name: "Mohamed Aziz",
+      role: "Résident en cardiologie",
+      city: "Tunis",
+    },
+    {
+      quote:
+        "J'avais peur de la partie stats, ils m'ont accompagnée du plan d'analyse jusqu'à la soutenance. Délais tenus à la lettre.",
+      name: "Ines",
+      role: "Étudiante en 6e année de médecine",
+      city: "Monastir",
+    },
+    {
+      quote:
+        "Très bonne réactivité et un vrai dialogue scientifique, pas juste un prestataire. Recommandé pour un article original.",
+      name: "Khalil",
+      role: "Médecin hospitalier",
+      city: "Sfax",
+    },
+    {
+      quote:
+        "La rédaction IMRAD est claire et bien référencée. C'est exactement ce qu'attendait ma faculté.",
+      name: "Rania",
+      role: "Thésarde en pédiatrie",
+      city: "Bizerte",
+    },
+  ];
+
+  return (
+    <Section>
+      <SectionHeader
+        eyebrow="Témoignages"
+        title="Ils nous ont confié leur thèse."
+        description="Quelques retours d'étudiants et de médecins accompagnés en Tunisie."
+      />
+      <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {items.map((t) => (
+          <figure
+            key={t.name + t.city}
+            className="flex h-full flex-col rounded-2xl border border-border bg-card p-6 shadow-sm"
+          >
+            <div className="flex items-center gap-1 text-brand">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="h-4 w-4 fill-current" />
+              ))}
+            </div>
+            <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground">
+              « {t.quote} »
+            </blockquote>
+            <figcaption className="mt-5 border-t border-border/60 pt-4">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand/10 font-display text-sm font-semibold text-brand">
+                  {t.name.charAt(0)}
+                </span>
+                <div>
+                  <p className="font-display text-sm font-semibold text-foreground">
+                    {t.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.role} · {t.city}
+                  </p>
+                </div>
+              </div>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 function ForWho() {
   const audiences = [
     {
