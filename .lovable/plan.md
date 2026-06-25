@@ -1,75 +1,54 @@
-## Plan — Sprint sécurité, légal, conversion & cohérence
 
-5 chantiers groupés. Aucun ne nécessite de backend : tout reste en front, prêt à être branché plus tard.
+# Améliorer le rendu et la responsivité de la page Contact
 
----
+Objectif : rendre la page Contact plus aérée, plus lisible sur mobile et plus cohérente avec le style des pages Méthode / Services, sans changer la logique du formulaire ni les règles métier (validation, anti-spam, API, offres).
 
-### 1. Pages légales (P0-2)
+## Diagnostic
 
-Créer trois nouvelles routes statiques, accessibles via le footer et liées depuis les formulaires :
+- Sur mobile (<640px) : la grille 3 colonnes des offres se compresse mal une fois en `sm:grid-cols-3` (les cartes deviennent trop étroites pour leur contenu : badge + nom + prix), et le champ téléphone (Select + Input) peut frôler le débordement.
+- L'aside d'infos reste fixe en haut sur desktop alors qu'il pourrait être "sticky" pour rester visible pendant le remplissage du long formulaire.
+- Hiérarchie : les `FormSection` (01/02/03/04) n'ont pas de respiration verticale entre elles, et le séparateur consentement/bouton est un peu plat.
+- Le bouton "Envoyer" est aligné à droite sur desktop mais sans rappel de l'engagement (rappel sous 48h, gratuité du premier échange).
+- L'aside InfoCards manque d'une carte "WhatsApp/Facebook" alors que ce sont des canaux mentionnés ailleurs sur le site — à vérifier mais non ajouté si non confirmé.
+- Le badge "Réponse sous 48h" pourrait être intégré au PageHero plutôt que flottant au-dessus de l'aside.
 
-- `src/routes/mentions-legales.tsx` — éditeur du site (Insight Medics, Sousse), contact `helpinsightmedics@gmail.com`, hébergeur (placeholder à compléter), propriété intellectuelle, limites de responsabilité.
-- `src/routes/confidentialite.tsx` — données collectées (nom, téléphone, email, fichier d'audit), finalités (recontact commercial, audit statistique), base légale (consentement), durée de conservation (12 mois pour les leads, purge horaire pour les fichiers d'audit conformément à la promesse), destinataires (équipe Insight Medics uniquement), droits (accès, rectification, suppression via l'email contact), sécurité.
-- `src/routes/cgv.tsx` — offres et prix en DT (Analyses 600, Discussion 700, Thèse complète 1200), modalités de paiement (à la livraison), délais (1 à 2 semaines selon offre), révisions incluses, propriété du travail livré, juridiction tunisienne.
+## Changements proposés (UI uniquement)
 
-Toutes en `head()` avec `noindex` désactivé (on veut qu'elles soient indexables) mais titres courts.
+### 1. Layout général
+- Passer la grille principale à `lg:grid-cols-[1.5fr_1fr] xl:grid-cols-[1.6fr_1fr]` et augmenter le `gap` à `gap-8 lg:gap-10`.
+- Rendre l'`<aside>` **sticky** sur desktop (`lg:sticky lg:top-24 lg:self-start`) pour qu'il reste visible durant la saisie.
+- Augmenter le padding intérieur de la carte formulaire (`sm:p-8 lg:p-10`) et adoucir le coin (`rounded-3xl`).
 
-Mention sous chaque page : "Dernière mise à jour : juin 2026 — version initiale, à faire valider par un juriste avant exploitation commerciale."
+### 2. Mobile-first sur les sections critiques
+- **Offres** : passer de `sm:grid-cols-3` à `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` pour éviter l'écrasement sur tablette étroite. Augmenter le padding interne et hiérarchiser (tier en petit, nom en gros, prix en bas).
+- **Téléphone** : garder la structure mais ajouter `min-w-0` sur l'Input et `shrink-0` sur le Select, conformément aux règles de responsive layout. Réduire `min-w-[5.75rem]` à `min-w-[5.25rem]` pour gagner de la place sur très petit écran.
+- **Pills "Délai"** : agrandir légèrement (`px-3.5 py-2 text-sm`) pour de meilleures cibles tactiles (>40px).
+- **Exemples de sujet** : les pills deviennent une vraie ligne wrap avec un peu plus d'air (`gap-2`).
 
-### 2. Consentement explicite (P0-4)
+### 3. Hiérarchie & respirations
+- Espacement des `FormSection` : passer de `space-y-8` à `space-y-10` entre sections, et ajouter un fin séparateur visuel optionnel.
+- Le header de section (01/02/...) gagne un petit fond pour mieux marquer la progression.
+- Les `CharCount` deviennent inline à droite du label plutôt qu'en bloc en dessous, gain de hauteur.
 
-- `src/routes/audit.tsx` (formulaire d'upload) : ajouter une `Checkbox` shadcn obligatoire **avant** le bouton "Lancer l'audit", label : *"J'accepte que mon fichier soit traité pour générer l'audit et d'être recontacté(e) par Insight Medics. Voir la [politique de confidentialité](/confidentialite)."* Soumission bloquée tant que non cochée.
-- `src/routes/contact.tsx` : remplacer le texte gris actuel ("En envoyant ce message, vous acceptez…") par une vraie `Checkbox` obligatoire avec lien vers `/confidentialite`.
-- Ajouter la checkbox au schéma Zod (`.refine(v => v === true)`) pour bloquer côté form, sans message d'erreur intrusif (cohérent avec la pref déjà actée : pas de validation agressive).
+### 4. Aside repensé
+- Badge "Réponse sous 48h" déplacé **dans le PageHero** (sous la description) au lieu de l'aside.
+- Les `InfoCard` deviennent plus compactes (icône + texte en colonne unique), avec une carte "highlight" en tête : un encart "Téléphone prioritaire" légèrement accentué (fond brand/5, bordure brand/20) pour signaler le canal préféré.
+- Sur mobile : l'aside passe **sous** le formulaire (déjà le cas via grid), mais on réduit sa visibilité (les 4 cartes prennent beaucoup de place) en regroupant en 2 colonnes `grid-cols-2` sur mobile sauf la carte highlight pleine largeur.
 
-### 3. Anti-spam honeypot (P0-6)
+### 5. Bouton d'envoi & consentement
+- Bloc consentement + bouton dans une "footer card" légèrement surélevée (`bg-surface/60 -mx-5 sm:-mx-7 px-5 sm:px-7 py-6 rounded-b-3xl border-t`) pour mieux clore le formulaire.
+- Bouton "Envoyer" agrandi (`h-12 px-6 text-base`) avec à sa gauche un micro-texte rassurant : "Réponse sous 48h ouvrées · Premier échange gratuit".
 
-Approche zéro friction, pas de captcha :
+### 6. Success state
+- Ajouter une icône check plus marquante, et un bouton secondaire "Retour à l'accueil" en plus de "Envoyer un autre message".
 
-- Champ texte caché (CSS `position: absolute; left: -9999px; tabindex={-1}; autoComplete="off"; aria-hidden`) nommé `website` ou `company` dans les formulaires audit + contact.
-- À la soumission, si le champ est rempli → on simule un succès silencieux (pas d'envoi, pas d'erreur visible côté bot).
-- Bonus : timestamp de montage du form, rejet si soumission < 2 secondes après le mount (bots typiques).
-- Centraliser dans `src/lib/anti-spam.ts` (helpers `isHoneypotTripped`, `isTooFast`).
+## Hors-scope
 
-### 4. CTA Header (P1-12)
+- Aucune modification de la logique de validation, du schéma Zod, des appels `createLead`, de l'anti-spam, ni des offres/tarifs.
+- Pas d'ajout de nouveaux champs.
+- Pas de modification du `PageHero` au-delà de l'ajout d'un badge sous la description.
 
-Dans `src/components/site/SiteHeader.tsx` :
+## Vérification
 
-- Supprimer le bouton secondaire "Commander" (redondant avec le CTA principal et peu engageant).
-- Conserver uniquement le CTA principal "Auditer ma base gratuitement" → `/audit`.
-- Sur mobile, le menu burger conserve l'accès à `/contact` via la liste de nav.
-
-### 5. Composant `OfferCard` partagé (P2-22)
-
-Aujourd'hui les cartes d'offres sont recréées en parallèle dans :
-- `src/routes/index.tsx` (section Services)
-- `src/routes/tarifs.tsx` (grille principale)
-- `src/routes/services.tsx` (grille des 3 offres)
-
-Avec des variantes de badge "Le plus choisi" qui divergent visuellement.
-
-Plan :
-- Créer `src/components/site/OfferCard.tsx` avec une API typée : `{ title, price, currency, duration, description, features[], highlight?: boolean, ctaLabel, ctaHref }`.
-- Définir les 3 offres canoniques dans `src/lib/offers.ts` (déduplication + source unique de vérité pour les prix DT).
-- Refactorer les 3 pages pour consommer `OFFERS` + `<OfferCard>`. Le badge "Le plus choisi" devient une prop `highlight` unique.
-
-Impact : suppression d'environ 200 lignes dupliquées, garantie qu'un changement de prix se propage partout, design homogène.
-
----
-
-### Détails techniques
-
-- **Footer** (`src/components/site/Footer.tsx`) : ajouter une 4ᵉ colonne "Légal" avec les 3 liens, et un lien Facebook (icône) vers la page existante.
-- **`siteConfig`** (`src/lib/site-config.ts`) : ajouter `legal: { mentions, confidentialite, cgv }` et `social: { facebook }` pour centralisation.
-- **Validation** : tout reste géré par Zod, pas de nouvelle dépendance.
-- **Pas de backend touché** : honeypot et consentement sont purement front, le mock localStorage continue de fonctionner.
-
-### Hors scope (à traiter dans un sprint suivant)
-
-- Sécurisation `/admin` (P0-1) → nécessite décision sur le mode d'auth.
-- Vérité du discours audit IA (P0-3) → nécessite arbitrage : brancher le backend ou requalifier en "démo".
-- Favicon + OG image (P0-7), SEO titres (P1-8), sitemap/robots (P1-9), analytics (P1-14), logo (P1-11), témoignages (P1-13).
-
-### Livrables
-
-5 nouveaux fichiers (3 routes légales + `OfferCard` + `offers.ts`), 1 helper anti-spam, refactor de 5 fichiers existants (header, footer, audit, contact, index/tarifs/services pour OfferCard).
+- Lecture visuelle Playwright à 375px, 768px et 1280px pour confirmer qu'aucun élément ne déborde et que l'aside sticky se comporte correctement.
+- Tester la soumission (validation + success state) pour s'assurer qu'aucun comportement n'a régressé.

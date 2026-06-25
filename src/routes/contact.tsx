@@ -264,21 +264,32 @@ function ContactPage() {
         description="Décrivez votre étude, votre problématique et votre objectif. Nous revenons vers vous sous 48h ouvrées — par téléphone en priorité."
       />
 
-      <Section className="pt-4 sm:pt-6">
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
+      <Section className="pt-2 sm:pt-4">
+        <div className="mx-auto mb-6 flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:mb-8">
+          <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1.5 text-xs font-medium text-brand">
+            <Sparkles className="h-3.5 w-3.5" />
+            Réponse sous 48h ouvrées
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3.5 py-1.5 text-xs font-medium text-muted-foreground">
+            <Phone className="h-3.5 w-3.5" />
+            Premier échange gratuit
+          </span>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:gap-10 xl:grid-cols-[1.6fr_1fr]">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-brand/5 via-transparent to-transparent"
             />
-            <div className="relative">
+            <div className="relative p-5 sm:p-8 lg:p-10">
               {submitted ? (
                 <SuccessState onReset={() => setSubmitted(false)} />
               ) : (
                 <form
                   ref={formRef}
                   onSubmit={onSubmit}
-                  className="space-y-8"
+                  className="space-y-10"
                   noValidate
                 >
                   {/* Honeypot anti-bot — invisible aux humains */}
@@ -295,6 +306,7 @@ function ContactPage() {
                     Les champs marqués d'un{" "}
                     <span className="text-destructive">*</span> sont obligatoires.
                   </p>
+
 
                   {showErrorBanner && (
                     <div
@@ -335,7 +347,7 @@ function ContactPage() {
                           <Select value={dialCode} onValueChange={setDialCode}>
                             <SelectTrigger
                               aria-label="Indicatif pays"
-                              className="h-11 w-auto min-w-[5.75rem] shrink-0 gap-1.5 whitespace-nowrap rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none [&>span]:overflow-visible"
+                              className="h-11 w-auto min-w-[5.25rem] shrink-0 gap-1.5 whitespace-nowrap rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none [&>span]:overflow-visible"
                             >
                               <SelectValue aria-label={dialCode}>
                                 <span className="flex items-center gap-1.5 whitespace-nowrap">
@@ -373,7 +385,7 @@ function ContactPage() {
                             placeholder="Numéro local"
                             value={values.phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            className="h-11 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                            className="h-11 w-full min-w-0 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
                         </div>
                       </Field>
@@ -410,7 +422,7 @@ function ContactPage() {
                           className="h-11 pl-10 transition-colors"
                         />
                       </IconInput>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
                         <span className="text-xs text-muted-foreground">
                           Inspirations :
                         </span>
@@ -419,12 +431,13 @@ function ContactPage() {
                             key={ex}
                             type="button"
                             onClick={() => setValue("subject", ex)}
-                            className="rounded-full border border-border bg-surface/60 px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:border-brand/40 hover:text-brand"
+                            className="rounded-full border border-border bg-surface/60 px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-brand/40 hover:text-brand"
                           >
                             {ex}
                           </button>
                         ))}
                       </div>
+
                     </Field>
 
                     <OffersField
@@ -503,11 +516,10 @@ function ContactPage() {
                     </Field>
                   </FormSection>
 
-                  <div className="space-y-4 border-t border-border pt-6">
-
+                  <div className="-mx-5 space-y-5 rounded-b-3xl border-t border-border bg-surface/60 px-5 py-6 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
                     <label
                       className={cn(
-                        "flex items-start gap-3 rounded-xl border bg-surface/40 p-3.5 text-sm transition-colors",
+                        "flex items-start gap-3 rounded-xl border bg-background/60 p-3.5 text-sm transition-colors",
                         consentError
                           ? "border-destructive/40 bg-destructive/5"
                           : "border-border",
@@ -540,11 +552,14 @@ function ContactPage() {
                       </span>
                     </label>
 
-                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs text-muted-foreground sm:max-w-[60%]">
+                        Réponse sous 48h ouvrées · Premier échange gratuit, sans engagement.
+                      </p>
                       <Button
                         type="submit"
                         disabled={submitting}
-                        className="group w-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
+                        className="group h-12 w-full bg-brand px-6 text-base text-brand-foreground hover:bg-brand/90 sm:w-auto"
                       >
                         {submitting ? (
                           <>
@@ -566,39 +581,41 @@ function ContactPage() {
           </div>
 
 
-          <aside className="space-y-4">
-            <div className="flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-2 text-xs font-medium text-brand">
-              <Sparkles className="h-3.5 w-3.5" />
-              Réponse sous 48h ouvrées
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="sm:col-span-2 lg:col-span-1">
+                <InfoCard
+                  highlight
+                  icon={<Phone className="h-4 w-4 sm:h-5 sm:w-5" />}
+                  title="Téléphone prioritaire"
+                  text="Nous rappelons par téléphone en priorité. Indiquez un numéro joignable dans le formulaire."
+                />
+              </div>
+              <InfoCard
+                icon={<Mail className="h-4 w-4 sm:h-5 sm:w-5" />}
+                title="Email direct"
+                text={
+                  <a
+                    href={`mailto:${siteConfig.email}`}
+                    className="break-all text-foreground hover:text-brand"
+                  >
+                    {siteConfig.email}
+                  </a>
+                }
+              />
+              <InfoCard
+                icon={<Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
+                title="Délais de réponse"
+                text="Sous 48h ouvrées. Soutenance imminente ? Signalez-le, nous traitons en priorité."
+              />
+              <InfoCard
+                icon={<User className="h-4 w-4 sm:h-5 sm:w-5" />}
+                title="Basé à Sousse, Tunisie"
+                text="Équipe biostatisticien + médecin pour thèses et publications."
+              />
             </div>
-            <InfoCard
-              icon={<Phone className="h-4 w-4 sm:h-5 sm:w-5" />}
-              title="Téléphone prioritaire"
-              text="Nous rappelons par téléphone en priorité. Indiquez un numéro joignable dans le formulaire."
-            />
-            <InfoCard
-              icon={<Mail className="h-4 w-4 sm:h-5 sm:w-5" />}
-              title="Email direct"
-              text={
-                <a
-                  href={`mailto:${siteConfig.email}`}
-                  className="text-foreground hover:text-brand"
-                >
-                  {siteConfig.email}
-                </a>
-              }
-            />
-            <InfoCard
-              icon={<Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
-              title="Délais de réponse"
-              text="Réponse sous 48h ouvrées. Pour les soutenances imminentes, signalez-le dès le premier message — nous traitons en priorité."
-            />
-            <InfoCard
-              icon={<User className="h-4 w-4 sm:h-5 sm:w-5" />}
-              title="Basé à Sousse, Tunisie"
-              text="Équipe biostatisticien + médecin disponible pour vos thèses et publications."
-            />
           </aside>
+
         </div>
       </Section>
 
@@ -682,17 +699,31 @@ function InfoCard({
   icon,
   title,
   text,
+  highlight,
 }: {
   icon: ReactNode;
   title: string;
   text: ReactNode;
+  highlight?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-border bg-surface/60 p-4 sm:gap-4 sm:p-5">
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand sm:h-10 sm:w-10">
+    <div
+      className={cn(
+        "flex h-full items-start gap-3 rounded-2xl border p-4 sm:gap-4 sm:p-5",
+        highlight
+          ? "border-brand/30 bg-brand/5"
+          : "border-border bg-surface/60",
+      )}
+    >
+      <span
+        className={cn(
+          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10",
+          highlight ? "bg-brand text-brand-foreground" : "bg-brand/10 text-brand",
+        )}
+      >
         {icon}
       </span>
-      <div>
+      <div className="min-w-0">
         <h3 className="font-display text-sm font-semibold tracking-tight sm:text-base">
           {title}
         </h3>
@@ -703,6 +734,7 @@ function InfoCard({
     </div>
   );
 }
+
 
 function Field({
   id,
@@ -798,7 +830,7 @@ function PillsField({
               aria-checked={selected}
               onClick={() => onChange(opt)}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                "rounded-full border px-3.5 py-2 text-sm font-medium transition-colors",
                 selected
                   ? "border-brand bg-brand/10 text-brand"
                   : "border-border bg-surface/60 text-muted-foreground hover:border-brand/40 hover:text-foreground"
@@ -836,7 +868,7 @@ function OffersField({
           Sélectionnez une ou plusieurs
         </span>
       </div>
-      <div role="group" className="grid gap-3 sm:grid-cols-3">
+      <div role="group" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {SERVICE_OFFERS.map((offer) => {
           const selected = value.includes(offer.id);
           const accent = offer.featured || offer.id === "audit";
