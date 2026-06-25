@@ -276,7 +276,14 @@ function ContactPage() {
                               aria-label="Indicatif pays"
                               className="h-11 w-auto gap-1.5 rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0"
                             >
-                              <SelectValue />
+                              <SelectValue aria-label={dialCode}>
+                                <span className="flex items-center gap-1.5">
+                                  <span aria-hidden className="text-base leading-none">
+                                    {COUNTRY_CODES.find((c) => c.code === dialCode)?.flag}
+                                  </span>
+                                  {dialCode}
+                                </span>
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               {COUNTRY_CODES.map((c) => (
