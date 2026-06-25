@@ -756,7 +756,7 @@ function OffersField({
           Sélectionnez une ou plusieurs
         </span>
       </div>
-      <div role="group" className="grid gap-3 sm:grid-cols-2">
+      <div role="group" className="grid gap-3 sm:grid-cols-3">
         {SERVICE_OFFERS.map((offer) => {
           const selected = value.includes(offer.id);
           const accent = offer.featured || offer.id === "audit";
