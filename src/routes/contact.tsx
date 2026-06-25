@@ -503,12 +503,8 @@ function ContactPage() {
                     </Field>
                   </FormSection>
 
-                  <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      En envoyant ce message, vous acceptez d'être recontacté(e)
-                      par téléphone ou email.
-                    </p>
                   <div className="space-y-4 border-t border-border pt-6">
+
                     <label
                       className={cn(
                         "flex items-start gap-3 rounded-xl border bg-surface/40 p-3.5 text-sm transition-colors",
