@@ -179,6 +179,7 @@ function ContactPage() {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (submitting) return;
 
     // Anti-spam silencieux : honeypot rempli ou form soumis trop vite => faux succès.
     const honeypotValue = (
