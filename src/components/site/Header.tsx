@@ -31,9 +31,6 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link to={siteConfig.cta.order.to}>Commander</Link>
-          </Button>
           <Button asChild size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90">
             <Link to={siteConfig.cta.audit.to}>{siteConfig.cta.audit.label}</Link>
           </Button>
@@ -69,14 +66,11 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <div className="mt-2 flex flex-col gap-2 pt-2 border-t border-border/60">
-            <Button asChild variant="outline" size="sm" onClick={() => setOpen(false)}>
-              <Link to={siteConfig.cta.order.to}>Commander une analyse</Link>
-            </Button>
+          <div className="mt-2 pt-2 border-t border-border/60">
             <Button
               asChild
               size="sm"
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              className="w-full bg-brand text-brand-foreground hover:bg-brand/90"
               onClick={() => setOpen(false)}
             >
               <Link to={siteConfig.cta.audit.to}>{siteConfig.cta.audit.label}</Link>
