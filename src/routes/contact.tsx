@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
   Mail,
@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,12 @@ import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
+import {
+  HONEYPOT_FIELD,
+  honeypotStyle,
+  isHoneypotTripped,
+  isTooFast,
+} from "@/lib/anti-spam";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/contact")({
