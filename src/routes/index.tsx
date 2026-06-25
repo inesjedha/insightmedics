@@ -99,8 +99,8 @@ function Hero() {
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           <PromiseCard
             icon={<GraduationCap className="h-5 w-5" />}
-            kicker="Thèse de médecine"
-            headline="Accompagnement complet"
+            kicker="Accompagnement complet"
+            headline="Thèse de médecine"
             value="livrée en 2 semaines"
             note="selon votre base"
           />
