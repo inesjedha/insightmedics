@@ -83,7 +83,7 @@ const paidOffers: PaidOffer[] = [
   {
     number: "03",
     icon: <GraduationCap className="h-5 w-5" />,
-    title: "Accompagnement IMRAD complet",
+    title: "Accompagnement thèse complète",
     price: "1 200 DT",
     description:
       "De la base brute à la conclusion : introduction, matériel & méthodes, résultats, discussion, conclusion.",
