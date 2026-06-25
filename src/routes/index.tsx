@@ -18,7 +18,10 @@ import {
   Star,
   PenLine,
   BookOpenCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -638,40 +641,8 @@ function Testimonials() {
         description="Quelques retours d'étudiants et de médecins accompagnés en Tunisie."
       />
       {/* Mobile : carrousel scroll-snap */}
-      <div className="mt-6 -mx-4 sm:hidden">
-        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {items.map((t) => (
-            <figure
-              key={t.name + t.city}
-              className="flex w-[82%] shrink-0 snap-center flex-col rounded-xl border border-border bg-card p-4 shadow-sm"
-            >
-              <div className="flex items-center gap-0.5 text-brand">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-3 w-3 fill-current" />
-                ))}
-              </div>
-              <blockquote className="mt-2.5 flex-1 text-[13px] leading-snug text-foreground">
-                « {t.quote} »
-              </blockquote>
-              <figcaption className="mt-3 flex items-center gap-2.5">
-                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/10 font-display text-xs font-semibold text-brand">
-                  {t.name.charAt(0)}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate font-display text-xs font-semibold text-foreground">
-                    {t.name}
-                  </p>
-                  <p className="truncate text-[11px] text-muted-foreground">
-                    {t.role} · {t.city}
-                  </p>
-                </div>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-        <p className="mt-2 px-4 text-center text-[11px] text-muted-foreground">
-          Glissez pour voir les autres témoignages →
-        </p>
+      <div className="mt-6 sm:hidden">
+        <TestimonialsMobileCarousel items={items} />
       </div>
 
       {/* Tablette/Desktop : grille */}
@@ -706,6 +677,122 @@ function Testimonials() {
         ))}
       </div>
     </Section>
+  );
+}
+
+type Testimonial = {
+  quote: string;
+  name: string;
+  role: string;
+  city: string;
+};
+
+function TestimonialsMobileCarousel({ items }: { items: Testimonial[] }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const slideWidth = el.scrollWidth / items.length;
+        const idx = Math.round(el.scrollLeft / slideWidth);
+        setActive(Math.max(0, Math.min(items.length - 1, idx)));
+      });
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [items.length]);
+
+  const goTo = (i: number) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const slideWidth = el.scrollWidth / items.length;
+    el.scrollTo({ left: slideWidth * i, behavior: "smooth" });
+  };
+
+  return (
+    <div className="-mx-4">
+      <div
+        ref={scrollerRef}
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {items.map((t) => (
+          <figure
+            key={t.name + t.city}
+            className="flex w-[82%] shrink-0 snap-center flex-col rounded-xl border border-border bg-card p-4 shadow-sm"
+          >
+            <div className="flex items-center gap-0.5 text-brand">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="h-3 w-3 fill-current" />
+              ))}
+            </div>
+            <blockquote className="mt-2.5 flex-1 text-[13px] leading-snug text-foreground">
+              « {t.quote} »
+            </blockquote>
+            <figcaption className="mt-3 flex items-center gap-2.5">
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/10 font-display text-xs font-semibold text-brand">
+                {t.name.charAt(0)}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-display text-xs font-semibold text-foreground">
+                  {t.name}
+                </p>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {t.role} · {t.city}
+                </p>
+              </div>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between px-4">
+        <button
+          type="button"
+          aria-label="Témoignage précédent"
+          onClick={() => goTo(Math.max(0, active - 1))}
+          disabled={active === 0}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition disabled:opacity-40"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+
+        <div className="flex items-center gap-1.5" role="tablist" aria-label="Sélection du témoignage">
+          {items.map((t, i) => (
+            <button
+              key={t.name + t.city}
+              type="button"
+              role="tab"
+              aria-selected={i === active}
+              aria-label={`Aller au témoignage ${i + 1}`}
+              onClick={() => goTo(i)}
+              className={
+                i === active
+                  ? "h-1.5 w-5 rounded-full bg-brand transition-all"
+                  : "h-1.5 w-1.5 rounded-full bg-border transition-all"
+              }
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          aria-label="Témoignage suivant"
+          onClick={() => goTo(Math.min(items.length - 1, active + 1))}
+          disabled={active === items.length - 1}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition disabled:opacity-40"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 }
 
