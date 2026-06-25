@@ -14,6 +14,10 @@ import {
   ShieldCheck,
   CalendarCheck,
   Sparkles,
+  Check,
+  Star,
+  PenLine,
+  BookOpenCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -397,60 +401,183 @@ function AiHuman() {
 }
 
 function ServicesTeaser() {
-  const offers = [
+  const offers: Array<{
+    icon: React.ReactNode;
+    title: string;
+    price: string;
+    delay: string;
+    features: string[];
+    highlighted?: boolean;
+    badge?: string;
+  }> = [
     {
-      title: "Audit de base",
-      price: "Offert · 0 DT",
-      desc: "Contrôle qualité, score et rapport PDF.",
-    },
-    {
-      title: "Analyse statistique + résultats",
+      icon: <FileBarChart2 className="h-5 w-5" />,
+      title: "Analyses & résultats",
       price: "500 DT",
-      desc: "Analyses complètes et rédaction des résultats.",
+      delay: "Livré en 1 semaine",
+      features: [
+        "Plan d'analyse validé par un biostatisticien",
+        "Tests adaptés à votre question de recherche",
+        "Tableaux et figures prêts pour la thèse",
+        "Rédaction de la section Résultats",
+      ],
     },
     {
-      title: "Rédaction de la discussion",
+      icon: <PenLine className="h-5 w-5" />,
+      title: "Discussion rédigée",
       price: "500 DT",
-      desc: "Discussion structurée et argumentée.",
+      delay: "Livré en 1 semaine",
+      features: [
+        "Revue de la littérature ciblée",
+        "Mise en perspective de vos résultats",
+        "Limites et perspectives argumentées",
+        "Références au format de votre faculté",
+      ],
     },
     {
-      title: "Accompagnement IMRAD complet",
+      icon: <BookOpenCheck className="h-5 w-5" />,
+      title: "IMRAD complet",
       price: "1 200 DT",
-      desc: "Introduction, M&M, résultats, discussion, conclusion.",
+      delay: "Livré en 2 semaines",
+      features: [
+        "Tout l'audit + analyses + résultats",
+        "Introduction, M&M, Discussion, Conclusion",
+        "Tableaux, figures et mise en page",
+        "Un interlocuteur unique jusqu'à la soutenance",
+      ],
       highlighted: true,
+      badge: "Le plus choisi",
     },
   ];
+
   return (
     <Section className="bg-surface/60 border-y border-border/60">
       <SectionHeader
         eyebrow="Services"
-        title="Trois façons de travailler avec nous."
-        description="Commencez par l'audit offert. Pour aller plus loin, choisissez la formule adaptée à votre besoin."
+        title="Choisissez la formule qui correspond à votre étape."
+        description="Commencez par l'audit offert. Ajoutez ensuite ce dont vous avez besoin : analyses, rédaction, ou accompagnement complet."
       />
-      <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+
+      {/* Bannière audit offert */}
+      <div className="mt-10 rounded-2xl border border-brand/30 bg-brand/5 p-6 sm:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/15 text-brand">
+                <Gift className="h-5 w-5" />
+              </span>
+              <Badge variant="outline" className="border-brand/30 bg-background text-brand">
+                Offert · 0 DT
+              </Badge>
+            </div>
+            <h3 className="mt-4 font-display text-xl font-bold sm:text-2xl">
+              Commencez par l'audit de votre base.
+            </h3>
+            <ul className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                Contrôle qualité complet
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                Score sur 100 + rapport PDF
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                Sans engagement, sous 24 h
+              </li>
+            </ul>
+          </div>
+          <div className="shrink-0">
+            <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand/90">
+              <Link to={siteConfig.cta.audit.to}>
+                Auditer ma base gratuitement
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Grille 3 formules */}
+      <div className="mt-8 grid gap-5 md:grid-cols-3">
         {offers.map((o) => (
           <div
             key={o.title}
             className={
-              "rounded-2xl border bg-card p-6 shadow-sm " +
-              (o.highlighted ? "border-brand/40 ring-1 ring-brand/30" : "border-border")
+              "relative flex flex-col rounded-2xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md " +
+              (o.highlighted
+                ? "border-brand/50 ring-1 ring-brand/30 shadow-md"
+                : "border-border")
             }
           >
-            <h3 className="font-display text-base font-semibold">{o.title}</h3>
-            <p className="mt-3 font-display text-2xl font-extrabold tracking-tight text-brand">
-              {o.price}
+            {o.badge && (
+              <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-brand-foreground shadow-sm">
+                <Star className="h-3 w-3 fill-current" />
+                {o.badge}
+              </span>
+            )}
+
+            <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
+              {o.icon}
+            </div>
+            <h3 className="mt-4 font-display text-lg font-semibold">{o.title}</h3>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="font-display text-3xl font-extrabold tracking-tight text-brand">
+                {o.price}
+              </span>
+            </div>
+            <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <CalendarCheck className="h-3.5 w-3.5" />
+              {o.delay}
             </p>
-            <p className="mt-3 text-sm text-muted-foreground">{o.desc}</p>
+
+            <ul className="mt-5 flex-1 space-y-2.5 text-sm text-muted-foreground">
+              {o.features.map((f) => (
+                <li key={f} className="flex gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-6">
+              <Button
+                asChild
+                className={
+                  "w-full " +
+                  (o.highlighted
+                    ? "bg-brand text-brand-foreground hover:bg-brand/90"
+                    : "")
+                }
+                variant={o.highlighted ? "default" : "outline"}
+              >
+                <Link to="/contact">
+                  Choisir cette formule
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           </div>
         ))}
       </div>
-      <div className="mt-8 text-center">
-        <Button asChild size="lg" variant="outline">
-          <Link to="/services">
-            Voir le détail des services
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
+
+      {/* Réassurance */}
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
+        <span className="inline-flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-brand" />
+          Paiement à la livraison
+        </span>
+        <span className="hidden h-1 w-1 rounded-full bg-border sm:inline-block" />
+        <span className="inline-flex items-center gap-2">
+          <UserCheck className="h-4 w-4 text-brand" />
+          Relu par un médecin et un biostatisticien
+        </span>
+        <span className="hidden h-1 w-1 rounded-full bg-border sm:inline-block" />
+        <span className="inline-flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-brand" />
+          Devis personnalisé pour articles et mémoires
+        </span>
       </div>
     </Section>
   );
