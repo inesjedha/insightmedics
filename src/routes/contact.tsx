@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Loader2,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
 });
 
-const phoneRegex = /^(\+|00)?\d[\d\s().-]{6,18}$/;
+const phoneLocalRegex = /^\d{8}$/;
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Nom trop court").max(100, "Nom trop long"),
@@ -56,9 +57,7 @@ const contactSchema = z.object({
   phone: z
     .string()
     .trim()
-    .min(8, "Numéro de téléphone trop court")
-    .max(25, "Numéro trop long")
-    .regex(phoneRegex, "Numéro de téléphone invalide"),
+    .regex(phoneLocalRegex, "Numéro tunisien à 8 chiffres requis"),
   subject: z.string().trim().min(3, "Sujet trop court").max(150, "Sujet trop long"),
   problem: z
     .string()
@@ -115,8 +114,8 @@ const INITIAL_VALUES: Record<FieldName, string> = {
 
 function ContactPage() {
   const [values, setValues] = useState<Record<FieldName, string>>(INITIAL_VALUES);
-  const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [showErrorBanner, setShowErrorBanner] = useState(false);
   const [projectType, setProjectType] = useState<string>("Thèse");
   const [urgency, setUrgency] = useState<string>("2-4 semaines");
   const [submitted, setSubmitted] = useState(false);
@@ -125,21 +124,14 @@ function ContactPage() {
 
   const setValue = (name: FieldName, value: string) => {
     setValues((v) => ({ ...v, [name]: value }));
-    if (touched[name]) validateField(name, value);
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  const validateField = (name: FieldName, value: string) => {
-    const fieldSchema = contactSchema.shape[name];
-    const result = fieldSchema.safeParse(value);
-    setErrors((prev) => ({
-      ...prev,
-      [name]: result.success ? undefined : result.error.issues[0]?.message,
-    }));
-  };
-
-  const onBlur = (name: FieldName) => {
-    setTouched((t) => ({ ...t, [name]: true }));
-    validateField(name, values[name]);
+  const setPhone = (raw: string) => {
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    setValue("phone", digits);
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -152,10 +144,7 @@ function ContactPage() {
         if (!fe[k]) fe[k] = issue.message;
       }
       setErrors(fe);
-      const allTouched = Object.fromEntries(
-        (Object.keys(INITIAL_VALUES) as FieldName[]).map((k) => [k, true])
-      ) as Record<FieldName, boolean>;
-      setTouched(allTouched);
+      setShowErrorBanner(true);
       const firstError = Object.keys(fe)[0];
       if (firstError) {
         const el = formRef.current?.querySelector<HTMLElement>(
@@ -167,6 +156,7 @@ function ContactPage() {
       return;
     }
     setErrors({});
+    setShowErrorBanner(false);
     setSubmitting(true);
     const meta = `[Type: ${projectType}] [Deadline: ${urgency}]`;
     const finalMessage = parsed.data.message
@@ -177,7 +167,7 @@ function ContactPage() {
         source: "contact",
         name: parsed.data.name,
         email: parsed.data.email,
-        phone: parsed.data.phone,
+        phone: `+216 ${parsed.data.phone}`,
         subject: parsed.data.subject,
         problem: parsed.data.problem,
         objective: parsed.data.objective,
@@ -185,7 +175,6 @@ function ContactPage() {
       });
       setSubmitted(true);
       setValues(INITIAL_VALUES);
-      setTouched({});
     } finally {
       setSubmitting(false);
     }
@@ -220,14 +209,26 @@ function ContactPage() {
                   className="space-y-8"
                   noValidate
                 >
+                  <p className="text-xs text-muted-foreground">
+                    Les champs marqués d'un{" "}
+                    <span className="text-destructive">*</span> sont obligatoires.
+                  </p>
+
+                  {showErrorBanner && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
+                    >
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>
+                        Merci de compléter les champs obligatoires avant l'envoi.
+                      </span>
+                    </div>
+                  )}
+
                   <FormSection number="01" title="Vos coordonnées">
                     <div className="grid gap-5 sm:grid-cols-2">
-                      <Field
-                        id="name"
-                        label="Nom complet"
-                        error={touched.name ? errors.name : undefined}
-                        valid={touched.name && !errors.name && !!values.name}
-                      >
+                      <Field id="name" label="Nom complet" required>
                         <IconInput icon={<User className="h-4 w-4" />}>
                           <Input
                             id="name"
@@ -237,50 +238,41 @@ function ContactPage() {
                             maxLength={100}
                             value={values.name}
                             onChange={(e) => setValue("name", e.target.value)}
-                            onBlur={() => onBlur("name")}
-                            className={cn(
-                              "h-11 pl-10 transition-colors",
-                              touched.name && errors.name && "border-destructive focus-visible:ring-destructive/30",
-                              touched.name && !errors.name && values.name && "border-brand/50"
-                            )}
-                            placeholder="Dr. Karim Ben Salah"
+                            className="h-11 pl-10 transition-colors"
+                            placeholder="Karim Ben Salah"
                           />
                         </IconInput>
                       </Field>
                       <Field
                         id="phone"
                         label="Téléphone"
-                        error={touched.phone ? errors.phone : undefined}
-                        valid={touched.phone && !errors.phone && !!values.phone}
+                        required
                         hint="Prioritaire pour vous recontacter"
                       >
-                        <IconInput icon={<Phone className="h-4 w-4" />}>
+                        <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
+                          <span className="flex items-center gap-1.5 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80">
+                            <span aria-hidden className="text-base leading-none">
+                              🇹🇳
+                            </span>
+                            +216
+                          </span>
                           <Input
                             id="phone"
                             name="phone"
                             type="tel"
-                            autoComplete="tel"
+                            inputMode="numeric"
+                            autoComplete="tel-national"
                             required
-                            maxLength={25}
-                            placeholder="+216 ..."
+                            maxLength={8}
+                            placeholder="12 345 678"
                             value={values.phone}
-                            onChange={(e) => setValue("phone", e.target.value)}
-                            onBlur={() => onBlur("phone")}
-                            className={cn(
-                              "h-11 pl-10 transition-colors",
-                              touched.phone && errors.phone && "border-destructive focus-visible:ring-destructive/30",
-                              touched.phone && !errors.phone && values.phone && "border-brand/50"
-                            )}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="h-11 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
-                        </IconInput>
+                        </div>
                       </Field>
                     </div>
-                    <Field
-                      id="email"
-                      label="Email"
-                      error={touched.email ? errors.email : undefined}
-                      valid={touched.email && !errors.email && !!values.email}
-                    >
+                    <Field id="email" label="Email" required>
                       <IconInput icon={<Mail className="h-4 w-4" />}>
                         <Input
                           id="email"
@@ -292,24 +284,14 @@ function ContactPage() {
                           placeholder="vous@exemple.tn"
                           value={values.email}
                           onChange={(e) => setValue("email", e.target.value)}
-                          onBlur={() => onBlur("email")}
-                          className={cn(
-                            "h-11 pl-10 transition-colors",
-                            touched.email && errors.email && "border-destructive focus-visible:ring-destructive/30",
-                            touched.email && !errors.email && values.email && "border-brand/50"
-                          )}
+                          className="h-11 pl-10 transition-colors"
                         />
                       </IconInput>
                     </Field>
                   </FormSection>
 
                   <FormSection number="02" title="Sujet de votre étude">
-                    <Field
-                      id="subject"
-                      label="Sujet"
-                      error={touched.subject ? errors.subject : undefined}
-                      valid={touched.subject && !errors.subject && !!values.subject}
-                    >
+                    <Field id="subject" label="Sujet" required>
                       <IconInput icon={<FileText className="h-4 w-4" />}>
                         <Input
                           id="subject"
@@ -319,12 +301,7 @@ function ContactPage() {
                           placeholder="Ex. Thèse sur la prise en charge de l'infarctus aux urgences"
                           value={values.subject}
                           onChange={(e) => setValue("subject", e.target.value)}
-                          onBlur={() => onBlur("subject")}
-                          className={cn(
-                            "h-11 pl-10 transition-colors",
-                            touched.subject && errors.subject && "border-destructive focus-visible:ring-destructive/30",
-                            touched.subject && !errors.subject && values.subject && "border-brand/50"
-                          )}
+                          className="h-11 pl-10 transition-colors"
                         />
                       </IconInput>
                       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -364,8 +341,7 @@ function ContactPage() {
                     <Field
                       id="problem"
                       label="Problématique"
-                      error={touched.problem ? errors.problem : undefined}
-                      valid={touched.problem && !errors.problem && values.problem.length >= 10}
+                      required
                       hint="Ce que vous cherchez à comprendre"
                     >
                       <IconTextarea icon={<HelpCircle className="h-4 w-4" />}>
@@ -378,12 +354,7 @@ function ContactPage() {
                           placeholder="Quel est le problème clinique ou scientifique abordé ?"
                           value={values.problem}
                           onChange={(e) => setValue("problem", e.target.value)}
-                          onBlur={() => onBlur("problem")}
-                          className={cn(
-                            "resize-none pl-10 pt-3 transition-colors",
-                            touched.problem && errors.problem && "border-destructive focus-visible:ring-destructive/30",
-                            touched.problem && !errors.problem && values.problem.length >= 10 && "border-brand/50"
-                          )}
+                          className="resize-none pl-10 pt-3 transition-colors"
                         />
                       </IconTextarea>
                       <CharCount value={values.problem} max={1000} />
@@ -391,8 +362,7 @@ function ContactPage() {
                     <Field
                       id="objective"
                       label="Objectif"
-                      error={touched.objective ? errors.objective : undefined}
-                      valid={touched.objective && !errors.objective && values.objective.length >= 10}
+                      required
                       hint="Le livrable attendu (thèse complète, chapitre stats, article…)"
                     >
                       <IconTextarea icon={<Target className="h-4 w-4" />}>
@@ -405,12 +375,7 @@ function ContactPage() {
                           placeholder="Quel résultat / livrable cherchez-vous ?"
                           value={values.objective}
                           onChange={(e) => setValue("objective", e.target.value)}
-                          onBlur={() => onBlur("objective")}
-                          className={cn(
-                            "resize-none pl-10 pt-3 transition-colors",
-                            touched.objective && errors.objective && "border-destructive focus-visible:ring-destructive/30",
-                            touched.objective && !errors.objective && values.objective.length >= 10 && "border-brand/50"
-                          )}
+                          className="resize-none pl-10 pt-3 transition-colors"
                         />
                       </IconTextarea>
                       <CharCount value={values.objective} max={1000} />
@@ -418,11 +383,7 @@ function ContactPage() {
                   </FormSection>
 
                   <FormSection number="04" title="Message complémentaire">
-                    <Field
-                      id="message"
-                      label="Optionnel"
-                      error={touched.message ? errors.message : undefined}
-                    >
+                    <Field id="message" label="Optionnel">
                       <IconTextarea icon={<MessageSquare className="h-4 w-4" />}>
                         <Textarea
                           id="message"
@@ -432,7 +393,6 @@ function ContactPage() {
                           placeholder="Deadline précise, état actuel de la base, points particuliers…"
                           value={values.message}
                           onChange={(e) => setValue("message", e.target.value)}
-                          onBlur={() => onBlur("message")}
                           className="resize-none pl-10 pt-3 transition-colors"
                         />
                       </IconTextarea>
@@ -609,29 +569,30 @@ function InfoCard({
 function Field({
   id,
   label,
-  error,
   hint,
-  valid,
+  required,
   children,
 }: {
   id: string;
   label: string;
-  error?: string;
   hint?: string;
-  valid?: boolean;
+  required?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <Label htmlFor={id} className="flex items-center gap-1.5">
+        <Label htmlFor={id} className="flex items-center gap-1">
           {label}
-          {valid && <CheckCircle2 className="h-3.5 w-3.5 text-brand" />}
+          {required && (
+            <span aria-hidden className="text-destructive">
+              *
+            </span>
+          )}
         </Label>
         {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
       </div>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
