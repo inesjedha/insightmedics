@@ -732,7 +732,8 @@ function FinalCta() {
             </p>
             <p className="mt-4 inline-flex items-center gap-2 text-sm text-primary-foreground/80">
               <AlertTriangle className="h-4 w-4" />
-              En cas d'alerte critique, un expert vous recontacte sous 48h.
+              En cas d'alerte critique, un expert vous recontacte sous 48h
+              ouvrées.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
