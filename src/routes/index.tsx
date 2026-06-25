@@ -241,12 +241,6 @@ function ProblemApproach() {
         </div>
       </div>
 
-      {/* Bandeau chiffres */}
-      <div className="mt-14 grid gap-6 rounded-2xl border border-border bg-surface/60 p-6 sm:grid-cols-3 sm:p-8">
-        <Stat value="+30" label="Thèses et projets accompagnés" />
-        <Stat value="Offert" label="Audit de base systématique" />
-        <Stat value="Chaque" label="Livrable relu par un expert" />
-      </div>
     </Section>
   );
 }
