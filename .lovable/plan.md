@@ -1,26 +1,24 @@
-## Ajustements du formulaire Contact
+## Dropdown indicatif pays — formulaire Contact
 
-### 1. Placeholder Nom
-Retirer "Dr." du placeholder : `"Karim Ben Salah"` au lieu de `"Dr. Karim Ben Salah"`.
+Remplacer le préfixe fixe `🇹🇳 +216` du champ téléphone par un **dropdown sélectionnable** (10 pays d'Afrique francophone), avec la Tunisie sélectionnée par défaut.
 
-### 2. Champ Téléphone en 2 parties
-Refondre le champ téléphone avec :
-- **Préfixe fixe** à gauche : drapeau 🇹🇳 + `+216`, non-éditable, intégré visuellement à l'input (style "input group").
-- **Saisie utilisateur** à droite : uniquement les 8 chiffres du numéro local tunisien.
-- Concaténation à la soumission : `+216 ${numéro}` envoyé au backend.
-- Validation adaptée : 8 chiffres requis (regex `/^\d{8}$/`), avec masque visuel optionnel `XX XXX XXX`.
-- Remplace l'icône Phone par le bloc drapeau+indicatif.
+### Liste des 10 indicatifs proposés
+| Pays | Drapeau | Indicatif |
+|---|---|---|
+| Tunisie (défaut) | 🇹🇳 | +216 |
+| Algérie | 🇩🇿 | +213 |
+| Maroc | 🇲🇦 | +212 |
+| Sénégal | 🇸🇳 | +221 |
+| Côte d'Ivoire | 🇨🇮 | +225 |
+| Cameroun | 🇨🇲 | +237 |
+| Mali | 🇲🇱 | +223 |
+| Burkina Faso | 🇧🇫 | +226 |
+| Guinée | 🇬🇳 | +224 |
+| Niger | 🇳🇪 | +227 |
 
-### 3. Suppression des erreurs inline + indication des champs obligatoires
-- **Retirer l'affichage des messages d'erreur sous chaque champ** (plus de texte rouge au blur).
-- **Retirer la bordure rouge** au blur — garder uniquement la bordure teal de validation positive.
-- **Ne plus valider au blur** (supprimer `onBlur` + `touched`).
-- **Ajouter un astérisque rouge `*`** à côté du label de chaque champ obligatoire (Nom, Téléphone, Email, Sujet, Problématique, Objectif).
-- **Mention en haut du formulaire** : "Les champs marqués d'un * sont obligatoires."
-- À la soumission : si erreurs, scroll + focus sur le premier champ invalide (déjà en place) + afficher **un seul bandeau global discret** en haut du formulaire ("Merci de compléter les champs obligatoires") plutôt que des messages par champ.
-
-### Détails techniques
-- Fichier touché : `src/routes/contact.tsx` uniquement.
-- Schéma Zod : modifier `phone` pour valider 8 chiffres locaux ; concaténer `+216` avant `createLead`.
-- Composant `Field` : ajouter prop `required` pour rendre l'astérisque ; supprimer le rendu de `error`.
-- Conserver la logique de validation Zod à la soumission (juste ne plus l'afficher inline).
+### Implémentation
+- **UI** : utiliser le composant `Select` de shadcn/ui déjà disponible, intégré dans le bloc téléphone (à gauche, bordure droite, fusionné avec l'`Input`). Le trigger affiche `🇹🇳 +216`, le menu liste drapeau + nom + indicatif.
+- **State** : ajouter `dialCode` (string, défaut `"+216"`) et `flag` au state local de `ContactPage`.
+- **Validation** : assouplir la regex téléphone — accepter 6 à 12 chiffres (les longueurs varient selon le pays) au lieu du `\d{8}` strict tunisien. Le masque `maxLength={8}` du `Input` passe à `12` ; placeholder générique `"Numéro local"`.
+- **Soumission** : envoyer `phone: \`${dialCode} ${digitsLocaux}\`` à `createLead`.
+- **Fichier touché** : `src/routes/contact.tsx` uniquement (constante `COUNTRY_CODES` ajoutée en haut).
