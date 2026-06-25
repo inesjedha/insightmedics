@@ -144,7 +144,7 @@ function ContactPage() {
   const [values, setValues] = useState<Record<FieldName, string>>(INITIAL_VALUES);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [showErrorBanner, setShowErrorBanner] = useState(false);
-  const [projectType, setProjectType] = useState<string>("Thèse");
+  const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
   const [urgency, setUrgency] = useState<string>("2-4 semaines");
   const [dialCode, setDialCode] = useState<string>("+216");
   const [submitted, setSubmitted] = useState(false);
