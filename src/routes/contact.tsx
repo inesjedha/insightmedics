@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
-import { Mail, Send, CheckCircle2, Phone } from "lucide-react";
+import { Mail, Send, CheckCircle2, Phone, Clock, User } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { Section, SectionHeader } from "@/components/site/Section";
+import { Section } from "@/components/site/Section";
+import { PageHero } from "@/components/site/PageHero";
+import { FinalCTA } from "@/components/site/FinalCTA";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
 
@@ -23,14 +26,14 @@ export const Route = createFileRoute("/contact")({
       { property: "og:title", content: "Contact — Insight Medics" },
       {
         property: "og:description",
-        content: "Réponse sous 48h. Décrivez votre projet et nous revenons vers vous.",
+        content:
+          "Réponse sous 48h. Décrivez votre projet et nous revenons vers vous.",
       },
     ],
   }),
   component: ContactPage,
 });
 
-// Téléphone : accepte +216 / 00216 / 8 chiffres locaux, espaces tolérés.
 const phoneRegex = /^(\+|00)?\d[\d\s().-]{6,18}$/;
 
 const contactSchema = z.object({
@@ -105,25 +108,29 @@ function ContactPage() {
 
   return (
     <SiteLayout>
-      <Section className="pb-6">
-        <SectionHeader
-          eyebrow="Contact"
-          title="Parlons de votre projet."
-          description="Décrivez votre étude, votre problématique et votre objectif. Nous revenons vers vous sous 48h."
-        />
-      </Section>
+      <PageHero
+        eyebrow="Contact"
+        title={
+          <>
+            Parlons de <span className="text-brand">votre projet</span>.
+          </>
+        }
+        description="Décrivez votre étude, votre problématique et votre objectif. Nous revenons vers vous sous 48h ouvrées — par téléphone en priorité."
+      />
 
-      <Section className="pt-4">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <Section className="pt-4 sm:pt-6">
+        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
             {submitted ? (
               <div className="flex flex-col items-start gap-4">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-display text-xl font-bold">Message envoyé.</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  <h3 className="font-display text-xl font-bold tracking-tight">
+                    Message envoyé.
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     Merci. Nous vous répondons sous 48h ouvrées par téléphone
                     ou email.
                   </p>
@@ -133,17 +140,18 @@ function ContactPage() {
                 </Button>
               </div>
             ) : (
-              <form onSubmit={onSubmit} className="space-y-6" noValidate>
-                {/* Identité */}
-                <div className="space-y-5">
-                  <h3 className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Vos coordonnées
-                  </h3>
+              <form onSubmit={onSubmit} className="space-y-7" noValidate>
+                <FormSection number="01" title="Vos coordonnées">
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field id="name" label="Nom complet" error={errors.name}>
                       <Input id="name" name="name" autoComplete="name" required maxLength={100} />
                     </Field>
-                    <Field id="phone" label="Téléphone" error={errors.phone} hint="Prioritaire pour vous recontacter">
+                    <Field
+                      id="phone"
+                      label="Téléphone"
+                      error={errors.phone}
+                      hint="Prioritaire pour vous recontacter"
+                    >
                       <Input
                         id="phone"
                         name="phone"
@@ -165,14 +173,10 @@ function ContactPage() {
                       maxLength={255}
                     />
                   </Field>
-                </div>
+                </FormSection>
 
-                {/* Section 1 : Sujet */}
-                <div className="space-y-5 border-t border-border pt-6">
-                  <h3 className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    1. Sujet
-                  </h3>
-                  <Field id="subject" label="Sujet de votre étude" error={errors.subject}>
+                <FormSection number="02" title="Sujet de votre étude">
+                  <Field id="subject" label="Sujet" error={errors.subject}>
                     <Input
                       id="subject"
                       name="subject"
@@ -181,13 +185,9 @@ function ContactPage() {
                       placeholder="Ex. Thèse sur la prise en charge de l'infarctus aux urgences"
                     />
                   </Field>
-                </div>
+                </FormSection>
 
-                {/* Section 2 : Problématique + Objectif */}
-                <div className="space-y-5 border-t border-border pt-6">
-                  <h3 className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    2. Problématique & Objectif
-                  </h3>
+                <FormSection number="03" title="Problématique & objectif">
                   <Field id="problem" label="Problématique" error={errors.problem}>
                     <Textarea
                       id="problem"
@@ -208,11 +208,14 @@ function ContactPage() {
                       placeholder="Quel résultat / livrable cherchez-vous ?"
                     />
                   </Field>
-                </div>
+                </FormSection>
 
-                {/* Message libre */}
-                <div className="space-y-5 border-t border-border pt-6">
-                  <Field id="message" label="Message complémentaire (optionnel)" error={errors.message}>
+                <FormSection number="04" title="Message complémentaire">
+                  <Field
+                    id="message"
+                    label="Optionnel"
+                    error={errors.message}
+                  >
                     <Textarea
                       id="message"
                       name="message"
@@ -221,11 +224,12 @@ function ContactPage() {
                       placeholder="Deadline, état actuel de la base, points particuliers…"
                     />
                   </Field>
-                </div>
+                </FormSection>
 
-                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-muted-foreground">
-                    En envoyant ce message, vous acceptez d'être recontacté(e) par téléphone ou email.
+                    En envoyant ce message, vous acceptez d'être recontacté(e)
+                    par téléphone ou email.
                   </p>
                   <Button
                     type="submit"
@@ -243,40 +247,95 @@ function ContactPage() {
             )}
           </div>
 
-          <aside className="space-y-6">
-            <div className="rounded-2xl border border-border bg-surface/60 p-6">
-              <h3 className="font-display text-base font-semibold">Email direct</h3>
-              <a
-                href={`mailto:${siteConfig.email}`}
-                className="mt-2 inline-flex items-center gap-2 text-sm text-foreground hover:text-brand"
-              >
-                <Mail className="h-4 w-4" />
-                {siteConfig.email}
-              </a>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-surface/60 p-6">
-              <h3 className="font-display text-base font-semibold">Délais de réponse</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Réponse sous 48h ouvrées. Pour les soutenances imminentes,
-                signalez-le dès le premier message — nous traitons en priorité.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-surface/60 p-6">
-              <h3 className="font-display text-base font-semibold">
-                <Phone className="mr-2 inline h-4 w-4 text-brand" />
-                Téléphone prioritaire
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Nous rappelons par téléphone en priorité. Indiquez un numéro
-                joignable.
-              </p>
-            </div>
+          <aside className="space-y-4">
+            <InfoCard
+              icon={<Phone className="h-4 w-4 sm:h-5 sm:w-5" />}
+              title="Téléphone prioritaire"
+              text="Nous rappelons par téléphone en priorité. Indiquez un numéro joignable dans le formulaire."
+            />
+            <InfoCard
+              icon={<Mail className="h-4 w-4 sm:h-5 sm:w-5" />}
+              title="Email direct"
+              text={
+                <a
+                  href={`mailto:${siteConfig.email}`}
+                  className="text-foreground hover:text-brand"
+                >
+                  {siteConfig.email}
+                </a>
+              }
+            />
+            <InfoCard
+              icon={<Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
+              title="Délais de réponse"
+              text="Réponse sous 48h ouvrées. Pour les soutenances imminentes, signalez-le dès le premier message — nous traitons en priorité."
+            />
+            <InfoCard
+              icon={<User className="h-4 w-4 sm:h-5 sm:w-5" />}
+              title="Basé à Sousse, Tunisie"
+              text="Équipe biostatisticien + médecin disponible pour vos thèses et publications."
+            />
           </aside>
         </div>
       </Section>
+
+      <FinalCTA
+        title="Vous préférez voir avant de discuter ?"
+        description="Lancez l'audit gratuit de votre base. Vous recevez un rapport clair sur l'état de vos données — et un aperçu concret de notre méthode."
+        primary={{ to: "/audit", label: "Lancer un audit gratuit" }}
+        secondary={{ to: "/methode", label: "Voir notre méthode" }}
+      />
     </SiteLayout>
+  );
+}
+
+function FormSection({
+  number,
+  title,
+  children,
+}: {
+  number: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 font-display text-sm font-bold text-brand">
+          {number}
+        </span>
+        <h3 className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-foreground/80">
+          {title}
+        </h3>
+      </div>
+      <div className="space-y-5">{children}</div>
+    </div>
+  );
+}
+
+function InfoCard({
+  icon,
+  title,
+  text,
+}: {
+  icon: ReactNode;
+  title: string;
+  text: ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-border bg-surface/60 p-4 sm:gap-4 sm:p-5">
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand sm:h-10 sm:w-10">
+        {icon}
+      </span>
+      <div>
+        <h3 className="font-display text-sm font-semibold tracking-tight sm:text-base">
+          {title}
+        </h3>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          {text}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -291,7 +350,7 @@ function Field({
   label: string;
   error?: string;
   hint?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
