@@ -109,7 +109,7 @@ function MethodePage() {
 
       {/* CTA */}
       <Section>
-        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-primary p-8 text-primary-foreground sm:p-12">
+        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-primary p-6 text-primary-foreground sm:p-8 lg:p-12">
           <div
             aria-hidden
             className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand/25 blur-3xl"
@@ -118,13 +118,13 @@ function MethodePage() {
             aria-hidden
             className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-brand/10 blur-3xl"
           />
-          <div className="relative grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+          <div className="relative grid gap-6 sm:gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
             <div>
               <div className="h-px w-12 bg-brand" aria-hidden />
-              <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl text-balance">
+              <h2 className="mt-4 font-display text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:text-4xl">
                 Voyez la méthode appliquée à votre base.
               </h2>
-              <p className="mt-3 text-base text-primary-foreground/80">
+              <p className="mt-3 text-[15px] leading-relaxed text-primary-foreground/80 sm:text-base">
                 L'audit est gratuit. Vous recevez un rapport clair sur l'état
                 de votre base — et un aperçu concret de notre méthode.
               </p>
