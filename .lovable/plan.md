@@ -1,10 +1,13 @@
-## Problème
-Sur le sélecteur d'indicatif téléphone (`+216` 🇹🇳) dans `src/routes/contact.tsx`, des points de troncature `...` s'affichent à côté de l'indicatif, car le `SelectTrigger` de shadcn applique `line-clamp-1` / largeur trop étroite sur la valeur sélectionnée.
+## Vérification responsive du sélecteur d'indicatif
 
-## Correction
-Dans `src/routes/contact.tsx` (lignes ~275-287), ajuster le `SelectTrigger` du dialCode pour empêcher la troncature :
+Objectif : confirmer qu'aucun pays (de `+212` à `+227`) n'est tronqué dans le `SelectTrigger` du formulaire Contact, sur mobile (375px) et tablette (768px).
 
-- Ajouter `min-w-[5.5rem] shrink-0` et `whitespace-nowrap` sur le `SelectTrigger`.
-- Envelopper le contenu de `SelectValue` avec une classe `[&>span]:line-clamp-none [&>span]:truncate-none` (ou plus simple : forcer `whitespace-nowrap` sur le span interne) afin que `+216` ne soit jamais coupé.
+### Étapes
+1. Lancer Playwright headless sur `http://localhost:8080/contact` aux viewports 375×800 puis 768×1024.
+2. Pour chaque indicatif de `COUNTRY_CODES`, sélectionner la valeur puis capturer un screenshot du trigger seul (`page.locator('[aria-label="Indicatif pays"]').screenshot()`).
+3. Lire chaque screenshot pour vérifier visuellement l'absence de `…`.
+4. Si troncature détectée sur un indicatif : élargir le `min-w` du trigger (passer de `5.75rem` à la valeur nécessaire, ex. `6.25rem`) dans `src/routes/contact.tsx`, puis re-vérifier.
+5. Confirmer également que le champ numéro à droite reste utilisable (pas de débordement) sur 375px.
 
-Aucune autre modification (logique, validation, liste pays) — purement visuel.
+### Critère de succès
+Sur les deux viewports, chacun des 10 indicatifs s'affiche entièrement (drapeau + `+XXX`) sans ellipsis, sans clipping, et l'input numéro garde une largeur exploitable.
