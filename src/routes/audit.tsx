@@ -17,11 +17,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
 import { runAudit, createLead, updateLead } from "@/lib/api/client";
 import type { AuditEvent, AuditResult } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import {
+  HONEYPOT_FIELD,
+  honeypotStyle,
+  isHoneypotTripped,
+  isTooFast,
+} from "@/lib/anti-spam";
 
 export const Route = createFileRoute("/audit")({
   head: () => ({

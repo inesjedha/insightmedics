@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as MethodeRouteImport } from './routes/methode'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as CgvRouteImport } from './routes/cgv'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -35,9 +38,24 @@ const MethodeRoute = MethodeRouteImport.update({
   path: '/methode',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CgvRoute = CgvRouteImport.update({
+  id: '/cgv',
+  path: '/cgv',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditRoute = AuditRouteImport.update({
@@ -75,7 +93,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/audit': typeof AuditRoute
+  '/cgv': typeof CgvRoute
+  '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/methode': typeof MethodeRoute
   '/services': typeof ServicesRoute
   '/tarifs': typeof TarifsRoute
@@ -86,7 +107,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/audit': typeof AuditRoute
+  '/cgv': typeof CgvRoute
+  '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/methode': typeof MethodeRoute
   '/services': typeof ServicesRoute
   '/tarifs': typeof TarifsRoute
@@ -99,7 +123,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/audit': typeof AuditRoute
+  '/cgv': typeof CgvRoute
+  '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/methode': typeof MethodeRoute
   '/services': typeof ServicesRoute
   '/tarifs': typeof TarifsRoute
@@ -113,7 +140,10 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/audit'
+    | '/cgv'
+    | '/confidentialite'
     | '/contact'
+    | '/mentions-legales'
     | '/methode'
     | '/services'
     | '/tarifs'
@@ -124,7 +154,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/audit'
+    | '/cgv'
+    | '/confidentialite'
     | '/contact'
+    | '/mentions-legales'
     | '/methode'
     | '/services'
     | '/tarifs'
@@ -136,7 +169,10 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/audit'
+    | '/cgv'
+    | '/confidentialite'
     | '/contact'
+    | '/mentions-legales'
     | '/methode'
     | '/services'
     | '/tarifs'
@@ -149,7 +185,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuditRoute: typeof AuditRoute
+  CgvRoute: typeof CgvRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
   ContactRoute: typeof ContactRoute
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
   MethodeRoute: typeof MethodeRoute
   ServicesRoute: typeof ServicesRoute
   TarifsRoute: typeof TarifsRoute
@@ -178,11 +217,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MethodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cgv': {
+      id: '/cgv'
+      path: '/cgv'
+      fullPath: '/cgv'
+      preLoaderRoute: typeof CgvRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit': {
@@ -258,7 +318,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuditRoute: AuditRoute,
+  CgvRoute: CgvRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
   ContactRoute: ContactRoute,
+  MentionsLegalesRoute: MentionsLegalesRoute,
   MethodeRoute: MethodeRoute,
   ServicesRoute: ServicesRoute,
   TarifsRoute: TarifsRoute,
