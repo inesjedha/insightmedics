@@ -137,25 +137,6 @@ function Pillar({
   );
 }
 
-function DataCard({
-  icon,
-  title,
-  text,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-      <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
-        {icon}
-      </div>
-      <h3 className="mt-4 font-display text-base font-semibold">{title}</h3>
-      <p className="mt-1.5 text-sm text-muted-foreground">{text}</p>
-    </div>
-  );
-}
 
 function PipelineTimeline() {
   const steps = [
