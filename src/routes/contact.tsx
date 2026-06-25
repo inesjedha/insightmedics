@@ -221,6 +221,7 @@ function ContactPage() {
     setErrors({});
     setConsentError(false);
     setShowErrorBanner(false);
+    setSubmitError(null);
     setSubmitting(true);
     const offersLabel = selectedOffers
       .map((id) => SERVICE_OFFERS.find((o) => o.id === id)?.name)
@@ -249,6 +250,11 @@ function ContactPage() {
       setValues(INITIAL_VALUES);
       setSelectedOffers([]);
       setConsent(false);
+    } catch (err) {
+      console.error("[contact] submit failed", err);
+      setSubmitError(
+        "L'envoi a échoué. Vérifiez votre connexion et réessayez, ou écrivez-nous directement par email.",
+      );
     } finally {
       setSubmitting(false);
     }
