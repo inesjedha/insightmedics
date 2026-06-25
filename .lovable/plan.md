@@ -1,129 +1,126 @@
+# Plan — Refonte Insight Medics (frontend only)
 
-# Insights Medics — Proposition v1 (révisée : backend séparé)
+Tout reste 100% frontend. Les soumissions et le CRM utilisent un **client API typé** (`src/lib/api/`) qui pointe vers un mock en mémoire en dev, et qui sera branché sur ton backend via une seule variable `VITE_API_BASE_URL` plus tard. Un contrat OpenAPI-friendly est documenté en commentaires JSDoc.
 
-Tu gères le backend toi-même → on découple **clairement** : ce projet Lovable = **frontend uniquement** (vitrine + UI du module audit + formulaire commande). Le backend (API REST/HTTP) est un service séparé que tu héberges où tu veux. Le frontend l'appelle via `fetch` avec une URL configurée par variable d'env.
+## 1. Hero (`src/routes/index.tsx`)
 
-## 1. Stack proposée
+- Suppression du bloc "Tunisie" cassé.
+- Emplacement logo en haut à gauche du header (`<img src={logoUrl} />` avec fallback monogramme "IM" tant que tu n'as pas uploadé).
+- Deux accroches **côte à côte** (grid 2 colonnes desktop, stack mobile), chacune dans sa carte :
+  - "Votre thèse de médecine prête en **2 semaines**"
+  - "Vos analyses statistiques prêtes en **1 semaine**"
+- Bandeau de réassurance immédiat sous le hero : badge "⏱ Délai 2 semaines" + badge "🎁 Audit IA gratuit" + CTA principal "Lancer mon audit gratuit".
 
-### Frontend (ce projet)
-- **TanStack Start (React 19 + Vite 7, TypeScript strict)** — déjà en place. SSR/SSG pour SEO vitrine (acquisition Facebook = trafic mobile), file-based routing, server functions utilisées **uniquement comme proxy léger** vers ton backend (cache, header d'auth, validation Zod) — pas de logique métier côté Lovable.
-- **Tailwind v4 + shadcn/ui** — design médical sobre, mobile-first, i18n FR par dictionnaires JSON (EN plus tard).
-- **TanStack Query** — déjà câblé pour les appels backend (cache, retry, suspense).
-- **Web Crypto API** — chiffrement client-side du fichier avant upload (défense en profondeur).
-- **Vitest** — tests sur la logique critique côté front (validation cadrage, helpers).
-- Config 100% par variables d'env : `VITE_API_BASE_URL`, `VITE_MAX_UPLOAD_MB`, etc.
+## 2. Présentation "Problème → Approche"
 
-### Backend (toi — hors de ce projet)
-Stack que je te recommande, à toi de valider :
-- **Python (FastAPI)** — naturel vu pyreadstat/pandas/scipy ; un seul langage end-to-end avec le sandbox.
-- **Exécution sandbox** : **E2B Sandboxes** (microVMs jetables, pyreadstat/pandas/scipy préinstallables, sans réseau, timeout natif) — recommandé v1. Alternative souveraine : worker Docker + gVisor sur Fly.io/Hetzner.
-- **Stockage** : S3-compatible (R2, S3, MinIO self-hosted) chiffré au repos + chiffrement applicatif AES-256-GCM.
-- **DB** : Postgres (jobs, métadonnées, audit log). `pg_cron` pour la purge.
-- **LLM** : provider-agnostique via une abstraction (OpenAI, Anthropic, Gemini, OpenRouter) — clés en env.
-- **PDF** : hybride — graphiques matplotlib dans le sandbox, mise en page finale via WeasyPrint (HTML/CSS → PDF, brandable, FR-friendly). Alternative : reportlab full Python.
-- **Email** : Resend / Postmark / SES pour le formulaire commande.
+Remplace le paragraphe "30 thèses françaises". Deux colonnes :
 
-### Contrat d'API (ce qu'on définit ensemble)
-Le frontend a besoin de ces endpoints. Je le designerai en OpenAPI dès l'étape 2 :
+- **Notre constat** : stats qui bloquent, discussion qui piétine, deadline qui écrase, méthodologie floue.
+- **Notre approche** : analyses statistiques rigoureuses, rédaction scientifique structurée (IMRAD), data visualisation claire, accompagnement humain.
 
+Bandeau chiffres (uniquement vrais) :
+- **+30** thèses et projets accompagnés
+- **Audit gratuit** systématique
+- **Touche humaine** garantie
+
+Aucune mention de "France". Cibles affichées : étudiants en médecine · résidents · équipes hospitalières (Tunisie / Maghreb).
+
+## 3. Section "Audit IA gratuit" (sur la home + page `/audit`)
+
+- Titre : **"Votre base radiographiée en quelques minutes"**.
+- Sous-titre : contrôle qualité, analyse de structure, pistes d'ajustement concrètes.
+- 4 étapes visuelles : Upload base → Analyses temps réel → Score qualité → Rapport PDF.
+- Mention discrète : *"Tous les chiffres sont calculés par exécution de code — zéro valeur hallucinée."*
+- Upload accepte **tous formats** (`accept="*"` côté input, validation côté backend) : CSV, XLSX, XLS, SAV, SPSS, DTA, ODS, JSON, TXT, Parquet.
+- Page `/audit` : composant `AuditUploader` (drag & drop), `AuditLiveLog` (stream d'événements simulé en dev), `AuditScoreCard`, `AuditReportRequestForm`.
+- **Formulaire de récupération du rapport** : champs `téléphone` (requis, **affiché en premier, marqué prioritaire**) + `email` (requis) + case "j'accepte d'être recontacté". Validation Zod (regex tél tunisien souple : `+216` optionnel, 8 chiffres).
+
+## 4. Positionnement IA + Humain
+
+Nouvelle section "L'IA fait gagner du temps, l'humain garantit la qualité" :
+- IA : tri rapide, détection d'anomalies, premières analyses.
+- Humain : médecin + biostatisticien valident **chaque livrable** avant envoi.
+- Pas de jargon technique, pas de mention "hallucinations" (sauf la phrase discrète sur la page audit).
+
+## 5. Section Services — "3 manières de travailler avec nous"
+
+Refonte `src/routes/services.tsx` + teaser home. Cartes avec prix affichés clairement :
+
+| Offre | Prix |
+|---|---|
+| Audit de base de données | **Gratuit — 0 DT** |
+| Analyse statistique + rédaction des résultats | **500 DT** |
+| Rédaction de la discussion | **500 DT** |
+| Accompagnement complet IMRAD (intro + M&M + résultats + discussion + conclusion) | **1 200 DT** |
+
+Note interne (commentaire dans le code, **non affichée** au public) : intro + M&M + conclusion = supplément 100–150 DT.
+
+Page `/tarifs` alignée sur ces 4 offres (suppression du contenu "devis sur mesure" actuel).
+
+## 6. Formulaire de contact (`src/routes/contact.tsx`)
+
+Refonte du schéma Zod et de l'UI :
+
+- **Identité** : nom, email, téléphone (requis, validé).
+- **Section 1 — Sujet** : champ unique court.
+- **Section 2 — Problématique & Objectif** : 2 textareas distincts.
+- **Message** : textarea libre.
+- Submit → `api.leads.create({ source: 'contact', ... })`.
+
+## 7. CRM Admin (frontend mocké)
+
+Nouvelle zone `/admin` (non protégée pour l'instant, à sécuriser plus tard) :
+
+- `/admin` : dashboard (compteurs prospects / clients gagnés / perdus / relances dues).
+- `/admin/leads` : table triable (nom, email, tél, source = contact/audit, statut, dernier contact, prochaine relance, notes).
+- `/admin/leads/$id` : détail + timeline + boutons "Marquer contacté" / "Changer statut" / "Planifier relance".
+
+Données alimentées par le client API mocké (stockage `localStorage` en dev pour persister entre reloads). Quand tu branches ton backend, seul `src/lib/api/client.ts` change.
+
+## 8. Logique audit — règle "alerte humaine"
+
+Dans `AuditResult`, si `score < seuil` OU `criticalIssues.length > 0` :
+- bandeau rouge : *"Un expert humain reviendra vers vous sous 48h."*
+- création automatique d'un lead `source: 'audit', priority: 'high'` côté CRM.
+
+Seuils configurables dans `src/lib/audit/thresholds.ts`.
+
+## 9. Contrat API (documenté, non implémenté côté serveur)
+
+`src/lib/api/` :
 ```
-POST   /api/audit/upload          → multipart fichier chiffré + checksum  → { jobId, uploadUrl }
-POST   /api/audit/:jobId/cadrage  → JSON questionnaire                     → { ok }
-POST   /api/audit/:jobId/start    → lance le pipeline                      → { status }
-GET    /api/audit/:jobId/status   → polling                                → { status, progress, step }
-GET    /api/audit/:jobId/report   → PDF stream + score                     → file
-DELETE /api/audit/:jobId          → purge anticipée                        → { ok }
-POST   /api/contact               → formulaire vitrine
-POST   /api/order                 → formulaire commande humaine (envoie email)
+client.ts        // fetch wrapper + VITE_API_BASE_URL
+leads.ts         // POST /leads, GET /leads, PATCH /leads/:id
+audit.ts         // POST /audit/upload, GET /audit/:id/stream (SSE), GET /audit/:id/report.pdf
+mock/            // implémentation en mémoire + localStorage pour le dev
 ```
 
-Auth v1 : token signé court (JWT HS256) attaché au `jobId` et stocké en `httpOnly` cookie — pas de comptes utilisateurs (hors périmètre v1). CORS strict sur le domaine front.
+Switch mock/real via `VITE_USE_MOCK_API=true` (par défaut en dev).
 
-## 2. Architecture — garantir « zéro chiffre halluciné »
+## 10. Détails techniques (section dev)
 
-```text
-┌──────────────────────────────────────────────────┐
-│  Frontend (ce projet) — vitrine, UI, polling     │
-│  - Chiffre le fichier (Web Crypto) avant upload  │
-│  - N'a AUCUNE logique d'analyse                  │
-└────────────────────┬─────────────────────────────┘
-                     │ HTTPS + JWT
-┌────────────────────▼─────────────────────────────┐
-│  Backend (Python/FastAPI) — TON service          │
-│                                                  │
-│  Orchestrateur                                   │
-│   1. Reçoit fichier chiffré, déchiffre, stocke   │
-│   2. Anonymise (module testé) → mapping chiffré  │
-│   3. Pipeline LLM + Sandbox                      │
-│                                                  │
-│   ┌──────────┐  prompts/  ┌─────────────────┐    │
-│   │   LLM    │ ──code────▶│ Sandbox E2B     │    │
-│   │ provider │◀──JSON─────│ pandas/scipy/…  │    │
-│   └────┬─────┘            └─────────────────┘    │
-│        │ narratif (texte seul, 0 chiffre)        │
-│        ▼                                         │
-│   AuditResult typé (Pydantic) :                  │
-│     metrics: {...}        ← code exécuté         │
-│     score: calc Python    ← formule déterministe │
-│     narrative: {strings}  ← LLM, lint anti-digit │
-│        │                                         │
-│        ▼                                         │
-│   Renderer PDF (WeasyPrint)                      │
-│   Template lit metrics.* et narrative.*          │
-│   séparément → impossible d'injecter un          │
-│   chiffre non issu de metrics                    │
-└──────────────────────────────────────────────────┘
-```
+- Polices : Inter + Manrope déjà en place, on garde.
+- Couleurs : design tokens existants (bleu nuit + teal), aucune couleur hardcodée.
+- Logo : composant `<Logo />` avec prop `src` ; placeholder = monogramme "IM" en SVG inline tant que ton fichier n'est pas uploadé.
+- i18n : tout en français, `lang="fr"` déjà configuré.
+- SEO : `head()` mis à jour sur chaque route (titre + description avec nouveaux messages).
+- Validation : Zod partout, messages d'erreur en français.
+- Pas de Lovable Cloud, pas d'install de package serveur.
 
-**Invariants structurels (à implémenter côté backend) :**
-- Type `Narrative` = uniquement des `str` ; aucun champ numérique.
-- Template PDF : tableaux/scores lus depuis `metrics` (code), interprétations depuis `narrative` (LLM).
-- **Score /100 calculé en Python**, jamais demandé au LLM. Barème versionné et affiché.
-- Prompt système interdit les chiffres dans le narratif ; **linter post-LLM** rejette tout output narratif contenant des digits hors whitelist.
-- Sandbox **sans réseau**, timeout court, FS isolé, détruit après chaque audit.
-- Sorties code validées par schéma Pydantic avant injection.
+## Fichiers touchés (résumé)
 
-**Chiffrement + purge :**
-- Fichier chiffré côté **client** (Web Crypto) → en transit + au repos.
-- Mapping anonymisation chiffré séparément (clé distincte).
-- `pg_cron` purge horaire, durée configurable (`AUDIT_RETENTION_DAYS`, défaut 30 jours).
-- Aucune PII dans les logs (helper logging qui strippe).
+**Modifiés** : `src/lib/site-config.ts`, `src/routes/index.tsx`, `src/routes/services.tsx`, `src/routes/tarifs.tsx`, `src/routes/contact.tsx`, `src/routes/audit.tsx`, `src/components/site-header.tsx` (logo).
 
-**Branchement prompts de Hamza :** fichiers `prompts/cadrage.md`, `prompts/audit.md`, `prompts/recommandations.md` avec placeholders `{{contexte}}`, `{{sorties_code}}`. Provider et modèle LLM via env.
+**Créés** :
+- `src/components/logo.tsx`
+- `src/components/audit/` (uploader, live-log, score-card, report-form, human-alert)
+- `src/lib/api/` (client + leads + audit + mock)
+- `src/lib/audit/thresholds.ts`
+- `src/routes/admin.tsx` (layout), `src/routes/admin.index.tsx`, `src/routes/admin.leads.tsx`, `src/routes/admin.leads.$id.tsx`
 
-## 3. Découpage en étapes livrables (frontend Lovable)
+## Ce que je NE fais PAS (hors scope confirmé)
 
-Chaque étape = livrable testable, arrêt pour ta validation.
-
-1. **Squelette + Vitrine** — routes (`/`, `/services`, `/methode`, `/tarifs`, `/contact`), design system, SEO/OG par route, responsive mobile-first, footer/header. Formulaire contact → mock endpoint (à brancher quand backend prêt).
-2. **UI Upload + checkbox responsabilité + explication transparence** — composants, validation type/taille fichier, chiffrement client-side, barre de progression, gestion d'erreurs. Backend mocké via MSW pour tester sans dépendance.
-3. **UI Questionnaire de cadrage multi-étapes** — schéma Zod, validation, persistance locale (resume si reload), envoi au backend.
-4. **UI Suivi d'audit + polling** — page status (étapes en cours, progress), gestion timeout/erreurs, retry.
-5. **UI Téléchargement rapport + score visuel** — page résultat avec score animé, preview/téléchargement PDF, CTA vers prestation humaine.
-6. **Page Commande humaine** — formulaire brief structuré (POST `/api/order`).
-7. **Hardening front** — rate limit côté UI, états de chargement partout, accessibilité (a11y), checklist mobile.
-
-Pendant que je code le front, tu peux développer le backend en parallèle ; on synchronise sur le contrat OpenAPI.
-
-## 4. Questions à clarifier avant de coder
-
-**Contrat & intégration**
-1. URL du backend en dev/prod (je mets juste `VITE_API_BASE_URL` vide pour l'instant et tu me donneras l'URL plus tard ?). Tu veux que je mocke avec **MSW** pour développer le front sans attendre ?
-2. Le contrat d'API ci-dessus te convient ? Tu veux ajuster avant que je le fige en types TS ?
-3. Auth v1 : JWT court-vivant attaché au `jobId` en cookie httpOnly, ok ? Ou tu préfères un simple token opaque retourné à l'upload et stocké en `sessionStorage` ?
-
-**Produit / UX**
-4. **Taille max fichier** côté UI (50 Mo ? 200 Mo ?) — impacte la stratégie d'upload (single-shot vs chunked/resumable).
-5. **Rétention par défaut** — j'affiche « 30 jours » dans le texte de transparence ? Configurable ou fixe ?
-6. **Pendant l'audit** : on garde la page ouverte (polling) ou on envoie un email à la fin ? Si email, j'ai besoin du champ email à l'upload.
-7. **Téléchargement rapport** : seulement PDF, ou aussi un preview HTML dans l'app ?
-
-**Branding / design**
-8. Charte graphique existante (logo, couleurs, typo) ou je propose ? Si je propose : médical sobre, palette bleu nuit + vert clinique + blanc, typo Inter ou Manrope, ton sérieux mais pédagogique (cible thésards stressés).
-9. Tu as déjà un nom de domaine / logo Insights Medics à utiliser ?
-
-**Périmètre vitrine**
-10. Tarifs publics affichés ou page « sur devis » avec CTA contact ?
-11. Témoignages/cas clients à intégrer dès la v1 (tu as du contenu) ou placeholders pour l'instant ?
-
-Dis-moi tes réponses (même partielles) et je lance l'étape 1.
+- Pas d'exécution Python réelle (ton backend).
+- Pas de génération PDF côté front (mock d'un bouton "Télécharger le rapport" qui appellera ton endpoint).
+- Pas d'auth admin (à sécuriser plus tard avant publication — je laisse un commentaire `TODO security` visible).
+- Pas de chiffres inventés au-delà de "+30".

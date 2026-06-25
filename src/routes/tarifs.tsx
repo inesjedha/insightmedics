@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Info } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
-import { siteConfig } from "@/lib/site-config";
 
 export const Route = createFileRoute("/tarifs")({
   head: () => ({
@@ -13,13 +12,13 @@ export const Route = createFileRoute("/tarifs")({
       {
         name: "description",
         content:
-          "Audit IA gratuit. Prestation humaine sur devis, calibrée selon la complexité de votre base et vos délais. Tarifs transparents.",
+          "Audit IA gratuit. Analyse + résultats à 500 DT. Discussion à 500 DT. Accompagnement IMRAD complet à 1 200 DT.",
       },
       { property: "og:title", content: "Tarifs — Insight Medics" },
       {
         property: "og:description",
         content:
-          "Audit IA gratuit, analyses humaines sur devis selon la complexité et l'urgence.",
+          "Tarifs transparents en dinars tunisiens pour vos thèses et publications.",
       },
     ],
   }),
@@ -29,43 +28,56 @@ export const Route = createFileRoute("/tarifs")({
 const tiers = [
   {
     name: "Audit IA",
-    price: "Gratuit",
-    sub: "Sans engagement",
+    price: "0 DT",
+    sub: "Gratuit · sans engagement",
     features: [
-      "Audit qualité, structure, pistes d'ajustement",
-      "Score /100 et rapport PDF",
-      "Anonymisation automatique",
-      "Stockage chiffré + purge",
+      "Contrôle qualité de la base",
+      "Analyse de la structure",
+      "Score /100",
+      "Rapport PDF par email & SMS",
     ],
-    cta: { to: siteConfig.cta.audit.to, label: "Lancer un audit" },
+    cta: { to: "/audit" as const, label: "Lancer un audit" },
     highlighted: false,
   },
   {
-    name: "Analyse complète",
-    price: "Sur devis",
+    name: "Analyse + résultats",
+    price: "500 DT",
     sub: "Le plus demandé",
     features: [
-      "Cadrage avec biostatisticien",
-      "Descriptif + comparatif + multivarié",
+      "Analyses statistiques complètes",
       "Tableaux & figures publiables",
-      "Délais cadrés sur votre soutenance",
-      "Aller-retours de relecture",
+      "Rédaction des résultats",
+      "Validation humaine",
     ],
-    cta: { to: "/contact", label: "Demander un devis" },
-    highlighted: true,
+    cta: { to: "/contact" as const, label: "Demander un devis" },
+    highlighted: false,
   },
   {
-    name: "Accompagnement thèse",
-    price: "Sur devis",
-    sub: "Suivi complet",
+    name: "Discussion",
+    price: "500 DT",
+    sub: "Rédaction ciblée",
     features: [
-      "Audit + analyses + rédaction",
-      "Point hebdomadaire dédié",
-      "Préparation soutenance",
-      "Priorité sur les délais",
+      "Recherche bibliographique",
+      "Argumentation structurée",
+      "Forces & limites",
+      "Aller-retours inclus",
     ],
-    cta: { to: "/contact", label: "Discuter du projet" },
+    cta: { to: "/contact" as const, label: "Demander un devis" },
     highlighted: false,
+  },
+  {
+    name: "IMRAD complet",
+    price: "1 200 DT",
+    sub: "Accompagnement intégral",
+    features: [
+      "Introduction",
+      "Matériel & Méthodes",
+      "Résultats",
+      "Discussion",
+      "Conclusion",
+    ],
+    cta: { to: "/contact" as const, label: "Discuter du projet" },
+    highlighted: true,
   },
 ];
 
@@ -75,13 +87,13 @@ function TarifsPage() {
       <Section className="pb-8">
         <SectionHeader
           eyebrow="Tarifs"
-          title="Audit gratuit. Prestation humaine sur devis."
-          description="Nous ne publions pas de grille fixe pour nos prestations humaines : chaque thèse a sa complexité, son urgence et son périmètre. Le devis est rapide et transparent."
+          title="Tarifs transparents en dinars tunisiens."
+          description="Tous les livrables sont relus et validés par un humain avant envoi."
         />
       </Section>
 
       <Section className="pt-4">
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {tiers.map((t) => (
             <article
               key={t.name}
@@ -99,7 +111,7 @@ function TarifsPage() {
               )}
               <h3 className="font-display text-lg font-semibold">{t.name}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{t.sub}</p>
-              <div className="mt-5 font-display text-3xl font-extrabold tracking-tight text-foreground">
+              <div className="mt-5 font-display text-3xl font-extrabold tracking-tight text-brand">
                 {t.price}
               </div>
               <ul className="mt-6 space-y-2.5 text-sm">
@@ -128,29 +140,6 @@ function TarifsPage() {
               </div>
             </article>
           ))}
-        </div>
-      </Section>
-
-      <Section>
-        <div className="rounded-2xl border border-border bg-surface/60 p-6 sm:p-8">
-          <div className="flex gap-4">
-            <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Info className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-display text-lg font-semibold">
-                Pourquoi un devis plutôt qu'un tarif fixe ?
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Le prix d'une analyse dépend de la complexité de votre base
-                (nombre de variables, structure, qualité), du type d'étude
-                (transversale, cohorte, cas-témoins, essai), du niveau
-                d'ajustement attendu et de l'urgence. On vous répond en moins
-                de 48h après réception de votre brief, et le devis est sans
-                engagement.
-              </p>
-            </div>
-          </div>
         </div>
       </Section>
     </SiteLayout>
