@@ -1,41 +1,44 @@
-Aligner Services, Tarifs et Contact sur le style de la page Méthode : hero centré avec eyebrow pilule, H1 large, filet teal, cartes numérotées style "pilier", CTA final foncé avec halos, et un déroulé / structure unifié.
+# Refonte du formulaire Contact — Visuel & UX
 
-## Services (`src/routes/services.tsx`)
+Cible : `src/routes/contact.tsx` uniquement (frontend, pas de changement de schéma API). La structure 4-section numérotée reste mais devient plus claire, plus assistante et plus polie.
 
-- **Hero centré** identique à Méthode :
-  - Eyebrow pilule `bg-brand/10 text-brand` : "Nos services"
-  - H1 : "Choisissez le périmètre qui correspond à votre étape."
-  - Sous-titre + filet teal (`h-px w-16 bg-brand/40`)
-- **Bannière Audit gratuit** : carte pleine largeur mise en avant (style "highlight" comme l'étape 5 de la timeline) avec liseré teal à gauche, badge "Gratuit", CTA `/audit`.
-- **Grille des 3 offres payantes** (Analyses, Discussion, IMRAD) en 3 colonnes :
-  - Mêmes cartes que les `Pillar` de Méthode : numérotation 01/02/03 en filigrane brand/25, icône carrée brand/10, hover `-translate-y-0.5 hover:border-brand/40 hover:shadow-md`.
-  - Prix en grand sous le titre, liste features avec `CheckCircle2 text-brand`.
-  - Carte IMRAD highlight (`border-l-4 border-l-brand`) + badge "Le plus complet".
-- **CTA final foncé** identique à Méthode (bloc primary avec halos teal blur, 2 boutons).
+## 1. Polish visuel
 
-## Tarifs (`src/routes/tarifs.tsx`)
+- **Inputs** : hauteur portée à `h-11`, icône à gauche (User / Phone / Mail / FileText) via wrapper relatif + `pl-10`, focus ring teal renforcé (`focus-visible:ring-2 ring-brand/40 border-brand/50`), transition douce.
+- **Textareas** : même traitement (icône en haut-gauche, padding ajusté), coin redimensionnable masqué (`resize-none`) + hauteur min cohérente.
+- **États** : bordure rouge + halo léger quand `error`, bordure teal discrète quand champ valide (après blur).
+- **Carte form** : conserve `rounded-2xl border bg-card`, ajoute un liseré décoratif `bg-gradient-to-br from-brand/5 via-transparent` en haut.
+- **Section headers (01/02/03/04)** : badge actuel + ligne horizontale fine à droite pour aérer, comme sur /methode.
+- **Bouton submit** : pleine largeur sur mobile, icône `Send` animée (translate-x au hover), état `submitting` avec spinner Lucide (`Loader2 animate-spin`).
+- **Success state** : ajout d'un encart "prochaines étapes" (1. on vous rappelle, 2. on cadre, 3. on lance) au lieu du simple message.
 
-- **Hero centré** même structure : eyebrow "Tarifs", H1 "Tarifs transparents en dinars tunisiens.", filet teal.
-- **Grille 4 cartes** restylées comme les `Pillar` de Méthode :
-  - Numérotation discrète, icône brand/10, hover relevé, IMRAD highlight liseré gauche teal.
-  - Badge "Recommandé" repositionné en cohérence avec les badges Méthode (`bg-brand text-brand-foreground`).
-- **Bandeau réassurance** sous la grille (style identique à l'encart "Deux allers-retours" de Méthode : rounded-2xl, icône brand/10, texte muted).
-- **CTA final foncé** identique à Méthode.
+## 2. UX & assistance
 
-## Contact (`src/routes/contact.tsx`)
+- **Type de projet** (nouveau champ frontend, ajouté au `message` envoyé pour ne pas casser l'API) : groupe de pills sélectionnables — Thèse / Article / Mémoire / Analyse seule / Autre. Sélection unique, accessible (radiogroup).
+- **Urgence / deadline** (nouveau champ frontend) : 3 pills — < 2 semaines / 2-4 semaines / > 1 mois / pas de deadline. Concaténé dans `message` au submit (préfixe `[Type: …] [Deadline: …]`).
+- **Validation au blur** : `onBlur` par champ qui revalide juste ce champ via `contactSchema.shape[name].safeParse(value)` → feedback immédiat sans attendre le submit.
+- **Compteurs de caractères** : sous chaque textarea (`{value.length}/1000`), passe en `text-brand` à 80%, `text-destructive` à 100%.
+- **Hints contextuels** : phrases d'aide courtes sous Problématique ("Ce que vous cherchez à comprendre") et Objectif ("Le livrable attendu — thèse complète, chapitre stats, article…").
+- **Exemples cliquables** sous le champ Sujet : 2-3 chips qui pré-remplissent l'input ("Thèse rétrospective cardio", "Étude de cohorte diabète", "Revue systématique").
+- **Autofocus** sur le premier champ erroné après submit échoué (scroll smooth).
+- **Téléphone** : conservation `+216 …` placeholder, ajout d'un drapeau 🇹🇳 décoratif dans l'icône wrapper.
 
-- **Hero centré** : eyebrow "Contact", H1 "Parlons de votre projet.", sous-titre, filet teal.
-- **Formulaire** conservé fonctionnellement mais restylé :
-  - Carte `rounded-2xl border bg-card` avec un en-tête numéroté style Méthode (badge "01", "02"… pour les sections Coordonnées / Sujet / Problématique).
-  - Titres de section avec petite pastille brand/10 + numéro à gauche.
-  - Bouton Envoyer conservé en `bg-brand`.
-- **Aside** : 3 cartes (email / délais / téléphone) restylées comme l'encart "Deux allers-retours" de Méthode :
-  - Icône carrée brand/10 à gauche, titre + texte muted, fond `bg-surface/60`.
-- **CTA final foncé** identique à Méthode en bas de page (rappel "Auditer ma base gratuitement" + lien vers services).
+## 3. Aside (colonne droite)
 
-## Détails techniques transverses
+Inchangée dans son contenu, mais :
+- Ajout d'un bloc en tête "Réponse < 48h ouvrées" en pilule verte (rassurance immédiate).
+- Cartes existantes conservées.
 
-- Aucune modification de logique métier (validations zod, `createLead`, routes inchangées).
-- Pas de nouveaux tokens : on réutilise `brand`, `primary`, `surface`, `card`, `muted-foreground`, `border` déjà définis.
-- Mêmes paddings que Méthode : `pb-4 pt-12 sm:pb-6 sm:pt-24` pour les hero, `Section` standard ensuite.
-- Composant `Pillar` et bloc CTA dupliqués localement dans chaque page (pas d'extraction de composant partagé pour limiter le scope — uniquement du style).
+## Détails techniques
+
+- Tout reste local au composant `ContactPage` + petits sous-composants (`Field`, `FormSection`, `IconInput`, `Pills`, `CharCount`).
+- État ajouté : `values` (controlled inputs nécessaires pour compteurs + validation live), `touched`, `projectType`, `urgency`.
+- `onSubmit` concatène `projectType` + `urgency` dans `message` final → **aucun changement** sur `createLead` / types `Lead`.
+- Pas de nouvelle dépendance, on garde `lucide-react`, `zod`, shadcn.
+- Pas de modification de `src/lib/api/client.ts` ni `types.ts`.
+
+## Hors scope
+
+- Pas de wizard multi-étapes (non choisi).
+- Pas de bloc témoignage / preuve sociale dans le form (non choisi).
+- Pas de modification des autres pages.

@@ -1,7 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
-import { Mail, Send, CheckCircle2, Phone, Clock, User } from "lucide-react";
+import {
+  Mail,
+  Send,
+  CheckCircle2,
+  Phone,
+  Clock,
+  User,
+  FileText,
+  Target,
+  HelpCircle,
+  MessageSquare,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +26,7 @@ import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -65,29 +79,99 @@ const contactSchema = z.object({
 });
 
 type ContactValues = z.infer<typeof contactSchema>;
-type FieldErrors = Partial<Record<keyof ContactValues, string>>;
+type FieldName = keyof ContactValues;
+type FieldErrors = Partial<Record<FieldName, string>>;
+
+const PROJECT_TYPES = [
+  "Thèse",
+  "Article",
+  "Mémoire",
+  "Analyse seule",
+  "Autre",
+] as const;
+
+const URGENCIES = [
+  "< 2 semaines",
+  "2-4 semaines",
+  "> 1 mois",
+  "Pas de deadline",
+] as const;
+
+const SUBJECT_EXAMPLES = [
+  "Thèse rétrospective en cardiologie",
+  "Étude de cohorte sur le diabète",
+  "Revue systématique",
+];
+
+const INITIAL_VALUES: Record<FieldName, string> = {
+  name: "",
+  email: "",
+  phone: "",
+  subject: "",
+  problem: "",
+  objective: "",
+  message: "",
+};
 
 function ContactPage() {
+  const [values, setValues] = useState<Record<FieldName, string>>(INITIAL_VALUES);
+  const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [projectType, setProjectType] = useState<string>("Thèse");
+  const [urgency, setUrgency] = useState<string>("2-4 semaines");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const setValue = (name: FieldName, value: string) => {
+    setValues((v) => ({ ...v, [name]: value }));
+    if (touched[name]) validateField(name, value);
+  };
+
+  const validateField = (name: FieldName, value: string) => {
+    const fieldSchema = contactSchema.shape[name];
+    const result = fieldSchema.safeParse(value);
+    setErrors((prev) => ({
+      ...prev,
+      [name]: result.success ? undefined : result.error.issues[0]?.message,
+    }));
+  };
+
+  const onBlur = (name: FieldName) => {
+    setTouched((t) => ({ ...t, [name]: true }));
+    validateField(name, values[name]);
+  };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
-    const parsed = contactSchema.safeParse(data);
+    const parsed = contactSchema.safeParse(values);
     if (!parsed.success) {
       const fe: FieldErrors = {};
       for (const issue of parsed.error.issues) {
-        const k = issue.path[0] as keyof ContactValues;
+        const k = issue.path[0] as FieldName;
         if (!fe[k]) fe[k] = issue.message;
       }
       setErrors(fe);
+      const allTouched = Object.fromEntries(
+        (Object.keys(INITIAL_VALUES) as FieldName[]).map((k) => [k, true])
+      ) as Record<FieldName, boolean>;
+      setTouched(allTouched);
+      const firstError = Object.keys(fe)[0];
+      if (firstError) {
+        const el = formRef.current?.querySelector<HTMLElement>(
+          `[name="${firstError}"]`
+        );
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => el?.focus(), 300);
+      }
       return;
     }
     setErrors({});
     setSubmitting(true);
+    const meta = `[Type: ${projectType}] [Deadline: ${urgency}]`;
+    const finalMessage = parsed.data.message
+      ? `${meta}\n${parsed.data.message}`
+      : meta;
     try {
       await createLead({
         source: "contact",
@@ -97,10 +181,11 @@ function ContactPage() {
         subject: parsed.data.subject,
         problem: parsed.data.problem,
         objective: parsed.data.objective,
-        message: parsed.data.message || undefined,
+        message: finalMessage,
       });
       setSubmitted(true);
-      form.reset();
+      setValues(INITIAL_VALUES);
+      setTouched({});
     } finally {
       setSubmitting(false);
     }
@@ -120,134 +205,274 @@ function ContactPage() {
 
       <Section className="pt-4 sm:pt-6">
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
-            {submitted ? (
-              <div className="flex flex-col items-start gap-4">
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-display text-xl font-bold tracking-tight">
-                    Message envoyé.
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    Merci. Nous vous répondons sous 48h ouvrées par téléphone
-                    ou email.
-                  </p>
-                </div>
-                <Button variant="outline" onClick={() => setSubmitted(false)}>
-                  Envoyer un autre message
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={onSubmit} className="space-y-7" noValidate>
-                <FormSection number="01" title="Vos coordonnées">
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <Field id="name" label="Nom complet" error={errors.name}>
-                      <Input id="name" name="name" autoComplete="name" required maxLength={100} />
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-brand/5 via-transparent to-transparent"
+            />
+            <div className="relative">
+              {submitted ? (
+                <SuccessState onReset={() => setSubmitted(false)} />
+              ) : (
+                <form
+                  ref={formRef}
+                  onSubmit={onSubmit}
+                  className="space-y-8"
+                  noValidate
+                >
+                  <FormSection number="01" title="Vos coordonnées">
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <Field
+                        id="name"
+                        label="Nom complet"
+                        error={touched.name ? errors.name : undefined}
+                        valid={touched.name && !errors.name && !!values.name}
+                      >
+                        <IconInput icon={<User className="h-4 w-4" />}>
+                          <Input
+                            id="name"
+                            name="name"
+                            autoComplete="name"
+                            required
+                            maxLength={100}
+                            value={values.name}
+                            onChange={(e) => setValue("name", e.target.value)}
+                            onBlur={() => onBlur("name")}
+                            className={cn(
+                              "h-11 pl-10 transition-colors",
+                              touched.name && errors.name && "border-destructive focus-visible:ring-destructive/30",
+                              touched.name && !errors.name && values.name && "border-brand/50"
+                            )}
+                            placeholder="Dr. Karim Ben Salah"
+                          />
+                        </IconInput>
+                      </Field>
+                      <Field
+                        id="phone"
+                        label="Téléphone"
+                        error={touched.phone ? errors.phone : undefined}
+                        valid={touched.phone && !errors.phone && !!values.phone}
+                        hint="Prioritaire pour vous recontacter"
+                      >
+                        <IconInput icon={<Phone className="h-4 w-4" />}>
+                          <Input
+                            id="phone"
+                            name="phone"
+                            type="tel"
+                            autoComplete="tel"
+                            required
+                            maxLength={25}
+                            placeholder="+216 ..."
+                            value={values.phone}
+                            onChange={(e) => setValue("phone", e.target.value)}
+                            onBlur={() => onBlur("phone")}
+                            className={cn(
+                              "h-11 pl-10 transition-colors",
+                              touched.phone && errors.phone && "border-destructive focus-visible:ring-destructive/30",
+                              touched.phone && !errors.phone && values.phone && "border-brand/50"
+                            )}
+                          />
+                        </IconInput>
+                      </Field>
+                    </div>
+                    <Field
+                      id="email"
+                      label="Email"
+                      error={touched.email ? errors.email : undefined}
+                      valid={touched.email && !errors.email && !!values.email}
+                    >
+                      <IconInput icon={<Mail className="h-4 w-4" />}>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          autoComplete="email"
+                          required
+                          maxLength={255}
+                          placeholder="vous@exemple.tn"
+                          value={values.email}
+                          onChange={(e) => setValue("email", e.target.value)}
+                          onBlur={() => onBlur("email")}
+                          className={cn(
+                            "h-11 pl-10 transition-colors",
+                            touched.email && errors.email && "border-destructive focus-visible:ring-destructive/30",
+                            touched.email && !errors.email && values.email && "border-brand/50"
+                          )}
+                        />
+                      </IconInput>
+                    </Field>
+                  </FormSection>
+
+                  <FormSection number="02" title="Sujet de votre étude">
+                    <Field
+                      id="subject"
+                      label="Sujet"
+                      error={touched.subject ? errors.subject : undefined}
+                      valid={touched.subject && !errors.subject && !!values.subject}
+                    >
+                      <IconInput icon={<FileText className="h-4 w-4" />}>
+                        <Input
+                          id="subject"
+                          name="subject"
+                          required
+                          maxLength={150}
+                          placeholder="Ex. Thèse sur la prise en charge de l'infarctus aux urgences"
+                          value={values.subject}
+                          onChange={(e) => setValue("subject", e.target.value)}
+                          onBlur={() => onBlur("subject")}
+                          className={cn(
+                            "h-11 pl-10 transition-colors",
+                            touched.subject && errors.subject && "border-destructive focus-visible:ring-destructive/30",
+                            touched.subject && !errors.subject && values.subject && "border-brand/50"
+                          )}
+                        />
+                      </IconInput>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <span className="text-xs text-muted-foreground">
+                          Inspirations :
+                        </span>
+                        {SUBJECT_EXAMPLES.map((ex) => (
+                          <button
+                            key={ex}
+                            type="button"
+                            onClick={() => setValue("subject", ex)}
+                            className="rounded-full border border-border bg-surface/60 px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:border-brand/40 hover:text-brand"
+                          >
+                            {ex}
+                          </button>
+                        ))}
+                      </div>
+                    </Field>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <PillsField
+                        label="Type de projet"
+                        options={[...PROJECT_TYPES]}
+                        value={projectType}
+                        onChange={setProjectType}
+                      />
+                      <PillsField
+                        label="Délai souhaité"
+                        options={[...URGENCIES]}
+                        value={urgency}
+                        onChange={setUrgency}
+                      />
+                    </div>
+                  </FormSection>
+
+                  <FormSection number="03" title="Problématique & objectif">
+                    <Field
+                      id="problem"
+                      label="Problématique"
+                      error={touched.problem ? errors.problem : undefined}
+                      valid={touched.problem && !errors.problem && values.problem.length >= 10}
+                      hint="Ce que vous cherchez à comprendre"
+                    >
+                      <IconTextarea icon={<HelpCircle className="h-4 w-4" />}>
+                        <Textarea
+                          id="problem"
+                          name="problem"
+                          rows={4}
+                          required
+                          maxLength={1000}
+                          placeholder="Quel est le problème clinique ou scientifique abordé ?"
+                          value={values.problem}
+                          onChange={(e) => setValue("problem", e.target.value)}
+                          onBlur={() => onBlur("problem")}
+                          className={cn(
+                            "resize-none pl-10 pt-3 transition-colors",
+                            touched.problem && errors.problem && "border-destructive focus-visible:ring-destructive/30",
+                            touched.problem && !errors.problem && values.problem.length >= 10 && "border-brand/50"
+                          )}
+                        />
+                      </IconTextarea>
+                      <CharCount value={values.problem} max={1000} />
                     </Field>
                     <Field
-                      id="phone"
-                      label="Téléphone"
-                      error={errors.phone}
-                      hint="Prioritaire pour vous recontacter"
-                    >
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        autoComplete="tel"
-                        required
-                        maxLength={25}
-                        placeholder="+216 ..."
-                      />
-                    </Field>
-                  </div>
-                  <Field id="email" label="Email" error={errors.email}>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      maxLength={255}
-                    />
-                  </Field>
-                </FormSection>
-
-                <FormSection number="02" title="Sujet de votre étude">
-                  <Field id="subject" label="Sujet" error={errors.subject}>
-                    <Input
-                      id="subject"
-                      name="subject"
-                      required
-                      maxLength={150}
-                      placeholder="Ex. Thèse sur la prise en charge de l'infarctus aux urgences"
-                    />
-                  </Field>
-                </FormSection>
-
-                <FormSection number="03" title="Problématique & objectif">
-                  <Field id="problem" label="Problématique" error={errors.problem}>
-                    <Textarea
-                      id="problem"
-                      name="problem"
-                      rows={4}
-                      required
-                      maxLength={1000}
-                      placeholder="Quel est le problème clinique ou scientifique abordé ?"
-                    />
-                  </Field>
-                  <Field id="objective" label="Objectif" error={errors.objective}>
-                    <Textarea
                       id="objective"
-                      name="objective"
-                      rows={4}
-                      required
-                      maxLength={1000}
-                      placeholder="Quel résultat / livrable cherchez-vous ?"
-                    />
-                  </Field>
-                </FormSection>
+                      label="Objectif"
+                      error={touched.objective ? errors.objective : undefined}
+                      valid={touched.objective && !errors.objective && values.objective.length >= 10}
+                      hint="Le livrable attendu (thèse complète, chapitre stats, article…)"
+                    >
+                      <IconTextarea icon={<Target className="h-4 w-4" />}>
+                        <Textarea
+                          id="objective"
+                          name="objective"
+                          rows={4}
+                          required
+                          maxLength={1000}
+                          placeholder="Quel résultat / livrable cherchez-vous ?"
+                          value={values.objective}
+                          onChange={(e) => setValue("objective", e.target.value)}
+                          onBlur={() => onBlur("objective")}
+                          className={cn(
+                            "resize-none pl-10 pt-3 transition-colors",
+                            touched.objective && errors.objective && "border-destructive focus-visible:ring-destructive/30",
+                            touched.objective && !errors.objective && values.objective.length >= 10 && "border-brand/50"
+                          )}
+                        />
+                      </IconTextarea>
+                      <CharCount value={values.objective} max={1000} />
+                    </Field>
+                  </FormSection>
 
-                <FormSection number="04" title="Message complémentaire">
-                  <Field
-                    id="message"
-                    label="Optionnel"
-                    error={errors.message}
-                  >
-                    <Textarea
+                  <FormSection number="04" title="Message complémentaire">
+                    <Field
                       id="message"
-                      name="message"
-                      rows={4}
-                      maxLength={2000}
-                      placeholder="Deadline, état actuel de la base, points particuliers…"
-                    />
-                  </Field>
-                </FormSection>
+                      label="Optionnel"
+                      error={touched.message ? errors.message : undefined}
+                    >
+                      <IconTextarea icon={<MessageSquare className="h-4 w-4" />}>
+                        <Textarea
+                          id="message"
+                          name="message"
+                          rows={4}
+                          maxLength={2000}
+                          placeholder="Deadline précise, état actuel de la base, points particuliers…"
+                          value={values.message}
+                          onChange={(e) => setValue("message", e.target.value)}
+                          onBlur={() => onBlur("message")}
+                          className="resize-none pl-10 pt-3 transition-colors"
+                        />
+                      </IconTextarea>
+                      <CharCount value={values.message} max={2000} />
+                    </Field>
+                  </FormSection>
 
-                <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    En envoyant ce message, vous acceptez d'être recontacté(e)
-                    par téléphone ou email.
-                  </p>
-                  <Button
-                    type="submit"
-                    disabled={submitting}
-                    className="bg-brand text-brand-foreground hover:bg-brand/90"
-                  >
-                    {submitting ? "Envoi…" : (
-                      <>
-                        Envoyer <Send className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            )}
+                  <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      En envoyant ce message, vous acceptez d'être recontacté(e)
+                      par téléphone ou email.
+                    </p>
+                    <Button
+                      type="submit"
+                      disabled={submitting}
+                      className="group w-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Envoi…
+                        </>
+                      ) : (
+                        <>
+                          Envoyer
+                          <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
 
           <aside className="space-y-4">
+            <div className="flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-2 text-xs font-medium text-brand">
+              <Sparkles className="h-3.5 w-3.5" />
+              Réponse sous 48h ouvrées
+            </div>
             <InfoCard
               icon={<Phone className="h-4 w-4 sm:h-5 sm:w-5" />}
               title="Téléphone prioritaire"
@@ -289,6 +514,47 @@ function ContactPage() {
   );
 }
 
+function SuccessState({ onReset }: { onReset: () => void }) {
+  const steps = [
+    "Nous vous appelons sous 48h ouvrées pour cadrer le projet.",
+    "Nous validons ensemble le périmètre, le délai et le tarif.",
+    "Vous recevez un plan d'action — et nous démarrons.",
+  ];
+  return (
+    <div className="flex flex-col items-start gap-5">
+      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand">
+        <CheckCircle2 className="h-5 w-5" />
+      </div>
+      <div>
+        <h3 className="font-display text-xl font-bold tracking-tight">
+          Message envoyé.
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Merci. Voici ce qui se passe maintenant :
+        </p>
+      </div>
+      <ol className="w-full space-y-3">
+        {steps.map((s, i) => (
+          <li
+            key={i}
+            className="flex items-start gap-3 rounded-xl border border-border bg-surface/60 p-3.5"
+          >
+            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 font-display text-xs font-bold text-brand">
+              {i + 1}
+            </span>
+            <span className="text-sm leading-relaxed text-foreground/90">
+              {s}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <Button variant="outline" onClick={onReset}>
+        Envoyer un autre message
+      </Button>
+    </div>
+  );
+}
+
 function FormSection({
   number,
   title,
@@ -307,6 +573,7 @@ function FormSection({
         <h3 className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-foreground/80">
           {title}
         </h3>
+        <div className="h-px flex-1 bg-border" />
       </div>
       <div className="space-y-5">{children}</div>
     </div>
@@ -344,22 +611,105 @@ function Field({
   label,
   error,
   hint,
+  valid,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
   hint?: string;
+  valid?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <Label htmlFor={id}>{label}</Label>
-        {hint && <span className="text-xs text-brand">{hint}</span>}
+        <Label htmlFor={id} className="flex items-center gap-1.5">
+          {label}
+          {valid && <CheckCircle2 className="h-3.5 w-3.5 text-brand" />}
+        </Label>
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
       </div>
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+function IconInput({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <div className="relative">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+        {icon}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function IconTextarea({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <div className="relative">
+      <span className="pointer-events-none absolute left-3 top-3 text-muted-foreground">
+        {icon}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function CharCount({ value, max }: { value: string; max: number }) {
+  const len = value.length;
+  const ratio = len / max;
+  return (
+    <div
+      className={cn(
+        "mt-1 text-right text-[11px] tabular-nums text-muted-foreground",
+        ratio >= 0.8 && ratio < 1 && "text-brand",
+        ratio >= 1 && "text-destructive"
+      )}
+    >
+      {len}/{max}
+    </div>
+  );
+}
+
+function PillsField({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <div role="radiogroup" className="flex flex-wrap gap-1.5">
+        {options.map((opt) => {
+          const selected = opt === value;
+          return (
+            <button
+              key={opt}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(opt)}
+              className={cn(
+                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                selected
+                  ? "border-brand bg-brand/10 text-brand"
+                  : "border-border bg-surface/60 text-muted-foreground hover:border-brand/40 hover:text-foreground"
+              )}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
