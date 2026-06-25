@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   BarChart3,
-  ClipboardList,
   FileText,
   GraduationCap,
   Microscope,
@@ -12,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
-import { siteConfig } from "@/lib/site-config";
 
 export const Route = createFileRoute("/services")({
   head: () => ({
@@ -21,18 +19,22 @@ export const Route = createFileRoute("/services")({
       {
         name: "description",
         content:
-          "Audit IA gratuit de votre base, analyse statistique complète, accompagnement rédaction des résultats de thèse. Tous nos services.",
+          "Audit gratuit, analyse statistique + rédaction des résultats, rédaction de la discussion, accompagnement IMRAD complet. Tarifs en dinars tunisiens.",
       },
       { property: "og:title", content: "Services — Insight Medics" },
       {
         property: "og:description",
         content:
-          "Audit gratuit, analyse statistique complète, rédaction des résultats. Pour thèses, articles et mémoires médicaux.",
+          "3 manières de travailler avec nous. Tarifs transparents en DT.",
       },
     ],
   }),
   component: ServicesPage,
 });
+
+// NOTE INTERNE (non affichée au public) :
+// Intro + Matériel & Méthodes + Conclusion seuls = supplément 100 à 150 DT
+// par rapport à l'accompagnement complet IMRAD.
 
 type Service = {
   icon: React.ReactNode;
@@ -41,7 +43,7 @@ type Service = {
   price: string;
   description: string;
   features: string[];
-  cta: { to: string; label: string };
+  cta: { to: "/audit" | "/contact"; label: string };
   highlighted?: boolean;
 };
 
@@ -50,62 +52,64 @@ const services: Service[] = [
     icon: <Microscope className="h-5 w-5" />,
     badge: "Gratuit",
     title: "Audit de base de données",
-    price: "0 €",
+    price: "0 DT",
     description:
-      "Une radiographie automatique de votre base : qualité, structure, pistes d'ajustement, avec un score /100.",
+      "Contrôle qualité automatique de votre base, analyse de la structure, pistes d'ajustement. Score /100 + rapport PDF.",
     features: [
-      "Formats .sav, .xlsx, .csv",
-      "Anonymisation automatique avant analyse",
-      "Détection manquants, doublons, incohérences cliniques",
-      "Rapport PDF brandé en quelques minutes",
+      "Tous formats acceptés",
+      "Analyses en temps réel sur la plateforme",
+      "Score qualité /100",
+      "Rapport PDF reçu par email & SMS",
       "Sans engagement",
     ],
-    cta: siteConfig.cta.audit,
+    cta: { to: "/audit", label: "Lancer l'audit gratuit" },
   },
   {
     icon: <BarChart3 className="h-5 w-5" />,
-    badge: "Le plus demandé",
-    title: "Analyse statistique complète",
-    price: "Sur devis",
+    title: "Analyse statistique + rédaction des résultats",
+    price: "500 DT",
     description:
-      "Le cœur de notre métier : descriptif, comparatif, multivarié, courbes de survie, modèles ajustés. Tout ce dont votre thèse a besoin.",
+      "Analyses complètes (descriptif, comparatif, multivarié) et rédaction de la partie « Résultats » prête à intégrer.",
     features: [
       "Cadrage avec un biostatisticien",
-      "Choix des tests adaptés à votre design",
-      "Tableaux et figures publiables (FR/EN)",
-      "Code source remis sur demande",
-      "Délais cadrés sur votre soutenance",
+      "Tests adaptés à votre design d'étude",
+      "Tableaux & figures publiables",
+      "Texte des résultats rédigé",
+      "Validation par un humain",
     ],
-    cta: siteConfig.cta.order,
-    highlighted: true,
+    cta: { to: "/contact", label: "Demander cette offre" },
   },
   {
     icon: <FileText className="h-5 w-5" />,
-    title: "Rédaction des résultats",
-    price: "Sur devis",
+    title: "Rédaction de la discussion",
+    price: "500 DT",
     description:
-      "Nous rédigeons la partie « Résultats » de votre thèse dans un français académique, en cohérence avec vos tableaux et figures.",
+      "Rédaction structurée de la discussion : comparaison à la littérature, forces, limites, perspectives.",
     features: [
-      "Texte calibré pour une thèse de médecine",
-      "Cohérence stricte avec les analyses",
+      "Recherche bibliographique ciblée",
+      "Argumentation alignée sur vos résultats",
+      "Forces et limites discutées",
       "Aller-retours de relecture inclus",
-      "Compatibilité avec votre plan",
     ],
-    cta: siteConfig.cta.order,
+    cta: { to: "/contact", label: "Demander cette offre" },
   },
   {
     icon: <GraduationCap className="h-5 w-5" />,
-    title: "Accompagnement complet thèse",
-    price: "Sur devis",
+    badge: "Le plus complet",
+    title: "Accompagnement complet IMRAD",
+    price: "1 200 DT",
     description:
-      "De la base brute à la soutenance : cadrage, analyses, rédaction, soutien méthodologique jusqu'au dépôt.",
+      "De la base brute à la conclusion : introduction, matériel & méthodes, résultats, discussion, conclusion.",
     features: [
-      "Point hebdomadaire avec votre référent",
-      "Audit + analyses + rédaction inclus",
-      "Préparation de la défense statistique",
+      "Introduction rédigée",
+      "Matériel & Méthodes rédigés",
+      "Analyses + résultats rédigés",
+      "Discussion rédigée",
+      "Conclusion rédigée",
       "Priorité sur les délais",
     ],
-    cta: siteConfig.cta.order,
+    cta: { to: "/contact", label: "Discuter du projet" },
+    highlighted: true,
   },
 ];
 
@@ -115,8 +119,8 @@ function ServicesPage() {
       <Section className="pb-8">
         <SectionHeader
           eyebrow="Services"
-          title="Trois manières de travailler avec nous."
-          description="Commencez par l'audit gratuit pour évaluer votre base. Si vous voulez aller plus loin, nous prenons le relais avec une prestation humaine, à la mesure de vos besoins."
+          title="3 manières de travailler avec nous."
+          description="Tarifs transparents en dinars tunisiens. Chaque livrable est validé par un humain (médecin + biostatisticien) avant envoi."
         />
       </Section>
 
@@ -152,7 +156,7 @@ function ServicesPage() {
               <h3 className="mt-5 font-display text-xl font-bold">{s.title}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{s.description}</p>
 
-              <div className="mt-5 font-display text-2xl font-bold text-foreground">
+              <div className="mt-5 font-display text-3xl font-extrabold tracking-tight text-brand">
                 {s.price}
               </div>
 
@@ -183,32 +187,6 @@ function ServicesPage() {
               </div>
             </article>
           ))}
-        </div>
-      </Section>
-
-      <Section>
-        <div className="rounded-2xl border border-border bg-surface/60 p-8 sm:p-10">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="max-w-xl">
-              <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <ClipboardList className="h-5 w-5" />
-              </div>
-              <h3 className="mt-4 font-display text-2xl font-bold tracking-tight">
-                Pas sûr de ce qu'il vous faut ?
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Lancez l'audit gratuit. Le rapport vous indiquera exactement ce
-                qui peut être exploité dans votre base et ce qui mérite l'œil
-                d'un humain.
-              </p>
-            </div>
-            <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand/90">
-              <Link to={siteConfig.cta.audit.to}>
-                {siteConfig.cta.audit.label}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
         </div>
       </Section>
     </SiteLayout>
