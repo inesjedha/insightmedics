@@ -95,7 +95,7 @@ const tiers: Tier[] = [
   {
     number: "04",
     icon: <GraduationCap className="h-5 w-5" />,
-    name: "IMRAD complet",
+    name: "Thèse complète",
     price: "1 200 DT",
     sub: "Accompagnement intégral",
     features: [
