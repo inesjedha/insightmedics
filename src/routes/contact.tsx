@@ -830,7 +830,7 @@ function PillsField({
               aria-checked={selected}
               onClick={() => onChange(opt)}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                "rounded-full border px-3.5 py-2 text-sm font-medium transition-colors",
                 selected
                   ? "border-brand bg-brand/10 text-brand"
                   : "border-border bg-surface/60 text-muted-foreground hover:border-brand/40 hover:text-foreground"
