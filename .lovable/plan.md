@@ -1,46 +1,59 @@
 ## Objectif
 
-Remplacer les 6 cartes plates actuelles par une **frise horizontale narrative** qui rend concret ce qui se passe à chaque étape, et qui met en évidence les **points de contact humains** (validation expert, échanges avec le client) — c'est ce qui manque aujourd'hui.
+Élever visuellement la page `/methode` au niveau « publication scientifique premium » sans changer le contenu ni la palette. Inspiration retenue : direction V2 (clinique premium) — timeline verticale lisible, badges de rôle nets, hiérarchie typographique forte.
 
-## Nouveau contenu (copy)
+## Changements par section (fichier unique : `src/routes/methode.tsx`)
 
-Titre de section : **« Le déroulé, étape par étape »**
-Sous-titre : « Six étapes, deux points d'échange avec vous, une validation humaine systématique avant livraison. »
+### 1. Hero
+- Hero centré avec eyebrow en pilule (fond `bg-brand/10`, texte `text-brand`, tracking large).
+- H1 plus grand (`text-4xl sm:text-5xl lg:text-6xl`), `text-balance`, dernier mot accentué en `text-brand`.
+- Description en `max-w-2xl mx-auto`, `text-lg`.
+- Léger filet décoratif sous le hero (séparateur fin centré, 64 px).
 
-Chaque étape = numéro + icône + titre + 1 phrase concrète + un petit tag de rôle (« Vous » / « Insight Medics » / « Échange »).
+### 2. Trois piliers
+- Numérotation visible **01 / 02 / 03** en `font-display` léger (`text-brand/30`, gros).
+- Icône dans tuile arrondie + filet supérieur teal au survol (`hover:border-t-brand`).
+- Cartes plus aérées (`p-7`), titre plus serré, texte secondaire en `text-muted-foreground/90`.
+- Hauteur uniforme via `h-full` + grille `items-stretch`.
 
-1. **Upload** — *Vous* — « Vous déposez votre base (Excel, CSV, SPSS). Chiffrement avant envoi, aucun nom ne quitte votre poste en clair. »
-2. **Anonymisation** — *Insight Medics* — « Les colonnes identifiantes sont détectées et pseudonymisées automatiquement. Une table de correspondance reste chez nous, isolée. »
-3. **Cadrage** — *Échange avec vous* — « Court questionnaire + appel si besoin : objectif de la thèse, hypothèses, variables clés. C'est vous qui orientez l'analyse. »
-4. **Calculs** — *Insight Medics* — « Analyses statistiques sur vos données réelles : descriptives, tests, modèles. Les sorties brutes sont conservées et traçables. »
-5. **Revue humaine** — *Insight Medics* — « Un biostatisticien relit les analyses, ajuste les choix de tests, vérifie les hypothèses. Un médecin relit la cohérence clinique. »
-6. **Restitution & livraison** — *Échange avec vous* — « On vous présente les résultats, on répond à vos questions, on intègre vos retours, puis on livre le rapport final + les scripts. »
+### 3. Frise — refonte complète en timeline verticale éditoriale
+- Suppression du double rendu desktop/mobile : **une seule timeline verticale** centrée (`max-w-2xl mx-auto`), beaucoup plus lisible que la frise horizontale écrasée.
+- Rail vertical fin (`w-px bg-border`) à gauche, avec un dégradé subtil top→bottom.
+- Chaque étape : pastille numérotée (`w-10 h-10`, ring-4 white, bg selon rôle) + bloc carte à droite.
+- Code couleur des pastilles par rôle :
+  - **client (Vous)** : bordure `border-primary`, texte `text-primary`, fond `bg-card`.
+  - **team (Insight Medics)** : fond `bg-primary` plein, texte `text-primary-foreground`.
+  - **exchange (Échange avec vous)** : bordure double-tirets `ring-2 ring-brand/30`, fond `bg-brand/10`, texte `text-brand`.
+- Badges de rôle harmonisés : pilules `uppercase tracking-widest text-[10px]` cohérentes avec les pastilles.
+- **Étape 5 « Revue biostat + médecin »** mise en avant :
+  - Carte légèrement plus grande (`p-6` vs `p-5`),
+  - Liseré gauche `border-l-4 border-brand`,
+  - Petit ruban « Validation humaine » en haut à droite (badge `bg-brand text-brand-foreground`),
+  - Deux mini-avatars stylisés (ronds initiales BS / MD) sous le texte pour matérialiser les deux relecteurs.
+- Encart « 2 allers-retours inclus » conservé mais restylé en bandeau pleine largeur sous la timeline, fond `bg-surface`, icône `MessageSquare`, copie inchangée.
 
-Mention sous la frise : « Deux allers-retours avec vous sont inclus dans la prestation complète, pour cadrer puis pour ajuster. »
+### 4. CTA final
+- Conservé en `bg-primary` mais enrichi :
+  - Halo décoratif radial teal en haut-droite (`absolute -top-20 -right-20 w-64 h-64 bg-brand/20 rounded-full blur-3xl`),
+  - Petit filet teal au-dessus du titre,
+  - Bouton primaire passe en `bg-brand` (au lieu de surimprimer brand-on-primary) pour un contraste WCAG plus net,
+  - Bouton secondaire en outline subtil.
 
-## Mise en œuvre technique
+## Détails techniques
 
-Fichier : `src/routes/methode.tsx` (uniquement).
-
-- Supprimer `PipelineStep` (cartes plates) et la `<ol grid-cols-6>`.
-- Nouveau composant interne `PipelineTimeline` :
-  - **Desktop (≥ lg)** : frise horizontale.
-    - Une ligne décorative continue (`absolute top-5 inset-x-0 h-px bg-border`) derrière les 6 puces numérotées rondes.
-    - 6 colonnes (`grid grid-cols-6 gap-4`) — chaque colonne : puce ronde numérotée + icône au-dessus de la ligne, puis sous la ligne : badge de rôle coloré (Vous / Insight Medics / Échange), titre, phrase descriptive.
-    - Les étapes 3 et 6 (Échange) reçoivent un badge `bg-brand/10 text-brand` + un petit liseré différent pour signaler le point de contact client.
-    - L'étape 5 (Revue humaine) reçoit un petit picto `UserCheck` doublé pour souligner la validation humaine.
-  - **Mobile (< lg)** : pile verticale (`flex flex-col`) avec ligne verticale à gauche reliant les puces (`border-l border-border ml-4`), chaque étape en `pl-8`, même contenu.
-- Sous la frise : encart léger (`rounded-lg border-dashed border-border bg-surface/40 p-4 text-sm text-muted-foreground`) avec la mention « Deux allers-retours avec vous… ».
-- Réutiliser les icônes déjà importées (`Upload`, `EyeOff`, `ClipboardList`, `PlayCircle`, `UserCheck`, `PackageCheck`) — pas de nouvel import.
-- Types de rôle gérés via une petite map locale `{ role: 'client' | 'team' | 'exchange' }` → classes de badge.
+- Aucune dépendance nouvelle. Icônes Lucide ajoutées : `MessageSquare`, `Sparkles` (étape mise en avant).
+- Tokens utilisés : `primary`, `primary-foreground`, `brand`, `brand-foreground`, `border`, `card`, `surface`, `muted-foreground`. Aucune couleur en dur.
+- Conservation stricte de toute la copy (eyebrows, titres, descriptions, 6 étapes, CTA).
+- Responsive : timeline verticale fonctionne nativement mobile + desktop, suppression du dédoublement `lg:grid-cols-6`. Padding latéraux gérés via `Section`.
+- Accessibilité : pastilles avec `aria-hidden` pour la décoration numérique, rôles annoncés via `<span class="sr-only">Rôle : …</span>`.
 
 ## Hors périmètre
 
-- Aucun changement aux autres sections de `/methode`.
-- Aucun changement de design tokens, de polices, de pages adjacentes.
-- Pas de nouvelles dépendances, pas d'animation Motion (rendu CSS pur).
+- Aucun changement de copy, de palette, de polices, des composants `Section`/`SectionHeader`/`Button`.
+- Aucune modification des autres pages.
+- Pas d'animations Motion (effets statiques CSS seulement : `transition-colors`, `hover:`).
 
 ## Vérification
 
-- `tsgo --noEmit` doit passer.
-- Inspection visuelle desktop + mobile sur `/methode`.
+- `tsgo --noEmit`.
+- Capture Playwright desktop 1280×1800 + mobile 390×900 pour comparer avant/après.
