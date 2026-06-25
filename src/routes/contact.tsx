@@ -157,6 +157,7 @@ function ContactPage() {
   const [consentError, setConsentError] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const mountedAtRef = useRef<number>(0);
 
@@ -178,6 +179,7 @@ function ContactPage() {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (submitting) return;
 
     // Anti-spam silencieux : honeypot rempli ou form soumis trop vite => faux succès.
     const honeypotValue = (
@@ -219,6 +221,7 @@ function ContactPage() {
     setErrors({});
     setConsentError(false);
     setShowErrorBanner(false);
+    setSubmitError(null);
     setSubmitting(true);
     const offersLabel = selectedOffers
       .map((id) => SERVICE_OFFERS.find((o) => o.id === id)?.name)
@@ -247,6 +250,11 @@ function ContactPage() {
       setValues(INITIAL_VALUES);
       setSelectedOffers([]);
       setConsent(false);
+    } catch (err) {
+      console.error("[contact] submit failed", err);
+      setSubmitError(
+        "L'envoi a échoué. Vérifiez votre connexion et réessayez, ou écrivez-nous directement par email.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -291,6 +299,7 @@ function ContactPage() {
                   onSubmit={onSubmit}
                   className="space-y-10"
                   noValidate
+                  aria-busy={submitting}
                 >
                   {/* Honeypot anti-bot — invisible aux humains */}
                   <input
@@ -317,6 +326,16 @@ function ContactPage() {
                       <span>
                         Merci de compléter les champs obligatoires avant l'envoi.
                       </span>
+                    </div>
+                  )}
+
+                  {submitError && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
+                    >
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>{submitError}</span>
                     </div>
                   )}
 
