@@ -274,10 +274,10 @@ function ContactPage() {
                           <Select value={dialCode} onValueChange={setDialCode}>
                             <SelectTrigger
                               aria-label="Indicatif pays"
-                              className="h-11 w-auto gap-1.5 rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0"
+                              className="h-11 w-auto min-w-[5.75rem] shrink-0 gap-1.5 whitespace-nowrap rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none [&>span]:overflow-visible"
                             >
                               <SelectValue aria-label={dialCode}>
-                                <span className="flex items-center gap-1.5">
+                                <span className="flex items-center gap-1.5 whitespace-nowrap">
                                   <span aria-hidden className="text-base leading-none">
                                     {COUNTRY_CODES.find((c) => c.code === dialCode)?.flag}
                                   </span>
