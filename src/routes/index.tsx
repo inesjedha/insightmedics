@@ -113,7 +113,7 @@ function Hero() {
         {/* Pills de réassurance */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
           <ReassuranceBadge icon={<CalendarCheck className="h-4 w-4" />}>
-            Délai annoncé, délai tenu
+            Délais courts, annoncés à l'avance
           </ReassuranceBadge>
           <ReassuranceBadge icon={<Gift className="h-4 w-4" />}>
             Audit de base offert
