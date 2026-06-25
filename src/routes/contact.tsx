@@ -111,7 +111,6 @@ type ServiceOffer = {
 };
 
 const SERVICE_OFFERS: ServiceOffer[] = [
-  { id: "audit", name: "Audit IA", price: "0", tier: "Gratuit" },
   { id: "analyses", name: "Analyses + résultats", price: "500", tier: "Essentiel" },
   { id: "discussion", name: "Discussion", price: "500", tier: "Expertise" },
   { id: "imrad", name: "IMRAD complet", price: "1 200", tier: "Le plus choisi", featured: true },
@@ -757,7 +756,7 @@ function OffersField({
           Sélectionnez une ou plusieurs
         </span>
       </div>
-      <div role="group" className="grid gap-3 sm:grid-cols-2">
+      <div role="group" className="grid gap-3 sm:grid-cols-3">
         {SERVICE_OFFERS.map((offer) => {
           const selected = value.includes(offer.id);
           const accent = offer.featured || offer.id === "audit";
