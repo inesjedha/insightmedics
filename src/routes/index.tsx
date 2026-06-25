@@ -637,7 +637,45 @@ function Testimonials() {
         title="Ils nous ont confié leur thèse."
         description="Quelques retours d'étudiants et de médecins accompagnés en Tunisie."
       />
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
+      {/* Mobile : carrousel scroll-snap */}
+      <div className="mt-6 -mx-4 sm:hidden">
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {items.map((t) => (
+            <figure
+              key={t.name + t.city}
+              className="flex w-[82%] shrink-0 snap-center flex-col rounded-xl border border-border bg-card p-4 shadow-sm"
+            >
+              <div className="flex items-center gap-0.5 text-brand">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-3 w-3 fill-current" />
+                ))}
+              </div>
+              <blockquote className="mt-2.5 flex-1 text-[13px] leading-snug text-foreground">
+                « {t.quote} »
+              </blockquote>
+              <figcaption className="mt-3 flex items-center gap-2.5">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/10 font-display text-xs font-semibold text-brand">
+                  {t.name.charAt(0)}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate font-display text-xs font-semibold text-foreground">
+                    {t.name}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {t.role} · {t.city}
+                  </p>
+                </div>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+        <p className="mt-2 px-4 text-center text-[11px] text-muted-foreground">
+          Glissez pour voir les autres témoignages →
+        </p>
+      </div>
+
+      {/* Tablette/Desktop : grille */}
+      <div className="mt-6 hidden gap-3 sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
         {items.map((t) => (
           <figure
             key={t.name + t.city}
