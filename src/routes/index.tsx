@@ -99,19 +99,21 @@ function Hero() {
             kicker="Thèse de médecine"
             headline="Accompagnement complet"
             value="livrée en 2 semaines"
+            note="selon votre base"
           />
           <PromiseCard
             icon={<FileBarChart2 className="h-5 w-5" />}
             kicker="Analyses statistiques"
             headline="Données analysées & résultats rédigés"
             value="en 1 semaine"
+            note="selon votre base"
           />
         </div>
 
         {/* Pills de réassurance */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
           <ReassuranceBadge icon={<CalendarCheck className="h-4 w-4" />}>
-            Délai annoncé, délai tenu
+            Délais courts, annoncés à l'avance
           </ReassuranceBadge>
           <ReassuranceBadge icon={<Gift className="h-4 w-4" />}>
             Audit de base offert
@@ -142,11 +144,13 @@ function PromiseCard({
   kicker,
   headline,
   value,
+  note,
 }: {
   icon: React.ReactNode;
   kicker: string;
   headline: string;
   value: string;
+  note?: string;
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
@@ -162,6 +166,9 @@ function PromiseCard({
       <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-brand sm:text-3xl">
         {value}
       </p>
+      {note ? (
+        <p className="mt-1 text-xs text-muted-foreground">{note}</p>
+      ) : null}
     </div>
   );
 }
@@ -234,7 +241,7 @@ function ProblemApproach() {
       <div className="mt-14 grid gap-6 rounded-2xl border border-border bg-surface/60 p-6 sm:grid-cols-3 sm:p-8">
         <Stat value="+30" label="Thèses et projets accompagnés" />
         <Stat value="Offert" label="Audit de base systématique" />
-        <Stat value="100%" label="Livrables relus par un expert" />
+        <Stat value="Chaque" label="Livrable relu par un expert" />
       </div>
     </Section>
   );
@@ -725,7 +732,8 @@ function FinalCta() {
             </p>
             <p className="mt-4 inline-flex items-center gap-2 text-sm text-primary-foreground/80">
               <AlertTriangle className="h-4 w-4" />
-              En cas d'alerte critique, un expert vous recontacte sous 48h.
+              En cas d'alerte critique, un expert vous recontacte sous 48h
+              ouvrées.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">

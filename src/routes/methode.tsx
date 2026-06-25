@@ -27,13 +27,13 @@ export const Route = createFileRoute("/methode")({
       {
         name: "description",
         content:
-          "Comment Insight Medics garantit des résultats de thèse exacts et traçables : analyses calculées directement sur vos données, validées par un biostatisticien, données patients protégées au plus haut standard.",
+          "La méthode Insight Medics pour des résultats de thèse traçables et reproductibles : analyses calculées directement sur vos données, validées par un biostatisticien, données patients protégées par des mesures strictes.",
       },
       { property: "og:title", content: "Méthode — Insight Medics" },
       {
         property: "og:description",
         content:
-          "Des résultats que vous pouvez défendre, ligne par ligne. Calculés, validés et signés par un biostatisticien.",
+          "Des résultats que vous comprenez et pouvez justifier. Calculés sur vos données, validés par un biostatisticien.",
       },
     ],
   }),
@@ -46,8 +46,8 @@ function MethodePage() {
       <Section className="pb-8">
         <SectionHeader
           eyebrow="Notre méthode"
-          title="Des résultats que vous pouvez défendre, ligne par ligne."
-          description="Votre thèse engage votre nom et celui de votre directeur. Notre méthode est construite pour une seule chose : que chaque chiffre de votre travail soit exact, traçable et reproductible — du premier calcul à la soutenance."
+          title="Des résultats que vous comprenez et pouvez justifier."
+          description="Votre thèse engage votre nom et celui de votre directeur. Notre méthode vise une chose : que chaque chiffre de votre travail soit calculé directement sur vos données, traçable et reproductible — du premier calcul à la soutenance."
         />
       </Section>
 
@@ -65,7 +65,7 @@ function MethodePage() {
           />
           <Pillar
             icon={<UserCheck className="h-5 w-5" />}
-            title="Validés et signés par un biostatisticien"
+            title="Validés par un biostatisticien"
             text="Pour la prestation complète, un biostatisticien revoit, ajuste et valide chaque analyse définitive avant livraison."
           />
         </div>
@@ -90,7 +90,7 @@ function MethodePage() {
         <SectionHeader
           eyebrow="Garde-fou structurel"
           title="Les chiffres viennent du calcul, jamais de la rédaction."
-          description="Nos modèles de rapport vont chercher les nombres directement dans les sorties de code. La partie rédigée n'a aucun accès aux tableaux ni aux scores : impossible d'y glisser une valeur à la main."
+          description="Nos modèles de rapport vont chercher les nombres directement dans les sorties de code. La partie rédigée n'a pas accès aux tableaux ni aux scores : les valeurs ne sont jamais saisies à la main."
         />
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -103,7 +103,7 @@ function MethodePage() {
             <p className="mt-2 text-sm text-muted-foreground">
               Le score qualité suit une formule fixe, à partir de critères
               objectifs : complétude, cohérence, structure, taille
-              d'échantillon. Le barème est public et affiché dans votre rapport.
+              d'échantillon. Le barème est affiché dans votre rapport.
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -126,24 +126,24 @@ function MethodePage() {
       <Section>
         <SectionHeader
           eyebrow="Données & confidentialité"
-          title="Vos données patients, traitées au plus haut standard."
-          description="Nous travaillons depuis la Tunisie. Plutôt que de nous limiter au minimum légal local, nous appliquons volontairement les exigences les plus strictes en matière de données de santé — parce que vos fichiers contiennent du sensible."
+          title="Vos données patients, protégées par des mesures strictes."
+          description="Nous travaillons depuis la Tunisie. Plutôt que de nous limiter au minimum légal local, nous appliquons volontairement des mesures strictes, adaptées à la sensibilité des données de santé que vous nous confiez."
         />
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           <DataCard
             icon={<ShieldCheck className="h-5 w-5" />}
             title="Anonymisation à l'import"
-            text="Les colonnes identifiantes (noms, identifiants directs, dates de naissance) sont repérées et pseudonymisées avant toute analyse."
+            text="Nous identifions et pseudonymisons les colonnes identifiantes (noms, identifiants directs, dates de naissance) avant l'analyse."
           />
           <DataCard
             icon={<Lock className="h-5 w-5" />}
-            title="Chiffrement de bout en bout"
-            text="Vos fichiers sont chiffrés avant l'envoi, puis stockés chiffrés. Aucune donnée patient n'apparaît dans nos journaux techniques."
+            title="Transmission et stockage sécurisés"
+            text="Vos fichiers sont transmis via une connexion sécurisée et stockés chiffrés. Nous évitons toute donnée patient identifiante dans nos journaux techniques."
           />
           <DataCard
             icon={<Trash2 className="h-5 w-5" />}
-            title="Suppression après livraison"
-            text="Vos fichiers et la table de correspondance sont supprimés automatiquement une fois la prestation terminée."
+            title="Suppression après la prestation"
+            text="Vos fichiers et la table de correspondance sont supprimés à l'issue de la prestation, selon une politique définie."
           />
         </div>
 
