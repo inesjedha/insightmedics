@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
 import { siteConfig } from "@/lib/site-config";
+import { OFFERS } from "@/lib/offers";
 
 export const Route = createFileRoute("/")({
   head: () => ({
