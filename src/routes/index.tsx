@@ -18,7 +18,10 @@ import {
   Star,
   PenLine,
   BookOpenCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SiteLayout } from "@/components/site/SiteLayout";
