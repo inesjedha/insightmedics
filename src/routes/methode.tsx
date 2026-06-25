@@ -95,11 +95,11 @@ function MethodePage() {
           align="center"
         />
         <PipelineTimeline />
-        <div className="mx-auto mt-8 flex max-w-3xl items-start gap-4 rounded-2xl border border-border bg-surface/60 p-5">
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-            <MessageSquare className="h-5 w-5" />
+        <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-border bg-surface/60 p-4 sm:gap-4 sm:p-5">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand sm:h-10 sm:w-10">
+            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
           </span>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Deux allers-retours avec vous sont inclus dans la prestation
             complète : un pour cadrer le plan d'analyse, un pour ajuster après
             restitution.
