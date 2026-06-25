@@ -1,19 +1,41 @@
-## Section Témoignages — version compacte
+Aligner Services, Tarifs et Contact sur le style de la page Méthode : hero centré avec eyebrow pilule, H1 large, filet teal, cartes numérotées style "pilier", CTA final foncé avec halos, et un déroulé / structure unifié.
 
-Refondre la section témoignages de la landing (`src/routes/index.tsx`, fonction `Testimonials`) pour qu'elle prenne nettement moins de place verticalement, tout en gardant les 5 avis.
+## Services (`src/routes/services.tsx`)
 
-### Changements
+- **Hero centré** identique à Méthode :
+  - Eyebrow pilule `bg-brand/10 text-brand` : "Nos services"
+  - H1 : "Choisissez le périmètre qui correspond à votre étape."
+  - Sous-titre + filet teal (`h-px w-16 bg-brand/40`)
+- **Bannière Audit gratuit** : carte pleine largeur mise en avant (style "highlight" comme l'étape 5 de la timeline) avec liseré teal à gauche, badge "Gratuit", CTA `/audit`.
+- **Grille des 3 offres payantes** (Analyses, Discussion, IMRAD) en 3 colonnes :
+  - Mêmes cartes que les `Pillar` de Méthode : numérotation 01/02/03 en filigrane brand/25, icône carrée brand/10, hover `-translate-y-0.5 hover:border-brand/40 hover:shadow-md`.
+  - Prix en grand sous le titre, liste features avec `CheckCircle2 text-brand`.
+  - Carte IMRAD highlight (`border-l-4 border-l-brand`) + badge "Le plus complet".
+- **CTA final foncé** identique à Méthode (bloc primary avec halos teal blur, 2 boutons).
 
-1. **Padding de section réduit** : passer la `Section` à un padding vertical plus court (`py-10 sm:py-14` via `className` override), au lieu du `py-16 sm:py-24` par défaut.
-2. **En-tête resserré** : titre plus court ("Ils nous ont confié leur thèse.") avec description condensée sur une ligne, marge supérieure de la grille réduite (`mt-6` au lieu de `mt-10`).
-3. **Cartes compactes** :
-   - Padding `p-4 sm:p-5` (au lieu de `p-6`).
-   - Citation en `text-[13px] leading-snug`, max 2–3 lignes visibles.
-   - Suppression du bloc étoiles (gain de hauteur) ou réduction à une simple ligne `text-[11px]`.
-   - Footer fusionné : avatar + nom/rôle/ville sur une seule ligne sans séparateur ni `pt-4`.
-4. **Grille plus dense** : `gap-3 sm:gap-4`, `md:grid-cols-3 lg:grid-cols-5` pour étaler les 5 témoignages sur une seule ligne en desktop large (et 2 colonnes en tablette).
-5. **Témoignage de Khalil** : remplacer "Recommandé pour un article original." par "Recommandé pour une thèse originale et pertinente."
+## Tarifs (`src/routes/tarifs.tsx`)
 
-### Résultat attendu
+- **Hero centré** même structure : eyebrow "Tarifs", H1 "Tarifs transparents en dinars tunisiens.", filet teal.
+- **Grille 4 cartes** restylées comme les `Pillar` de Méthode :
+  - Numérotation discrète, icône brand/10, hover relevé, IMRAD highlight liseré gauche teal.
+  - Badge "Recommandé" repositionné en cohérence avec les badges Méthode (`bg-brand text-brand-foreground`).
+- **Bandeau réassurance** sous la grille (style identique à l'encart "Deux allers-retours" de Méthode : rounded-2xl, icône brand/10, texte muted).
+- **CTA final foncé** identique à Méthode.
 
-Bandeau témoignages compact (≈ 1 écran de hauteur réduite), 5 cartes alignées en desktop large, lisible et professionnel sans dominer la page.
+## Contact (`src/routes/contact.tsx`)
+
+- **Hero centré** : eyebrow "Contact", H1 "Parlons de votre projet.", sous-titre, filet teal.
+- **Formulaire** conservé fonctionnellement mais restylé :
+  - Carte `rounded-2xl border bg-card` avec un en-tête numéroté style Méthode (badge "01", "02"… pour les sections Coordonnées / Sujet / Problématique).
+  - Titres de section avec petite pastille brand/10 + numéro à gauche.
+  - Bouton Envoyer conservé en `bg-brand`.
+- **Aside** : 3 cartes (email / délais / téléphone) restylées comme l'encart "Deux allers-retours" de Méthode :
+  - Icône carrée brand/10 à gauche, titre + texte muted, fond `bg-surface/60`.
+- **CTA final foncé** identique à Méthode en bas de page (rappel "Auditer ma base gratuitement" + lien vers services).
+
+## Détails techniques transverses
+
+- Aucune modification de logique métier (validations zod, `createLead`, routes inchangées).
+- Pas de nouveaux tokens : on réutilise `brand`, `primary`, `surface`, `card`, `muted-foreground`, `border` déjà définis.
+- Mêmes paddings que Méthode : `pb-4 pt-12 sm:pb-6 sm:pt-24` pour les hero, `Section` standard ensuite.
+- Composant `Pillar` et bloc CTA dupliqués localement dans chaque page (pas d'extraction de composant partagé pour limiter le scope — uniquement du style).
