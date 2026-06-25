@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
   Mail,
@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,12 @@ import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
+import {
+  HONEYPOT_FIELD,
+  honeypotStyle,
+  isHoneypotTripped,
+  isTooFast,
+} from "@/lib/anti-spam";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/contact")({
@@ -146,9 +153,16 @@ function ContactPage() {
   const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
   const [urgency, setUrgency] = useState<string>("2-4 semaines");
   const [dialCode, setDialCode] = useState<string>("+216");
+  const [consent, setConsent] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const mountedAtRef = useRef<number>(0);
+
+  useEffect(() => {
+    mountedAtRef.current = Date.now();
+  }, []);
 
   const setValue = (name: FieldName, value: string) => {
     setValues((v) => ({ ...v, [name]: value }));
@@ -164,14 +178,30 @@ function ContactPage() {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Anti-spam silencieux : honeypot rempli ou form soumis trop vite => faux succès.
+    const honeypotValue = (
+      formRef.current?.elements.namedItem(HONEYPOT_FIELD) as HTMLInputElement | null
+    )?.value;
+    if (isHoneypotTripped(honeypotValue) || isTooFast(mountedAtRef.current)) {
+      setSubmitted(true);
+      return;
+    }
+
     const parsed = contactSchema.safeParse(values);
-    if (!parsed.success) {
+    const hasFieldErrors = !parsed.success;
+    const hasConsentError = !consent;
+
+    if (hasFieldErrors || hasConsentError) {
       const fe: FieldErrors = {};
-      for (const issue of parsed.error.issues) {
-        const k = issue.path[0] as FieldName;
-        if (!fe[k]) fe[k] = issue.message;
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          const k = issue.path[0] as FieldName;
+          if (!fe[k]) fe[k] = issue.message;
+        }
       }
       setErrors(fe);
+      setConsentError(hasConsentError);
       setShowErrorBanner(true);
       const firstError = Object.keys(fe)[0];
       if (firstError) {
@@ -180,10 +210,14 @@ function ContactPage() {
         );
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
         setTimeout(() => el?.focus(), 300);
+      } else if (hasConsentError) {
+        const el = formRef.current?.querySelector<HTMLElement>("#contact-consent");
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       return;
     }
     setErrors({});
+    setConsentError(false);
     setShowErrorBanner(false);
     setSubmitting(true);
     const offersLabel = selectedOffers
@@ -212,6 +246,7 @@ function ContactPage() {
       setSubmitted(true);
       setValues(INITIAL_VALUES);
       setSelectedOffers([]);
+      setConsent(false);
     } finally {
       setSubmitting(false);
     }
@@ -246,6 +281,16 @@ function ContactPage() {
                   className="space-y-8"
                   noValidate
                 >
+                  {/* Honeypot anti-bot — invisible aux humains */}
+                  <input
+                    type="text"
+                    name={HONEYPOT_FIELD}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    style={honeypotStyle}
+                    defaultValue=""
+                  />
                   <p className="text-xs text-muted-foreground">
                     Les champs marqués d'un{" "}
                     <span className="text-destructive">*</span> sont obligatoires.
@@ -458,33 +503,68 @@ function ContactPage() {
                     </Field>
                   </FormSection>
 
-                  <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      En envoyant ce message, vous acceptez d'être recontacté(e)
-                      par téléphone ou email.
-                    </p>
-                    <Button
-                      type="submit"
-                      disabled={submitting}
-                      className="group w-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Envoi…
-                        </>
-                      ) : (
-                        <>
-                          Envoyer
-                          <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                        </>
+                  <div className="space-y-4 border-t border-border pt-6">
+
+                    <label
+                      className={cn(
+                        "flex items-start gap-3 rounded-xl border bg-surface/40 p-3.5 text-sm transition-colors",
+                        consentError
+                          ? "border-destructive/40 bg-destructive/5"
+                          : "border-border",
                       )}
-                    </Button>
+                    >
+                      <Checkbox
+                        id="contact-consent"
+                        checked={consent}
+                        onCheckedChange={(v) => {
+                          const next = v === true;
+                          setConsent(next);
+                          if (next) setConsentError(false);
+                        }}
+                        className="mt-0.5"
+                      />
+                      <span className="leading-relaxed text-foreground/90">
+                        <span aria-hidden className="mr-0.5 text-destructive">*</span>
+                        J'accepte d'être recontacté(e) par {siteConfig.name} au
+                        sujet de ma demande et le traitement de mes données
+                        comme décrit dans la{" "}
+                        <a
+                          href="/confidentialite"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand underline-offset-2 hover:underline"
+                        >
+                          politique de confidentialité
+                        </a>
+                        .
+                      </span>
+                    </label>
+
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+                      <Button
+                        type="submit"
+                        disabled={submitting}
+                        className="group w-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Envoi…
+                          </>
+                        ) : (
+                          <>
+                            Envoyer
+                            <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </form>
               )}
             </div>
           </div>
+
 
           <aside className="space-y-4">
             <div className="flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-2 text-xs font-medium text-brand">

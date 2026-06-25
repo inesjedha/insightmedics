@@ -19,4 +19,12 @@ export const siteConfig = {
     audit: { to: "/audit", label: "Lancer un audit gratuit" },
     order: { to: "/contact", label: "Confier ma thèse" },
   },
+  legal: [
+    { to: "/mentions-legales", label: "Mentions légales" },
+    { to: "/confidentialite", label: "Confidentialité" },
+    { to: "/cgv", label: "CGV" },
+  ] as const,
+  social: {
+    facebook: "https://www.facebook.com/profile.php?id=61580783536688",
+  },
 } as const;

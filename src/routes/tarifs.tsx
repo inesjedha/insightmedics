@@ -6,7 +6,6 @@ import {
   BarChart3,
   FileText,
   GraduationCap,
-  Sparkles,
   ShieldCheck,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -15,7 +14,8 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
-import { cn } from "@/lib/utils";
+import { OfferCard } from "@/components/site/OfferCard";
+import { OFFERS } from "@/lib/offers";
 
 export const Route = createFileRoute("/tarifs")({
   head: () => ({
@@ -37,79 +37,11 @@ export const Route = createFileRoute("/tarifs")({
   component: TarifsPage,
 });
 
-type Tier = {
-  number: string;
-  icon: ReactNode;
-  name: string;
-  price: string;
-  sub: string;
-  features: string[];
-  cta: { to: "/audit" | "/contact"; label: string };
-  highlight?: boolean;
-  badge?: string;
+const OFFER_ICONS: Record<string, ReactNode> = {
+  analyses: <BarChart3 className="h-5 w-5" />,
+  discussion: <FileText className="h-5 w-5" />,
+  these: <GraduationCap className="h-5 w-5" />,
 };
-
-const tiers: Tier[] = [
-  {
-    number: "01",
-    icon: <Microscope className="h-5 w-5" />,
-    name: "Audit IA",
-    price: "0 DT",
-    sub: "Gratuit · sans engagement",
-    features: [
-      "Contrôle qualité de la base",
-      "Analyse de la structure",
-      "Score /100",
-      "Rapport PDF par email",
-    ],
-    cta: { to: "/audit", label: "Lancer un audit" },
-  },
-  {
-    number: "02",
-    icon: <BarChart3 className="h-5 w-5" />,
-    name: "Analyse + résultats",
-    price: "500 DT",
-    sub: "Le plus demandé",
-    features: [
-      "Analyses statistiques complètes",
-      "Tableaux & figures publiables",
-      "Rédaction des résultats",
-      "Validation humaine",
-    ],
-    cta: { to: "/contact", label: "Demander un devis" },
-  },
-  {
-    number: "03",
-    icon: <FileText className="h-5 w-5" />,
-    name: "Discussion",
-    price: "500 DT",
-    sub: "Rédaction ciblée",
-    features: [
-      "Recherche bibliographique",
-      "Argumentation structurée",
-      "Forces & limites",
-      "Aller-retours inclus",
-    ],
-    cta: { to: "/contact", label: "Demander un devis" },
-  },
-  {
-    number: "04",
-    icon: <GraduationCap className="h-5 w-5" />,
-    name: "Thèse complète",
-    price: "1 200 DT",
-    sub: "Accompagnement intégral",
-    features: [
-      "Introduction",
-      "Matériel & Méthodes",
-      "Résultats",
-      "Discussion",
-      "Conclusion",
-    ],
-    cta: { to: "/contact", label: "Discuter du projet" },
-    highlight: true,
-    badge: "Recommandé",
-  },
-];
 
 function TarifsPage() {
   return (
@@ -127,68 +59,67 @@ function TarifsPage() {
 
       <Section className="pt-4 sm:pt-6">
         <div className="grid items-stretch gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {tiers.map((t) => (
-            <article
-              key={t.name}
-              className={cn(
-                "group relative flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md sm:p-6",
-                t.highlight && "border-l-4 border-l-brand",
-              )}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  {t.icon}
-                </div>
-                <span
-                  aria-hidden
-                  className="font-display text-2xl font-bold leading-none text-brand/25 sm:text-3xl"
-                >
-                  {t.number}
-                </span>
+          {/* Audit gratuit en première position — carte simple */}
+          <article className="group relative flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md sm:p-7">
+            <div className="flex items-start justify-between gap-3">
+              <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
+                <Microscope className="h-5 w-5" />
               </div>
+              <span
+                aria-hidden
+                className="font-display text-2xl font-bold leading-none text-brand/25 sm:text-3xl"
+              >
+                00
+              </span>
+            </div>
+            <h3 className="mt-4 font-display text-base font-semibold tracking-tight sm:mt-5 sm:text-lg">
+              Audit IA
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Gratuit · sans engagement
+            </p>
+            <div className="mt-5 font-display text-3xl font-extrabold tracking-tight text-brand">
+              0 DT
+            </div>
+            <ul className="mt-5 space-y-2.5 text-sm">
+              {[
+                "Contrôle qualité de la base",
+                "Analyse de la structure",
+                "Score /100",
+                "Rapport PDF par email",
+              ].map((f) => (
+                <li key={f} className="flex gap-2.5">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                  <span className="text-foreground/90">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto pt-6">
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/audit">
+                  Lancer un audit
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </article>
 
-              {t.badge && (
-                <span className="mt-4 inline-flex w-fit items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-foreground">
-                  <Sparkles className="h-3 w-3" />
-                  {t.badge}
-                </span>
-              )}
-
-              <h3 className="mt-4 font-display text-base font-semibold tracking-tight sm:text-lg">
-                {t.name}
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">{t.sub}</p>
-
-              <div className="mt-5 font-display text-3xl font-extrabold tracking-tight text-brand">
-                {t.price}
-              </div>
-
-              <ul className="mt-5 space-y-2.5 text-sm">
-                {t.features.map((f) => (
-                  <li key={f} className="flex gap-2.5">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-                    <span className="text-foreground/90">{f}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-auto pt-6">
-                <Button
-                  asChild
-                  variant={t.highlight ? "default" : "outline"}
-                  className={cn(
-                    "w-full",
-                    t.highlight &&
-                      "bg-brand text-brand-foreground hover:bg-brand/90",
-                  )}
-                >
-                  <Link to={t.cta.to}>
-                    {t.cta.label}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </article>
+          {/* Offres payantes — source canonique */}
+          {OFFERS.map((o) => (
+            <OfferCard
+              key={o.id}
+              number={o.number}
+              icon={OFFER_ICONS[o.id]}
+              title={o.shortTitle}
+              price={o.priceLabel}
+              delay={o.delay}
+              tagline={o.tagline}
+              features={o.features}
+              ctaLabel={o.ctaLabel}
+              ctaHref="/contact"
+              highlight={o.highlight}
+              badge={o.badge}
+            />
           ))}
         </div>
 

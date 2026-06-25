@@ -17,11 +17,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
 import { runAudit, createLead, updateLead } from "@/lib/api/client";
 import type { AuditEvent, AuditResult } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import {
+  HONEYPOT_FIELD,
+  honeypotStyle,
+  isHoneypotTripped,
+  isTooFast,
+} from "@/lib/anti-spam";
 
 export const Route = createFileRoute("/audit")({
   head: () => ({
@@ -348,12 +355,29 @@ const reportSchema = z.object({
 function AuditReportForm({ result }: { result: AuditResult }) {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
+  const mountedAtRef = useRef<number>(Date.now());
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+
+    // Anti-spam silencieux : honeypot + soumission trop rapide => faux succès.
+    if (
+      isHoneypotTripped(data[HONEYPOT_FIELD]) ||
+      isTooFast(mountedAtRef.current)
+    ) {
+      setSent(true);
+      return;
+    }
+
+    if (!consent) {
+      setErrors({ consent: "Acceptation requise pour continuer" });
+      return;
+    }
+
     const parsed = reportSchema.safeParse(data);
     if (!parsed.success) {
       const fe: Record<string, string> = {};
@@ -376,7 +400,6 @@ function AuditReportForm({ result }: { result: AuditResult }) {
         auditScore: result.score,
         priority: result.needsHumanReview ? "high" : "normal",
       });
-      // Si alerte humaine, on note tout de suite dans le CRM.
       if (result.needsHumanReview) {
         await updateLead(lead.id, {
           notes: `Audit ${result.score}/100 — relecture humaine requise (${result.issues.filter((i) => i.level === "critical").length} alerte(s) critique(s)).`,
@@ -418,6 +441,17 @@ function AuditReportForm({ result }: { result: AuditResult }) {
         </div>
       ) : (
         <form onSubmit={onSubmit} className="mt-6 grid gap-5 sm:grid-cols-2" noValidate>
+          {/* Honeypot anti-bot — invisible aux humains */}
+          <input
+            type="text"
+            name={HONEYPOT_FIELD}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            style={honeypotStyle}
+            defaultValue=""
+          />
+
           <div className="space-y-1.5 sm:col-span-2">
             <div className="flex items-baseline justify-between gap-3">
               <Label htmlFor="phone">
@@ -444,11 +478,44 @@ function AuditReportForm({ result }: { result: AuditResult }) {
             <Input id="name" name="name" maxLength={100} />
           </div>
 
-          <div className="sm:col-span-2 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-muted-foreground">
-              En soumettant, vous acceptez d'être recontacté(e) par téléphone ou email.
-            </p>
-            <Button type="submit" disabled={sending} className="bg-brand text-brand-foreground hover:bg-brand/90">
+          <div className="sm:col-span-2">
+            <label className="flex items-start gap-3 rounded-lg border border-border bg-surface/40 p-3.5 text-sm">
+              <Checkbox
+                id="audit-consent"
+                checked={consent}
+                onCheckedChange={(v) => {
+                  setConsent(v === true);
+                  if (v === true && errors.consent) {
+                    setErrors((prev) => ({ ...prev, consent: undefined }));
+                  }
+                }}
+                className="mt-0.5"
+              />
+              <span className="leading-relaxed text-foreground/90">
+                J'accepte que mon fichier et mes coordonnées soient traités pour
+                générer cet audit et d'être recontacté(e) par Insight Medics.{" "}
+                <a
+                  href="/confidentialite"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand underline-offset-2 hover:underline"
+                >
+                  Politique de confidentialité
+                </a>
+                .
+              </span>
+            </label>
+            {errors.consent && (
+              <p className="mt-1.5 text-xs text-destructive">{errors.consent}</p>
+            )}
+          </div>
+
+          <div className="sm:col-span-2 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <Button
+              type="submit"
+              disabled={sending}
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
+            >
               {sending ? "Envoi…" : "Recevoir mon rapport"}
             </Button>
           </div>

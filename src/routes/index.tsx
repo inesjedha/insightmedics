@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
 import { siteConfig } from "@/lib/site-config";
+import { OFFERS } from "@/lib/offers";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -412,54 +413,40 @@ function AiHuman() {
 }
 
 function ServicesTeaser() {
-  const offers: Array<{
-    icon: React.ReactNode;
-    title: string;
-    price: string;
-    delay: string;
-    features: string[];
-    highlighted?: boolean;
-    badge?: string;
-  }> = [
-    {
-      icon: <FileBarChart2 className="h-5 w-5" />,
-      title: "Analyses & résultats",
-      price: "500 DT",
-      delay: "Livré en 1 semaine",
-      features: [
-        "Plan d'analyse validé par un biostatisticien",
-        "Tests adaptés à votre question de recherche",
-        "Tableaux et figures prêts pour la thèse",
-        "Rédaction de la section Résultats",
-      ],
-    },
-    {
-      icon: <PenLine className="h-5 w-5" />,
-      title: "Discussion rédigée",
-      price: "500 DT",
-      delay: "Livré en 1 semaine",
-      features: [
-        "Revue de la littérature ciblée",
-        "Mise en perspective de vos résultats",
-        "Limites et perspectives argumentées",
-        "Références au format de votre faculté",
-      ],
-    },
-    {
-      icon: <BookOpenCheck className="h-5 w-5" />,
-      title: "Thèse complète",
-      price: "1 200 DT",
-      delay: "Livré en 2 semaines",
-      features: [
-        "Tout l'audit + analyses + résultats",
-        "Introduction, M&M, Discussion, Conclusion",
-        "Tableaux, figures et mise en page",
-        "Un interlocuteur unique jusqu'à la soutenance",
-      ],
-      highlighted: true,
-      badge: "Le plus choisi",
-    },
-  ];
+  const ICONS: Record<string, React.ReactNode> = {
+    analyses: <FileBarChart2 className="h-5 w-5" />,
+    discussion: <PenLine className="h-5 w-5" />,
+    these: <BookOpenCheck className="h-5 w-5" />,
+  };
+  const features: Record<string, string[]> = {
+    analyses: [
+      "Plan d'analyse validé par un biostatisticien",
+      "Tests adaptés à votre question de recherche",
+      "Tableaux et figures prêts pour la thèse",
+      "Rédaction de la section Résultats",
+    ],
+    discussion: [
+      "Revue de la littérature ciblée",
+      "Mise en perspective de vos résultats",
+      "Limites et perspectives argumentées",
+      "Références au format de votre faculté",
+    ],
+    these: [
+      "Tout l'audit + analyses + résultats",
+      "Introduction, M&M, Discussion, Conclusion",
+      "Tableaux, figures et mise en page",
+      "Un interlocuteur unique jusqu'à la soutenance",
+    ],
+  };
+  const offers = OFFERS.map((o) => ({
+    icon: ICONS[o.id],
+    title: o.shortTitle,
+    price: o.priceLabel,
+    delay: o.delay,
+    features: features[o.id],
+    highlighted: o.highlight,
+    badge: o.badge,
+  }));
 
   return (
     <Section className="bg-surface/60 border-y border-border/60">
