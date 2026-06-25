@@ -616,7 +616,7 @@ function Testimonials() {
     },
     {
       quote:
-        "Très bonne réactivité et un vrai dialogue scientifique, pas juste un prestataire. Recommandé pour un article original.",
+        "Très bonne réactivité et un vrai dialogue scientifique, pas juste un prestataire. Recommandé pour une thèse originale et pertinente.",
       name: "Khalil",
       role: "Médecin hospitalier",
       city: "Sfax",
@@ -631,39 +631,37 @@ function Testimonials() {
   ];
 
   return (
-    <Section>
+    <Section className="py-10 sm:py-14">
       <SectionHeader
         eyebrow="Témoignages"
         title="Ils nous ont confié leur thèse."
         description="Quelques retours d'étudiants et de médecins accompagnés en Tunisie."
       />
-      <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
         {items.map((t) => (
           <figure
             key={t.name + t.city}
-            className="flex h-full flex-col rounded-2xl border border-border bg-card p-6 shadow-sm"
+            className="flex h-full flex-col rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5"
           >
-            <div className="flex items-center gap-1 text-brand">
+            <div className="flex items-center gap-0.5 text-brand">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-current" />
+                <Star key={i} className="h-3 w-3 fill-current" />
               ))}
             </div>
-            <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground">
+            <blockquote className="mt-2.5 flex-1 text-[13px] leading-snug text-foreground">
               « {t.quote} »
             </blockquote>
-            <figcaption className="mt-5 border-t border-border/60 pt-4">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand/10 font-display text-sm font-semibold text-brand">
-                  {t.name.charAt(0)}
-                </span>
-                <div>
-                  <p className="font-display text-sm font-semibold text-foreground">
-                    {t.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.role} · {t.city}
-                  </p>
-                </div>
+            <figcaption className="mt-3 flex items-center gap-2.5">
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/10 font-display text-xs font-semibold text-brand">
+                {t.name.charAt(0)}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-display text-xs font-semibold text-foreground">
+                  {t.name}
+                </p>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {t.role} · {t.city}
+                </p>
               </div>
             </figcaption>
           </figure>

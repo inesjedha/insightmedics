@@ -1,59 +1,19 @@
-## Objectif
+## Section Témoignages — version compacte
 
-Élever visuellement la page `/methode` au niveau « publication scientifique premium » sans changer le contenu ni la palette. Inspiration retenue : direction V2 (clinique premium) — timeline verticale lisible, badges de rôle nets, hiérarchie typographique forte.
+Refondre la section témoignages de la landing (`src/routes/index.tsx`, fonction `Testimonials`) pour qu'elle prenne nettement moins de place verticalement, tout en gardant les 5 avis.
 
-## Changements par section (fichier unique : `src/routes/methode.tsx`)
+### Changements
 
-### 1. Hero
-- Hero centré avec eyebrow en pilule (fond `bg-brand/10`, texte `text-brand`, tracking large).
-- H1 plus grand (`text-4xl sm:text-5xl lg:text-6xl`), `text-balance`, dernier mot accentué en `text-brand`.
-- Description en `max-w-2xl mx-auto`, `text-lg`.
-- Léger filet décoratif sous le hero (séparateur fin centré, 64 px).
+1. **Padding de section réduit** : passer la `Section` à un padding vertical plus court (`py-10 sm:py-14` via `className` override), au lieu du `py-16 sm:py-24` par défaut.
+2. **En-tête resserré** : titre plus court ("Ils nous ont confié leur thèse.") avec description condensée sur une ligne, marge supérieure de la grille réduite (`mt-6` au lieu de `mt-10`).
+3. **Cartes compactes** :
+   - Padding `p-4 sm:p-5` (au lieu de `p-6`).
+   - Citation en `text-[13px] leading-snug`, max 2–3 lignes visibles.
+   - Suppression du bloc étoiles (gain de hauteur) ou réduction à une simple ligne `text-[11px]`.
+   - Footer fusionné : avatar + nom/rôle/ville sur une seule ligne sans séparateur ni `pt-4`.
+4. **Grille plus dense** : `gap-3 sm:gap-4`, `md:grid-cols-3 lg:grid-cols-5` pour étaler les 5 témoignages sur une seule ligne en desktop large (et 2 colonnes en tablette).
+5. **Témoignage de Khalil** : remplacer "Recommandé pour un article original." par "Recommandé pour une thèse originale et pertinente."
 
-### 2. Trois piliers
-- Numérotation visible **01 / 02 / 03** en `font-display` léger (`text-brand/30`, gros).
-- Icône dans tuile arrondie + filet supérieur teal au survol (`hover:border-t-brand`).
-- Cartes plus aérées (`p-7`), titre plus serré, texte secondaire en `text-muted-foreground/90`.
-- Hauteur uniforme via `h-full` + grille `items-stretch`.
+### Résultat attendu
 
-### 3. Frise — refonte complète en timeline verticale éditoriale
-- Suppression du double rendu desktop/mobile : **une seule timeline verticale** centrée (`max-w-2xl mx-auto`), beaucoup plus lisible que la frise horizontale écrasée.
-- Rail vertical fin (`w-px bg-border`) à gauche, avec un dégradé subtil top→bottom.
-- Chaque étape : pastille numérotée (`w-10 h-10`, ring-4 white, bg selon rôle) + bloc carte à droite.
-- Code couleur des pastilles par rôle :
-  - **client (Vous)** : bordure `border-primary`, texte `text-primary`, fond `bg-card`.
-  - **team (Insight Medics)** : fond `bg-primary` plein, texte `text-primary-foreground`.
-  - **exchange (Échange avec vous)** : bordure double-tirets `ring-2 ring-brand/30`, fond `bg-brand/10`, texte `text-brand`.
-- Badges de rôle harmonisés : pilules `uppercase tracking-widest text-[10px]` cohérentes avec les pastilles.
-- **Étape 5 « Revue biostat + médecin »** mise en avant :
-  - Carte légèrement plus grande (`p-6` vs `p-5`),
-  - Liseré gauche `border-l-4 border-brand`,
-  - Petit ruban « Validation humaine » en haut à droite (badge `bg-brand text-brand-foreground`),
-  - Deux mini-avatars stylisés (ronds initiales BS / MD) sous le texte pour matérialiser les deux relecteurs.
-- Encart « 2 allers-retours inclus » conservé mais restylé en bandeau pleine largeur sous la timeline, fond `bg-surface`, icône `MessageSquare`, copie inchangée.
-
-### 4. CTA final
-- Conservé en `bg-primary` mais enrichi :
-  - Halo décoratif radial teal en haut-droite (`absolute -top-20 -right-20 w-64 h-64 bg-brand/20 rounded-full blur-3xl`),
-  - Petit filet teal au-dessus du titre,
-  - Bouton primaire passe en `bg-brand` (au lieu de surimprimer brand-on-primary) pour un contraste WCAG plus net,
-  - Bouton secondaire en outline subtil.
-
-## Détails techniques
-
-- Aucune dépendance nouvelle. Icônes Lucide ajoutées : `MessageSquare`, `Sparkles` (étape mise en avant).
-- Tokens utilisés : `primary`, `primary-foreground`, `brand`, `brand-foreground`, `border`, `card`, `surface`, `muted-foreground`. Aucune couleur en dur.
-- Conservation stricte de toute la copy (eyebrows, titres, descriptions, 6 étapes, CTA).
-- Responsive : timeline verticale fonctionne nativement mobile + desktop, suppression du dédoublement `lg:grid-cols-6`. Padding latéraux gérés via `Section`.
-- Accessibilité : pastilles avec `aria-hidden` pour la décoration numérique, rôles annoncés via `<span class="sr-only">Rôle : …</span>`.
-
-## Hors périmètre
-
-- Aucun changement de copy, de palette, de polices, des composants `Section`/`SectionHeader`/`Button`.
-- Aucune modification des autres pages.
-- Pas d'animations Motion (effets statiques CSS seulement : `transition-colors`, `hover:`).
-
-## Vérification
-
-- `tsgo --noEmit`.
-- Capture Playwright desktop 1280×1800 + mobile 390×900 pour comparer avant/après.
+Bandeau témoignages compact (≈ 1 écran de hauteur réduite), 5 cartes alignées en desktop large, lisible et professionnel sans dominer la page.
