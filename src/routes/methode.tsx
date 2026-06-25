@@ -2,10 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   ShieldCheck,
-  FileCheck2,
   Lock,
   Trash2,
-  AlertTriangle,
   UserCheck,
   Target,
   Calculator,
@@ -83,42 +81,8 @@ function MethodePage() {
         </p>
       </Section>
 
-      <Section className="border-y border-border/60 bg-surface/60">
-        <SectionHeader
-          eyebrow="Garde-fou structurel"
-          title="Les chiffres viennent du calcul, jamais de la rédaction."
-          description="Nos modèles de rapport vont chercher les nombres directement dans les sorties de code. La partie rédigée n'a pas accès aux tableaux ni aux scores : les valeurs ne sont jamais saisies à la main."
-        />
-        <div className="mt-10 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-            <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
-              <FileCheck2 className="h-5 w-5" />
-            </div>
-            <h3 className="mt-4 font-display text-lg font-semibold">
-              Score /100 calculé, pas estimé
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Le score qualité suit une formule fixe, à partir de critères
-              objectifs : complétude, cohérence, structure, taille
-              d'échantillon. Le barème est affiché dans votre rapport.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-            <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <h3 className="mt-4 font-display text-lg font-semibold">
-              Pas de résultats définitifs en mode audit
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              L'audit gratuit s'arrête au cadrage et à la qualité de la base.
-              Les analyses qui comptent pour la thèse — comparaisons, modèles
-              multivariés — passent toujours par un expert. C'est une exigence
-              de fiabilité, pas un choix commercial.
-            </p>
-          </div>
-        </div>
-      </Section>
+
+
 
       <Section>
         <SectionHeader
