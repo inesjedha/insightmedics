@@ -157,6 +157,7 @@ function ContactPage() {
   const [consentError, setConsentError] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const mountedAtRef = useRef<number>(0);
 
