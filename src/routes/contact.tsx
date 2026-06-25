@@ -212,6 +212,7 @@ function ContactPage() {
       });
       setSubmitted(true);
       setValues(INITIAL_VALUES);
+      setSelectedOffers([]);
     } finally {
       setSubmitting(false);
     }
