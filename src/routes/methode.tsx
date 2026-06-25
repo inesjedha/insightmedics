@@ -63,8 +63,8 @@ function MethodePage() {
       </Section>
 
       {/* Piliers */}
-      <Section className="pt-6">
-        <div className="grid items-stretch gap-6 md:grid-cols-3">
+      <Section className="pt-4 sm:pt-6">
+        <div className="grid items-stretch gap-4 sm:gap-6 md:grid-cols-3">
           <Pillar
             number="01"
             icon={<Target className="h-5 w-5" />}
