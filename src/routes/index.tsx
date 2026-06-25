@@ -418,35 +418,16 @@ function ServicesTeaser() {
     discussion: <PenLine className="h-5 w-5" />,
     these: <BookOpenCheck className="h-5 w-5" />,
   };
-  const features: Record<string, string[]> = {
-    analyses: [
-      "Plan d'analyse validé par un biostatisticien",
-      "Tests adaptés à votre question de recherche",
-      "Tableaux et figures prêts pour la thèse",
-      "Rédaction de la section Résultats",
-    ],
-    discussion: [
-      "Revue de la littérature ciblée",
-      "Mise en perspective de vos résultats",
-      "Limites et perspectives argumentées",
-      "Références au format de votre faculté",
-    ],
-    these: [
-      "Tout l'audit + analyses + résultats",
-      "Introduction, M&M, Discussion, Conclusion",
-      "Tableaux, figures et mise en page",
-      "Un interlocuteur unique jusqu'à la soutenance",
-    ],
-  };
   const offers = OFFERS.map((o) => ({
     icon: ICONS[o.id],
     title: o.shortTitle,
     price: o.priceLabel,
     delay: o.delay,
-    features: features[o.id],
+    features: o.features,
     highlighted: o.highlight,
     badge: o.badge,
   }));
+
 
   return (
     <Section className="bg-surface/60 border-y border-border/60">
