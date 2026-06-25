@@ -699,17 +699,31 @@ function InfoCard({
   icon,
   title,
   text,
+  highlight,
 }: {
   icon: ReactNode;
   title: string;
   text: ReactNode;
+  highlight?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-border bg-surface/60 p-4 sm:gap-4 sm:p-5">
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand sm:h-10 sm:w-10">
+    <div
+      className={cn(
+        "flex h-full items-start gap-3 rounded-2xl border p-4 sm:gap-4 sm:p-5",
+        highlight
+          ? "border-brand/30 bg-brand/5"
+          : "border-border bg-surface/60",
+      )}
+    >
+      <span
+        className={cn(
+          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10",
+          highlight ? "bg-brand text-brand-foreground" : "bg-brand/10 text-brand",
+        )}
+      >
         {icon}
       </span>
-      <div>
+      <div className="min-w-0">
         <h3 className="font-display text-sm font-semibold tracking-tight sm:text-base">
           {title}
         </h3>
@@ -720,6 +734,7 @@ function InfoCard({
     </div>
   );
 }
+
 
 function Field({
   id,
