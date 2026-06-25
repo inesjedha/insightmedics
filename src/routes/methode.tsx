@@ -279,7 +279,7 @@ function PipelineTimeline() {
         className="pointer-events-none absolute left-5 top-2 bottom-2 w-px bg-gradient-to-b from-border via-border to-transparent sm:left-6"
       />
 
-      <div className="space-y-6">
+      <div className="space-y-5 sm:space-y-6">
         {steps.map((s) => (
           <li key={s.n} className="relative pl-14 sm:pl-16">
             {/* Pastille */}
@@ -295,20 +295,12 @@ function PipelineTimeline() {
 
             <div
               className={cn(
-                "relative rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6",
-                s.highlight &&
-                  "border-l-4 border-l-brand bg-card pl-5 sm:pl-6",
+                "relative rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6",
+                s.highlight && "border-l-4 border-l-brand",
               )}
             >
-              {s.highlight && (
-                <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-foreground">
-                  <Sparkles className="h-3 w-3" />
-                  Validation humaine
-                </span>
-              )}
-
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
                   {s.icon}
                 </span>
                 <span
@@ -320,6 +312,12 @@ function PipelineTimeline() {
                   <span className="sr-only">Rôle : </span>
                   {s.roleLabel}
                 </span>
+                {s.highlight && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-foreground">
+                    <Sparkles className="h-3 w-3" />
+                    Validation humaine
+                  </span>
+                )}
               </div>
 
               <h3 className="mt-3 font-display text-base font-semibold tracking-tight sm:text-lg">
@@ -339,7 +337,7 @@ function PipelineTimeline() {
                       MD
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
                     Biostatisticien + médecin relecteur, sur chaque dossier.
                   </p>
                 </div>
