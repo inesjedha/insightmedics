@@ -65,7 +65,7 @@ function MethodePage() {
           />
           <Pillar
             icon={<UserCheck className="h-5 w-5" />}
-            title="Validés et signés par un biostatisticien"
+            title="Validés par un biostatisticien"
             text="Pour la prestation complète, un biostatisticien revoit, ajuste et valide chaque analyse définitive avant livraison."
           />
         </div>
