@@ -170,19 +170,19 @@ function Pillar({
   text: string;
 }) {
   return (
-    <div className="group relative flex h-full flex-col rounded-2xl border border-border bg-card p-7 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md">
-      <div className="flex items-start justify-between">
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+    <div className="group relative flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md sm:p-7">
+      <div className="flex items-start justify-between gap-3">
+        <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
           {icon}
         </div>
         <span
           aria-hidden
-          className="font-display text-3xl font-bold leading-none text-brand/25"
+          className="font-display text-2xl font-bold leading-none text-brand/25 sm:text-3xl"
         >
           {number}
         </span>
       </div>
-      <h3 className="mt-5 font-display text-lg font-semibold tracking-tight">
+      <h3 className="mt-4 font-display text-base font-semibold tracking-tight sm:mt-5 sm:text-lg">
         {title}
       </h3>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
