@@ -126,24 +126,24 @@ function MethodePage() {
       <Section>
         <SectionHeader
           eyebrow="Données & confidentialité"
-          title="Vos données patients, traitées au plus haut standard."
-          description="Nous travaillons depuis la Tunisie. Plutôt que de nous limiter au minimum légal local, nous appliquons volontairement les exigences les plus strictes en matière de données de santé — parce que vos fichiers contiennent du sensible."
+          title="Vos données patients, protégées par des mesures strictes."
+          description="Nous travaillons depuis la Tunisie. Plutôt que de nous limiter au minimum légal local, nous appliquons volontairement des mesures strictes, adaptées à la sensibilité des données de santé que vous nous confiez."
         />
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           <DataCard
             icon={<ShieldCheck className="h-5 w-5" />}
             title="Anonymisation à l'import"
-            text="Les colonnes identifiantes (noms, identifiants directs, dates de naissance) sont repérées et pseudonymisées avant toute analyse."
+            text="Nous identifions et pseudonymisons les colonnes identifiantes (noms, identifiants directs, dates de naissance) avant l'analyse."
           />
           <DataCard
             icon={<Lock className="h-5 w-5" />}
-            title="Chiffrement de bout en bout"
-            text="Vos fichiers sont chiffrés avant l'envoi, puis stockés chiffrés. Aucune donnée patient n'apparaît dans nos journaux techniques."
+            title="Transmission et stockage sécurisés"
+            text="Vos fichiers sont transmis via une connexion sécurisée et stockés chiffrés. Nous évitons toute donnée patient identifiante dans nos journaux techniques."
           />
           <DataCard
             icon={<Trash2 className="h-5 w-5" />}
-            title="Suppression après livraison"
-            text="Vos fichiers et la table de correspondance sont supprimés automatiquement une fois la prestation terminée."
+            title="Suppression après la prestation"
+            text="Vos fichiers et la table de correspondance sont supprimés à l'issue de la prestation, selon une politique définie."
           />
         </div>
 
