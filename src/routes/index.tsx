@@ -447,7 +447,7 @@ function ServicesTeaser() {
     },
     {
       icon: <BookOpenCheck className="h-5 w-5" />,
-      title: "IMRAD complet",
+      title: "Thèse complète",
       price: "1 200 DT",
       delay: "Livré en 2 semaines",
       features: [

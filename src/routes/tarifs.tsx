@@ -24,7 +24,7 @@ export const Route = createFileRoute("/tarifs")({
       {
         name: "description",
         content:
-          "Audit IA gratuit. Analyse + résultats à 500 DT. Discussion à 500 DT. Accompagnement IMRAD complet à 1 200 DT.",
+          "Audit IA gratuit. Analyse + résultats à 500 DT. Discussion à 500 DT. Accompagnement thèse complète à 1 200 DT.",
       },
       { property: "og:title", content: "Tarifs — Insight Medics" },
       {
@@ -95,7 +95,7 @@ const tiers: Tier[] = [
   {
     number: "04",
     icon: <GraduationCap className="h-5 w-5" />,
-    name: "IMRAD complet",
+    name: "Thèse complète",
     price: "1 200 DT",
     sub: "Accompagnement intégral",
     features: [

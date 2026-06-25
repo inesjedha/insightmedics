@@ -23,7 +23,7 @@ export const Route = createFileRoute("/services")({
       {
         name: "description",
         content:
-          "Audit gratuit, analyse statistique + rédaction des résultats, rédaction de la discussion, accompagnement IMRAD complet. Tarifs en dinars tunisiens.",
+          "Audit gratuit, analyse statistique + rédaction des résultats, rédaction de la discussion, accompagnement thèse complète. Tarifs en dinars tunisiens.",
       },
       { property: "og:title", content: "Services — Insight Medics" },
       {
@@ -83,7 +83,7 @@ const paidOffers: PaidOffer[] = [
   {
     number: "03",
     icon: <GraduationCap className="h-5 w-5" />,
-    title: "Accompagnement IMRAD complet",
+    title: "Accompagnement thèse complète",
     price: "1 200 DT",
     description:
       "De la base brute à la conclusion : introduction, matériel & méthodes, résultats, discussion, conclusion.",

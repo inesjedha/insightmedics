@@ -113,7 +113,7 @@ type ServiceOffer = {
 const SERVICE_OFFERS: ServiceOffer[] = [
   { id: "analyses", name: "Analyses + résultats", price: "500", tier: "Essentiel" },
   { id: "discussion", name: "Discussion", price: "500", tier: "Expertise" },
-  { id: "imrad", name: "IMRAD complet", price: "1 200", tier: "Le plus choisi", featured: true },
+  { id: "imrad", name: "Thèse complète", price: "1 200", tier: "Le plus choisi", featured: true },
 ];
 
 const URGENCIES = [
