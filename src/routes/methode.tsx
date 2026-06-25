@@ -43,22 +43,22 @@ function MethodePage() {
   return (
     <SiteLayout>
       {/* Hero */}
-      <Section className="pb-6">
+      <Section className="pb-4 pt-12 sm:pb-6 sm:pt-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
+          <span className="inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-brand sm:text-[11px] sm:tracking-[0.22em]">
             Notre méthode
           </span>
-          <h1 className="mt-5 font-display text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+          <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-balance sm:mt-5 sm:text-5xl lg:text-6xl">
             Des résultats que vous comprenez et pouvez{" "}
             <span className="text-brand">justifier</span>.
           </h1>
-          <p className="mt-5 text-base text-muted-foreground sm:text-lg text-balance">
+          <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground text-balance sm:mt-5 sm:text-lg">
             Votre thèse engage votre nom et celui de votre directeur. Notre
             méthode vise une chose : que chaque chiffre de votre travail soit
             calculé directement sur vos données, traçable et reproductible — du
             premier calcul à la soutenance.
           </p>
-          <div className="mx-auto mt-8 h-px w-16 bg-brand/40" aria-hidden />
+          <div className="mx-auto mt-6 h-px w-16 bg-brand/40 sm:mt-8" aria-hidden />
         </div>
       </Section>
 
