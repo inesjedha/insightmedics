@@ -188,7 +188,7 @@ function ContactPage() {
         source: "contact",
         name: parsed.data.name,
         email: parsed.data.email,
-        phone: `+216 ${parsed.data.phone}`,
+        phone: `${dialCode} ${parsed.data.phone}`,
         subject: parsed.data.subject,
         problem: parsed.data.problem,
         objective: parsed.data.objective,
