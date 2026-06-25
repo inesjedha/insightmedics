@@ -73,17 +73,14 @@ function MethodePage() {
 
       <Section>
         <SectionHeader
-          eyebrow="Le pipeline, étape par étape"
-          title="De votre fichier brut au rapport signé."
+          eyebrow="Le déroulé, étape par étape"
+          title="De votre fichier brut au rapport final."
+          description="Six étapes, deux points d'échange avec vous, une validation humaine systématique avant livraison."
         />
-        <ol className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <PipelineStep n={1} icon={<Upload className="h-4 w-4" />} label="Upload" />
-          <PipelineStep n={2} icon={<EyeOff className="h-4 w-4" />} label="Anonymisation" />
-          <PipelineStep n={3} icon={<ClipboardList className="h-4 w-4" />} label="Cadrage" />
-          <PipelineStep n={4} icon={<PlayCircle className="h-4 w-4" />} label="Calcul" />
-          <PipelineStep n={5} icon={<UserCheck className="h-4 w-4" />} label="Validation" />
-          <PipelineStep n={6} icon={<PackageCheck className="h-4 w-4" />} label="Livraison" />
-        </ol>
+        <PipelineTimeline />
+        <p className="mt-6 rounded-lg border border-dashed border-border bg-surface/40 p-4 text-sm text-muted-foreground">
+          Deux allers-retours avec vous sont inclus dans la prestation complète : un pour cadrer le plan d'analyse, un pour ajuster après restitution.
+        </p>
       </Section>
 
       <Section className="border-y border-border/60 bg-surface/60">
