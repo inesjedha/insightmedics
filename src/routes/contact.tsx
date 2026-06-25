@@ -516,11 +516,10 @@ function ContactPage() {
                     </Field>
                   </FormSection>
 
-                  <div className="space-y-4 border-t border-border pt-6">
-
+                  <div className="-mx-5 space-y-5 rounded-b-3xl border-t border-border bg-surface/60 px-5 py-6 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
                     <label
                       className={cn(
-                        "flex items-start gap-3 rounded-xl border bg-surface/40 p-3.5 text-sm transition-colors",
+                        "flex items-start gap-3 rounded-xl border bg-background/60 p-3.5 text-sm transition-colors",
                         consentError
                           ? "border-destructive/40 bg-destructive/5"
                           : "border-border",
@@ -553,11 +552,14 @@ function ContactPage() {
                       </span>
                     </label>
 
-                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs text-muted-foreground sm:max-w-[60%]">
+                        Réponse sous 48h ouvrées · Premier échange gratuit, sans engagement.
+                      </p>
                       <Button
                         type="submit"
                         disabled={submitting}
-                        className="group w-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto"
+                        className="group h-12 w-full bg-brand px-6 text-base text-brand-foreground hover:bg-brand/90 sm:w-auto"
                       >
                         {submitting ? (
                           <>
@@ -579,39 +581,41 @@ function ContactPage() {
           </div>
 
 
-          <aside className="space-y-4">
-            <div className="flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-2 text-xs font-medium text-brand">
-              <Sparkles className="h-3.5 w-3.5" />
-              Réponse sous 48h ouvrées
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="sm:col-span-2 lg:col-span-1">
+                <InfoCard
+                  highlight
+                  icon={<Phone className="h-4 w-4 sm:h-5 sm:w-5" />}
+                  title="Téléphone prioritaire"
+                  text="Nous rappelons par téléphone en priorité. Indiquez un numéro joignable dans le formulaire."
+                />
+              </div>
+              <InfoCard
+                icon={<Mail className="h-4 w-4 sm:h-5 sm:w-5" />}
+                title="Email direct"
+                text={
+                  <a
+                    href={`mailto:${siteConfig.email}`}
+                    className="break-all text-foreground hover:text-brand"
+                  >
+                    {siteConfig.email}
+                  </a>
+                }
+              />
+              <InfoCard
+                icon={<Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
+                title="Délais de réponse"
+                text="Sous 48h ouvrées. Soutenance imminente ? Signalez-le, nous traitons en priorité."
+              />
+              <InfoCard
+                icon={<User className="h-4 w-4 sm:h-5 sm:w-5" />}
+                title="Basé à Sousse, Tunisie"
+                text="Équipe biostatisticien + médecin pour thèses et publications."
+              />
             </div>
-            <InfoCard
-              icon={<Phone className="h-4 w-4 sm:h-5 sm:w-5" />}
-              title="Téléphone prioritaire"
-              text="Nous rappelons par téléphone en priorité. Indiquez un numéro joignable dans le formulaire."
-            />
-            <InfoCard
-              icon={<Mail className="h-4 w-4 sm:h-5 sm:w-5" />}
-              title="Email direct"
-              text={
-                <a
-                  href={`mailto:${siteConfig.email}`}
-                  className="text-foreground hover:text-brand"
-                >
-                  {siteConfig.email}
-                </a>
-              }
-            />
-            <InfoCard
-              icon={<Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
-              title="Délais de réponse"
-              text="Réponse sous 48h ouvrées. Pour les soutenances imminentes, signalez-le dès le premier message — nous traitons en priorité."
-            />
-            <InfoCard
-              icon={<User className="h-4 w-4 sm:h-5 sm:w-5" />}
-              title="Basé à Sousse, Tunisie"
-              text="Équipe biostatisticien + médecin disponible pour vos thèses et publications."
-            />
           </aside>
+
         </div>
       </Section>
 
