@@ -27,13 +27,13 @@ export const Route = createFileRoute("/methode")({
       {
         name: "description",
         content:
-          "Comment Insight Medics garantit des résultats de thèse exacts et traçables : analyses calculées directement sur vos données, validées par un biostatisticien, données patients protégées au plus haut standard.",
+          "La méthode Insight Medics pour des résultats de thèse traçables et reproductibles : analyses calculées directement sur vos données, validées par un biostatisticien, données patients protégées par des mesures strictes.",
       },
       { property: "og:title", content: "Méthode — Insight Medics" },
       {
         property: "og:description",
         content:
-          "Des résultats que vous pouvez défendre, ligne par ligne. Calculés, validés et signés par un biostatisticien.",
+          "Des résultats que vous comprenez et pouvez justifier. Calculés sur vos données, validés par un biostatisticien.",
       },
     ],
   }),
