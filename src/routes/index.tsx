@@ -99,12 +99,14 @@ function Hero() {
             kicker="Thèse de médecine"
             headline="Accompagnement complet"
             value="livrée en 2 semaines"
+            note="selon votre base"
           />
           <PromiseCard
             icon={<FileBarChart2 className="h-5 w-5" />}
             kicker="Analyses statistiques"
             headline="Données analysées & résultats rédigés"
             value="en 1 semaine"
+            note="selon votre base"
           />
         </div>
 
