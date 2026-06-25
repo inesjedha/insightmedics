@@ -205,7 +205,7 @@ function MethodePage() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
-                <Link to={siteConfig.cta.contact.to}>Consulter le barème du score</Link>
+                <Link to={siteConfig.cta.order.to}>Consulter le barème du score</Link>
               </Button>
             </div>
           </div>
