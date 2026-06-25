@@ -61,10 +61,8 @@ function MentionsPage() {
 
           <LegalBlock title="Hébergement">
             <p>
-              Le site est hébergé par Lovable (plateforme d'édition et
-              d'hébergement web). Les coordonnées complètes de l'hébergeur
-              seront précisées lors de la mise en production sur un domaine
-              définitif.
+              Les coordonnées complètes de l'hébergeur seront précisées lors de
+              la mise en production sur un domaine définitif.
             </p>
           </LegalBlock>
 
