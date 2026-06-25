@@ -43,28 +43,28 @@ function MethodePage() {
   return (
     <SiteLayout>
       {/* Hero */}
-      <Section className="pb-6">
+      <Section className="pb-4 pt-12 sm:pb-6 sm:pt-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
+          <span className="inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-brand sm:text-[11px] sm:tracking-[0.22em]">
             Notre méthode
           </span>
-          <h1 className="mt-5 font-display text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+          <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-balance sm:mt-5 sm:text-5xl lg:text-6xl">
             Des résultats que vous comprenez et pouvez{" "}
             <span className="text-brand">justifier</span>.
           </h1>
-          <p className="mt-5 text-base text-muted-foreground sm:text-lg text-balance">
+          <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground text-balance sm:mt-5 sm:text-lg">
             Votre thèse engage votre nom et celui de votre directeur. Notre
             méthode vise une chose : que chaque chiffre de votre travail soit
             calculé directement sur vos données, traçable et reproductible — du
             premier calcul à la soutenance.
           </p>
-          <div className="mx-auto mt-8 h-px w-16 bg-brand/40" aria-hidden />
+          <div className="mx-auto mt-6 h-px w-16 bg-brand/40 sm:mt-8" aria-hidden />
         </div>
       </Section>
 
       {/* Piliers */}
-      <Section className="pt-6">
-        <div className="grid items-stretch gap-6 md:grid-cols-3">
+      <Section className="pt-4 sm:pt-6">
+        <div className="grid items-stretch gap-4 sm:gap-6 md:grid-cols-3">
           <Pillar
             number="01"
             icon={<Target className="h-5 w-5" />}
@@ -95,11 +95,11 @@ function MethodePage() {
           align="center"
         />
         <PipelineTimeline />
-        <div className="mx-auto mt-8 flex max-w-3xl items-start gap-4 rounded-2xl border border-border bg-surface/60 p-5">
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-            <MessageSquare className="h-5 w-5" />
+        <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-border bg-surface/60 p-4 sm:gap-4 sm:p-5">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand sm:h-10 sm:w-10">
+            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
           </span>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Deux allers-retours avec vous sont inclus dans la prestation
             complète : un pour cadrer le plan d'analyse, un pour ajuster après
             restitution.
@@ -109,7 +109,7 @@ function MethodePage() {
 
       {/* CTA */}
       <Section>
-        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-primary p-8 text-primary-foreground sm:p-12">
+        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-primary p-6 text-primary-foreground sm:p-8 lg:p-12">
           <div
             aria-hidden
             className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand/25 blur-3xl"
@@ -118,13 +118,13 @@ function MethodePage() {
             aria-hidden
             className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-brand/10 blur-3xl"
           />
-          <div className="relative grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+          <div className="relative grid gap-6 sm:gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
             <div>
               <div className="h-px w-12 bg-brand" aria-hidden />
-              <h2 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl text-balance">
+              <h2 className="mt-4 font-display text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:text-4xl">
                 Voyez la méthode appliquée à votre base.
               </h2>
-              <p className="mt-3 text-base text-primary-foreground/80">
+              <p className="mt-3 text-[15px] leading-relaxed text-primary-foreground/80 sm:text-base">
                 L'audit est gratuit. Vous recevez un rapport clair sur l'état
                 de votre base — et un aperçu concret de notre méthode.
               </p>
@@ -170,19 +170,19 @@ function Pillar({
   text: string;
 }) {
   return (
-    <div className="group relative flex h-full flex-col rounded-2xl border border-border bg-card p-7 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md">
-      <div className="flex items-start justify-between">
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+    <div className="group relative flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md sm:p-7">
+      <div className="flex items-start justify-between gap-3">
+        <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
           {icon}
         </div>
         <span
           aria-hidden
-          className="font-display text-3xl font-bold leading-none text-brand/25"
+          className="font-display text-2xl font-bold leading-none text-brand/25 sm:text-3xl"
         >
           {number}
         </span>
       </div>
-      <h3 className="mt-5 font-display text-lg font-semibold tracking-tight">
+      <h3 className="mt-4 font-display text-base font-semibold tracking-tight sm:mt-5 sm:text-lg">
         {title}
       </h3>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -279,7 +279,7 @@ function PipelineTimeline() {
         className="pointer-events-none absolute left-5 top-2 bottom-2 w-px bg-gradient-to-b from-border via-border to-transparent sm:left-6"
       />
 
-      <div className="space-y-6">
+      <div className="space-y-5 sm:space-y-6">
         {steps.map((s) => (
           <li key={s.n} className="relative pl-14 sm:pl-16">
             {/* Pastille */}
@@ -295,20 +295,12 @@ function PipelineTimeline() {
 
             <div
               className={cn(
-                "relative rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6",
-                s.highlight &&
-                  "border-l-4 border-l-brand bg-card pl-5 sm:pl-6",
+                "relative rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6",
+                s.highlight && "border-l-4 border-l-brand",
               )}
             >
-              {s.highlight && (
-                <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-foreground">
-                  <Sparkles className="h-3 w-3" />
-                  Validation humaine
-                </span>
-              )}
-
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
                   {s.icon}
                 </span>
                 <span
@@ -320,6 +312,12 @@ function PipelineTimeline() {
                   <span className="sr-only">Rôle : </span>
                   {s.roleLabel}
                 </span>
+                {s.highlight && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-foreground">
+                    <Sparkles className="h-3 w-3" />
+                    Validation humaine
+                  </span>
+                )}
               </div>
 
               <h3 className="mt-3 font-display text-base font-semibold tracking-tight sm:text-lg">
@@ -339,7 +337,7 @@ function PipelineTimeline() {
                       MD
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
                     Biostatisticien + médecin relecteur, sur chaque dossier.
                   </p>
                 </div>
