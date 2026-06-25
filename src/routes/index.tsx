@@ -144,11 +144,13 @@ function PromiseCard({
   kicker,
   headline,
   value,
+  note,
 }: {
   icon: React.ReactNode;
   kicker: string;
   headline: string;
   value: string;
+  note?: string;
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
@@ -164,6 +166,9 @@ function PromiseCard({
       <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-brand sm:text-3xl">
         {value}
       </p>
+      {note ? (
+        <p className="mt-1 text-xs text-muted-foreground">{note}</p>
+      ) : null}
     </div>
   );
 }
