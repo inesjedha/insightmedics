@@ -46,8 +46,8 @@ function MethodePage() {
       <Section className="pb-8">
         <SectionHeader
           eyebrow="Notre méthode"
-          title="Des résultats que vous pouvez défendre, ligne par ligne."
-          description="Votre thèse engage votre nom et celui de votre directeur. Notre méthode est construite pour une seule chose : que chaque chiffre de votre travail soit exact, traçable et reproductible — du premier calcul à la soutenance."
+          title="Des résultats que vous comprenez et pouvez justifier."
+          description="Votre thèse engage votre nom et celui de votre directeur. Notre méthode vise une chose : que chaque chiffre de votre travail soit calculé directement sur vos données, traçable et reproductible — du premier calcul à la soutenance."
         />
       </Section>
 
