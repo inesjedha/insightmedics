@@ -15,6 +15,7 @@ import {
   Loader2,
   Sparkles,
   AlertCircle,
+  Check,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -101,13 +102,20 @@ type ContactValues = z.infer<typeof contactSchema>;
 type FieldName = keyof ContactValues;
 type FieldErrors = Partial<Record<FieldName, string>>;
 
-const PROJECT_TYPES = [
-  "Thèse",
-  "Article",
-  "Mémoire",
-  "Analyse seule",
-  "Autre",
-] as const;
+type ServiceOffer = {
+  id: string;
+  name: string;
+  price: string;
+  tier: string;
+  featured?: boolean;
+};
+
+const SERVICE_OFFERS: ServiceOffer[] = [
+  { id: "audit", name: "Audit IA", price: "0", tier: "Gratuit" },
+  { id: "analyses", name: "Analyses + résultats", price: "500", tier: "Essentiel" },
+  { id: "discussion", name: "Discussion", price: "500", tier: "Expertise" },
+  { id: "imrad", name: "IMRAD complet", price: "1 200", tier: "Le plus choisi", featured: true },
+];
 
 const URGENCIES = [
   "< 2 semaines",
@@ -136,7 +144,7 @@ function ContactPage() {
   const [values, setValues] = useState<Record<FieldName, string>>(INITIAL_VALUES);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [showErrorBanner, setShowErrorBanner] = useState(false);
-  const [projectType, setProjectType] = useState<string>("Thèse");
+  const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
   const [urgency, setUrgency] = useState<string>("2-4 semaines");
   const [dialCode, setDialCode] = useState<string>("+216");
   const [submitted, setSubmitted] = useState(false);
@@ -179,7 +187,15 @@ function ContactPage() {
     setErrors({});
     setShowErrorBanner(false);
     setSubmitting(true);
-    const meta = `[Type: ${projectType}] [Deadline: ${urgency}]`;
+    const offersLabel = selectedOffers
+      .map((id) => SERVICE_OFFERS.find((o) => o.id === id)?.name)
+      .filter(Boolean)
+      .join(", ");
+    const metaParts = [
+      offersLabel ? `Offres : ${offersLabel}` : null,
+      `Délai : ${urgency}`,
+    ].filter(Boolean);
+    const meta = metaParts.join(" | ");
     const finalMessage = parsed.data.message
       ? `${meta}\n${parsed.data.message}`
       : meta;
@@ -196,6 +212,7 @@ function ContactPage() {
       });
       setSubmitted(true);
       setValues(INITIAL_VALUES);
+      setSelectedOffers([]);
     } finally {
       setSubmitting(false);
     }
@@ -366,20 +383,17 @@ function ContactPage() {
                       </div>
                     </Field>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <PillsField
-                        label="Type de projet"
-                        options={[...PROJECT_TYPES]}
-                        value={projectType}
-                        onChange={setProjectType}
-                      />
-                      <PillsField
-                        label="Délai souhaité"
-                        options={[...URGENCIES]}
-                        value={urgency}
-                        onChange={setUrgency}
-                      />
-                    </div>
+                    <OffersField
+                      value={selectedOffers}
+                      onChange={setSelectedOffers}
+                    />
+
+                    <PillsField
+                      label="Délai souhaité"
+                      options={[...URGENCIES]}
+                      value={urgency}
+                      onChange={setUrgency}
+                    />
                   </FormSection>
 
                   <FormSection number="03" title="Problématique & objectif">
@@ -712,6 +726,109 @@ function PillsField({
               )}
             >
               {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function OffersField({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const toggle = (id: string) => {
+    if (value.includes(id)) {
+      onChange(value.filter((v) => v !== id));
+    } else {
+      onChange([...value, id]);
+    }
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <Label>Offres qui vous intéressent</Label>
+        <span className="text-xs text-muted-foreground">
+          Sélectionnez une ou plusieurs
+        </span>
+      </div>
+      <div role="group" className="grid gap-3 sm:grid-cols-2">
+        {SERVICE_OFFERS.map((offer) => {
+          const selected = value.includes(offer.id);
+          const accent = offer.featured || offer.id === "audit";
+          return (
+            <button
+              key={offer.id}
+              type="button"
+              role="checkbox"
+              aria-checked={selected}
+              onClick={() => toggle(offer.id)}
+              className={cn(
+                "group relative flex h-full flex-col overflow-hidden rounded-xl border-2 p-4 text-left transition-all",
+                selected
+                  ? "border-brand bg-brand/5"
+                  : "border-border bg-surface/40 hover:border-brand/40"
+              )}
+            >
+              {offer.featured && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-brand/30"
+                />
+              )}
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors",
+                  selected
+                    ? "border-brand bg-brand text-brand-foreground"
+                    : "border-border bg-background"
+                )}
+              >
+                <Check
+                  className={cn(
+                    "h-3 w-3 transition-opacity",
+                    selected ? "opacity-100" : "opacity-0"
+                  )}
+                  strokeWidth={3}
+                />
+              </span>
+              <span className="flex items-center gap-1.5 pr-8">
+                {offer.featured && (
+                  <span className="rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-foreground">
+                    {offer.tier}
+                  </span>
+                )}
+                {!offer.featured && (
+                  <span
+                    className={cn(
+                      "text-[11px] font-bold uppercase tracking-wider",
+                      accent ? "text-brand" : "text-muted-foreground"
+                    )}
+                  >
+                    {offer.tier}
+                  </span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "mt-1.5 text-sm font-semibold transition-colors",
+                  selected ? "text-brand" : "text-foreground group-hover:text-brand"
+                )}
+              >
+                {offer.name}
+              </span>
+              <span className="mt-4 text-lg font-bold tabular-nums text-foreground">
+                {offer.price}{" "}
+                <span className="text-xs font-medium uppercase text-muted-foreground">
+                  DT
+                </span>
+              </span>
             </button>
           );
         })}
