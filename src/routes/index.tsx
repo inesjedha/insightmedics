@@ -59,6 +59,7 @@ function HomePage() {
       <AuditTeaser />
       <AiHuman />
       <ServicesTeaser />
+      <Testimonials />
       <ForWho />
       <FinalCta />
     </SiteLayout>
