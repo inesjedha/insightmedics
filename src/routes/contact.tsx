@@ -138,6 +138,7 @@ function ContactPage() {
   const [showErrorBanner, setShowErrorBanner] = useState(false);
   const [projectType, setProjectType] = useState<string>("Thèse");
   const [urgency, setUrgency] = useState<string>("2-4 semaines");
+  const [dialCode, setDialCode] = useState<string>("+216");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -150,7 +151,7 @@ function ContactPage() {
   };
 
   const setPhone = (raw: string) => {
-    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    const digits = raw.replace(/\D/g, "").slice(0, 12);
     setValue("phone", digits);
   };
 
