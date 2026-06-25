@@ -733,3 +733,106 @@ function PillsField({
     </div>
   );
 }
+
+function OffersField({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const toggle = (id: string) => {
+    if (value.includes(id)) {
+      onChange(value.filter((v) => v !== id));
+    } else {
+      onChange([...value, id]);
+    }
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <Label>Offres qui vous intéressent</Label>
+        <span className="text-xs text-muted-foreground">
+          Sélectionnez une ou plusieurs
+        </span>
+      </div>
+      <div role="group" className="grid gap-3 sm:grid-cols-2">
+        {SERVICE_OFFERS.map((offer) => {
+          const selected = value.includes(offer.id);
+          const accent = offer.featured || offer.id === "audit";
+          return (
+            <button
+              key={offer.id}
+              type="button"
+              role="checkbox"
+              aria-checked={selected}
+              onClick={() => toggle(offer.id)}
+              className={cn(
+                "group relative flex h-full flex-col overflow-hidden rounded-xl border-2 p-4 text-left transition-all",
+                selected
+                  ? "border-brand bg-brand/5"
+                  : "border-border bg-surface/40 hover:border-brand/40"
+              )}
+            >
+              {offer.featured && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-brand/30"
+                />
+              )}
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors",
+                  selected
+                    ? "border-brand bg-brand text-brand-foreground"
+                    : "border-border bg-background"
+                )}
+              >
+                <Check
+                  className={cn(
+                    "h-3 w-3 transition-opacity",
+                    selected ? "opacity-100" : "opacity-0"
+                  )}
+                  strokeWidth={3}
+                />
+              </span>
+              <span className="flex items-center gap-1.5 pr-8">
+                {offer.featured && (
+                  <span className="rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-foreground">
+                    {offer.tier}
+                  </span>
+                )}
+                {!offer.featured && (
+                  <span
+                    className={cn(
+                      "text-[11px] font-bold uppercase tracking-wider",
+                      accent ? "text-brand" : "text-muted-foreground"
+                    )}
+                  >
+                    {offer.tier}
+                  </span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "mt-1.5 text-sm font-semibold transition-colors",
+                  selected ? "text-brand" : "text-foreground group-hover:text-brand"
+                )}
+              >
+                {offer.name}
+              </span>
+              <span className="mt-4 text-lg font-bold tabular-nums text-foreground">
+                {offer.price}{" "}
+                <span className="text-xs font-medium uppercase text-muted-foreground">
+                  DT
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
