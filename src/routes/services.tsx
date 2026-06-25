@@ -14,7 +14,8 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
-import { cn } from "@/lib/utils";
+import { OfferCard } from "@/components/site/OfferCard";
+import { OFFERS } from "@/lib/offers";
 
 export const Route = createFileRoute("/services")({
   head: () => ({
@@ -36,70 +37,11 @@ export const Route = createFileRoute("/services")({
   component: ServicesPage,
 });
 
-type PaidOffer = {
-  number: string;
-  icon: ReactNode;
-  title: string;
-  price: string;
-  description: string;
-  features: string[];
-  cta: { to: "/contact"; label: string };
-  highlight?: boolean;
-  badge?: string;
+const OFFER_ICONS: Record<string, ReactNode> = {
+  analyses: <BarChart3 className="h-5 w-5" />,
+  discussion: <FileText className="h-5 w-5" />,
+  these: <GraduationCap className="h-5 w-5" />,
 };
-
-const paidOffers: PaidOffer[] = [
-  {
-    number: "01",
-    icon: <BarChart3 className="h-5 w-5" />,
-    title: "Analyse + rédaction des résultats",
-    price: "500 DT",
-    description:
-      "Analyses complètes (descriptif, comparatif, multivarié) et rédaction de la partie « Résultats » prête à intégrer.",
-    features: [
-      "Cadrage avec un biostatisticien",
-      "Tests adaptés à votre design d'étude",
-      "Tableaux & figures publiables",
-      "Texte des résultats rédigé",
-      "Validation humaine",
-    ],
-    cta: { to: "/contact", label: "Demander cette offre" },
-  },
-  {
-    number: "02",
-    icon: <FileText className="h-5 w-5" />,
-    title: "Rédaction de la discussion",
-    price: "500 DT",
-    description:
-      "Rédaction structurée : comparaison à la littérature, forces, limites, perspectives.",
-    features: [
-      "Recherche bibliographique ciblée",
-      "Argumentation alignée sur vos résultats",
-      "Forces et limites discutées",
-      "Aller-retours de relecture inclus",
-    ],
-    cta: { to: "/contact", label: "Demander cette offre" },
-  },
-  {
-    number: "03",
-    icon: <GraduationCap className="h-5 w-5" />,
-    title: "Accompagnement thèse complète",
-    price: "1 200 DT",
-    description:
-      "De la base brute à la conclusion : introduction, matériel & méthodes, résultats, discussion, conclusion.",
-    features: [
-      "Introduction rédigée",
-      "Matériel & Méthodes rédigés",
-      "Analyses + résultats rédigés",
-      "Discussion rédigée",
-      "Conclusion rédigée",
-      "Priorité sur les délais",
-    ],
-    cta: { to: "/contact", label: "Discuter du projet" },
-    highlight: true,
-    badge: "Le plus complet",
-  },
-];
 
 function ServicesPage() {
   return (
@@ -170,70 +112,21 @@ function ServicesPage() {
       {/* Offres payantes */}
       <Section className="pt-4 sm:pt-6">
         <div className="grid items-stretch gap-4 sm:gap-6 md:grid-cols-3">
-          {paidOffers.map((o) => (
-            <article
-              key={o.title}
-              className={cn(
-                "group relative flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md sm:p-7",
-                o.highlight && "border-l-4 border-l-brand",
-              )}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
-                  {o.icon}
-                </div>
-                <span
-                  aria-hidden
-                  className="font-display text-2xl font-bold leading-none text-brand/25 sm:text-3xl"
-                >
-                  {o.number}
-                </span>
-              </div>
-
-              {o.badge && (
-                <span className="mt-4 inline-flex w-fit items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-foreground">
-                  <Sparkles className="h-3 w-3" />
-                  {o.badge}
-                </span>
-              )}
-
-              <h3 className="mt-4 font-display text-base font-semibold tracking-tight sm:mt-5 sm:text-lg">
-                {o.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {o.description}
-              </p>
-
-              <div className="mt-5 font-display text-3xl font-extrabold tracking-tight text-brand">
-                {o.price}
-              </div>
-
-              <ul className="mt-5 space-y-2.5 text-sm">
-                {o.features.map((f) => (
-                  <li key={f} className="flex gap-2.5">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-                    <span className="text-foreground/90">{f}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-auto pt-6">
-                <Button
-                  asChild
-                  variant={o.highlight ? "default" : "outline"}
-                  className={cn(
-                    "w-full",
-                    o.highlight &&
-                      "bg-brand text-brand-foreground hover:bg-brand/90",
-                  )}
-                >
-                  <Link to={o.cta.to}>
-                    {o.cta.label}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </article>
+          {OFFERS.map((o) => (
+            <OfferCard
+              key={o.id}
+              number={o.number}
+              icon={OFFER_ICONS[o.id]}
+              title={o.title}
+              price={o.priceLabel}
+              delay={o.delay}
+              description={o.description}
+              features={o.features}
+              ctaLabel={o.ctaLabel}
+              ctaHref="/contact"
+              highlight={o.highlight}
+              badge={o.badge}
+            />
           ))}
         </div>
       </Section>
