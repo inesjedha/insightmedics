@@ -153,9 +153,16 @@ function ContactPage() {
   const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
   const [urgency, setUrgency] = useState<string>("2-4 semaines");
   const [dialCode, setDialCode] = useState<string>("+216");
+  const [consent, setConsent] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const mountedAtRef = useRef<number>(0);
+
+  useEffect(() => {
+    mountedAtRef.current = Date.now();
+  }, []);
 
   const setValue = (name: FieldName, value: string) => {
     setValues((v) => ({ ...v, [name]: value }));
@@ -171,14 +178,30 @@ function ContactPage() {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Anti-spam silencieux : honeypot rempli ou form soumis trop vite => faux succès.
+    const honeypotValue = (
+      formRef.current?.elements.namedItem(HONEYPOT_FIELD) as HTMLInputElement | null
+    )?.value;
+    if (isHoneypotTripped(honeypotValue) || isTooFast(mountedAtRef.current)) {
+      setSubmitted(true);
+      return;
+    }
+
     const parsed = contactSchema.safeParse(values);
-    if (!parsed.success) {
+    const hasFieldErrors = !parsed.success;
+    const hasConsentError = !consent;
+
+    if (hasFieldErrors || hasConsentError) {
       const fe: FieldErrors = {};
-      for (const issue of parsed.error.issues) {
-        const k = issue.path[0] as FieldName;
-        if (!fe[k]) fe[k] = issue.message;
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          const k = issue.path[0] as FieldName;
+          if (!fe[k]) fe[k] = issue.message;
+        }
       }
       setErrors(fe);
+      setConsentError(hasConsentError);
       setShowErrorBanner(true);
       const firstError = Object.keys(fe)[0];
       if (firstError) {
@@ -187,10 +210,14 @@ function ContactPage() {
         );
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
         setTimeout(() => el?.focus(), 300);
+      } else if (hasConsentError) {
+        const el = formRef.current?.querySelector<HTMLElement>("#contact-consent");
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       return;
     }
     setErrors({});
+    setConsentError(false);
     setShowErrorBanner(false);
     setSubmitting(true);
     const offersLabel = selectedOffers
@@ -219,6 +246,7 @@ function ContactPage() {
       setSubmitted(true);
       setValues(INITIAL_VALUES);
       setSelectedOffers([]);
+      setConsent(false);
     } finally {
       setSubmitting(false);
     }
