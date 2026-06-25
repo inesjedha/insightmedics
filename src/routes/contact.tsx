@@ -264,21 +264,32 @@ function ContactPage() {
         description="Décrivez votre étude, votre problématique et votre objectif. Nous revenons vers vous sous 48h ouvrées — par téléphone en priorité."
       />
 
-      <Section className="pt-4 sm:pt-6">
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
+      <Section className="pt-2 sm:pt-4">
+        <div className="mx-auto mb-6 flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:mb-8">
+          <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1.5 text-xs font-medium text-brand">
+            <Sparkles className="h-3.5 w-3.5" />
+            Réponse sous 48h ouvrées
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3.5 py-1.5 text-xs font-medium text-muted-foreground">
+            <Phone className="h-3.5 w-3.5" />
+            Premier échange gratuit
+          </span>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:gap-10 xl:grid-cols-[1.6fr_1fr]">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-brand/5 via-transparent to-transparent"
             />
-            <div className="relative">
+            <div className="relative p-5 sm:p-8 lg:p-10">
               {submitted ? (
                 <SuccessState onReset={() => setSubmitted(false)} />
               ) : (
                 <form
                   ref={formRef}
                   onSubmit={onSubmit}
-                  className="space-y-8"
+                  className="space-y-10"
                   noValidate
                 >
                   {/* Honeypot anti-bot — invisible aux humains */}
@@ -295,6 +306,8 @@ function ContactPage() {
                     Les champs marqués d'un{" "}
                     <span className="text-destructive">*</span> sont obligatoires.
                   </p>
+
+
 
                   {showErrorBanner && (
                     <div
