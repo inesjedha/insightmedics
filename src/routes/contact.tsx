@@ -271,12 +271,29 @@ function ContactPage() {
                         hint="Prioritaire pour vous recontacter"
                       >
                         <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
-                          <span className="flex items-center gap-1.5 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80">
-                            <span aria-hidden className="text-base leading-none">
-                              🇹🇳
-                            </span>
-                            +216
-                          </span>
+                          <Select value={dialCode} onValueChange={setDialCode}>
+                            <SelectTrigger
+                              aria-label="Indicatif pays"
+                              className="h-11 w-auto gap-1.5 rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0"
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {COUNTRY_CODES.map((c) => (
+                                <SelectItem key={c.code} value={c.code}>
+                                  <span className="flex items-center gap-2">
+                                    <span aria-hidden className="text-base leading-none">
+                                      {c.flag}
+                                    </span>
+                                    <span className="font-medium">{c.code}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {c.name}
+                                    </span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Input
                             id="phone"
                             name="phone"
@@ -284,8 +301,8 @@ function ContactPage() {
                             inputMode="numeric"
                             autoComplete="tel-national"
                             required
-                            maxLength={8}
-                            placeholder="12 345 678"
+                            maxLength={12}
+                            placeholder="Numéro local"
                             value={values.phone}
                             onChange={(e) => setPhone(e.target.value)}
                             className="h-11 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
