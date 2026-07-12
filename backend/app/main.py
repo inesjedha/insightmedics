@@ -3,6 +3,15 @@
 Démarrage local :  uvicorn app.main:app --reload --port 8000
 """
 
+import sys
+
+if sys.version_info < (3, 10):
+    raise RuntimeError(
+        f"Python 3.10+ requis (vous utilisez {sys.version_info.major}.{sys.version_info.minor}). "
+        "Sur macOS : brew install python@3.12, puis recréez le venv avec python3.12 -m venv .venv"
+    )
+
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

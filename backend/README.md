@@ -5,9 +5,11 @@ Implémente le contrat attendu par le front (`src/lib/api/client.ts`).
 
 ## Démarrage local
 
+**Prérequis : Python 3.10 ou plus** (`python3 --version` pour vérifier ; sur macOS : `brew install python@3.12`).
+
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
