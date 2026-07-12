@@ -27,15 +27,11 @@ export function Logo({
           aria-hidden
           className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm"
         >
-          <span className="font-display text-sm font-extrabold tracking-tight">
-            IM
-          </span>
+          <span className="font-display text-sm font-extrabold tracking-tight">IM</span>
         </span>
       )}
       {showWordmark && (
-        <span className="font-display text-lg font-bold tracking-tight">
-          {siteConfig.name}
-        </span>
+        <span className="font-display text-lg font-bold tracking-tight">{siteConfig.name}</span>
       )}
     </span>
   );

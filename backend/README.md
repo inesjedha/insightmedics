@@ -19,15 +19,15 @@ Puis côté front, dans `.env` : `VITE_USE_MOCK_API=false` et
 
 ## Endpoints
 
-| Méthode | Route | Description |
-|---|---|---|
-| POST | `/audit/upload` | Upload multipart (`file`) → audit synchrone → `AuditResult` |
-| GET | `/audit/:id` | Résumé de l'audit |
-| GET | `/audit/:id/events` | Journal des étapes |
-| GET | `/audit/:id/profiling` | Profiling complet (interne/admin) |
-| GET | `/audit/:id/report.pdf` | 501 — jalon M6 |
-| POST/GET/PATCH | `/leads`, `/leads/:id` | CRM leads |
-| GET | `/health` | Healthcheck |
+| Méthode        | Route                   | Description                                                 |
+| -------------- | ----------------------- | ----------------------------------------------------------- |
+| POST           | `/audit/upload`         | Upload multipart (`file`) → audit synchrone → `AuditResult` |
+| GET            | `/audit/:id`            | Résumé de l'audit                                           |
+| GET            | `/audit/:id/events`     | Journal des étapes                                          |
+| GET            | `/audit/:id/profiling`  | Profiling complet (interne/admin)                           |
+| GET            | `/audit/:id/report.pdf` | 501 — jalon M6                                              |
+| POST/GET/PATCH | `/leads`, `/leads/:id`  | CRM leads                                                   |
+| GET            | `/health`               | Healthcheck                                                 |
 
 ## Pipeline (voir doc d'architecture du 12/07/2026)
 

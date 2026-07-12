@@ -29,8 +29,7 @@ export const Route = createFileRoute("/services")({
       { property: "og:title", content: "Services — Insight Medics" },
       {
         property: "og:description",
-        content:
-          "3 manières de travailler avec nous. Tarifs transparents en DT.",
+        content: "3 manières de travailler avec nous. Tarifs transparents en DT.",
       },
     ],
   }),
@@ -50,8 +49,8 @@ function ServicesPage() {
         eyebrow="Nos services"
         title={
           <>
-            Choisissez le périmètre qui correspond à{" "}
-            <span className="text-brand">votre étape</span>.
+            Choisissez le périmètre qui correspond à <span className="text-brand">votre étape</span>
+            .
           </>
         }
         description="Un audit gratuit pour démarrer, puis trois offres claires en dinars tunisiens. Chaque livrable est validé par un humain — biostatisticien et médecin — avant envoi."
@@ -75,9 +74,8 @@ function ServicesPage() {
                 Audit de base de données
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Contrôle qualité automatique de votre base, analyse de la
-                structure, pistes d'ajustement. Score /100 + rapport PDF
-                envoyé par email.
+                Contrôle qualité automatique de votre base, analyse de la structure, pistes
+                d'ajustement. Score /100 + rapport PDF envoyé par email.
               </p>
               <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
                 {[

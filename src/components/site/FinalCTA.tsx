@@ -39,11 +39,7 @@ export function FinalCTA({
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-            <Button
-              asChild
-              size="lg"
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
-            >
+            <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand/90">
               <Link to={primary.to}>
                 {primary.label}
                 <ArrowRight className="ml-2 h-4 w-4" />

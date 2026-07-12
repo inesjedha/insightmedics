@@ -29,8 +29,7 @@ export const Route = createFileRoute("/tarifs")({
       { property: "og:title", content: "Tarifs — Insight Medics" },
       {
         property: "og:description",
-        content:
-          "Tarifs transparents en dinars tunisiens pour vos thèses et publications.",
+        content: "Tarifs transparents en dinars tunisiens pour vos thèses et publications.",
       },
     ],
   }),
@@ -50,8 +49,7 @@ function TarifsPage() {
         eyebrow="Tarifs"
         title={
           <>
-            Tarifs transparents en{" "}
-            <span className="text-brand">dinars tunisiens</span>.
+            Tarifs transparents en <span className="text-brand">dinars tunisiens</span>.
           </>
         }
         description="Pas de frais cachés. Chaque livrable est relu et validé par un humain — biostatisticien et médecin — avant envoi."
@@ -75,9 +73,7 @@ function TarifsPage() {
             <h3 className="mt-4 font-display text-base font-semibold tracking-tight sm:mt-5 sm:text-lg">
               Audit IA
             </h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Gratuit · sans engagement
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Gratuit · sans engagement</p>
             <div className="mt-5 font-display text-3xl font-extrabold tracking-tight text-brand">
               0 DT
             </div>
@@ -128,9 +124,8 @@ function TarifsPage() {
             <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5" />
           </span>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Paiement à la livraison. Aucun acompte demandé pour les
-            prestations en dinars tunisiens — vous validez la qualité avant
-            de régler.
+            Paiement à la livraison. Aucun acompte demandé pour les prestations en dinars tunisiens
+            — vous validez la qualité avant de régler.
           </p>
         </div>
       </Section>

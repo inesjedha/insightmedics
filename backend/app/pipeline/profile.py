@@ -42,12 +42,18 @@ def _py(v: Any) -> Any:
 
 
 def _detect_id_column(df: pd.DataFrame) -> str | None:
+    # Une colonne au nom d'identifiant reste l'identifiant même si elle contient
+    # des doublons : c'est précisément une anomalie à signaler, pas à masquer.
     candidates = [c for c in df.columns if ID_NAME_RE.search(str(c))]
+    best, best_ratio = None, 0.0
     for c in candidates:
         s = df[c].dropna()
-        if len(s) and s.nunique() >= 0.9 * len(s):
-            return str(c)
-    # Repli : première colonne quasi unique et non flottante "de mesure"
+        ratio = s.nunique() / len(s) if len(s) else 0.0
+        if ratio > best_ratio:
+            best, best_ratio = str(c), ratio
+    if best and best_ratio >= 0.5:
+        return best
+    # Repli : première colonne strictement unique
     first = df.columns[0]
     s = df[first].dropna()
     if len(s) and s.nunique() == len(s):

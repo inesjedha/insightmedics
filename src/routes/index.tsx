@@ -85,14 +85,11 @@ function Hero() {
           </Badge>
           <h1 className="mt-6 font-display text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl text-balance">
             Des analyses fiables.{" "}
-            <span className="text-brand">
-              Une rédaction au standard scientifique.
-            </span>
+            <span className="text-brand">Une rédaction au standard scientifique.</span>
           </h1>
           <p className="mt-5 text-base text-muted-foreground sm:text-lg text-balance">
-            Biostatistique, rédaction IMRAD et data visualisation pour vos
-            thèses, mémoires et publications. Chaque livrable est validé par
-            un expert humain.
+            Biostatistique, rédaction IMRAD et data visualisation pour vos thèses, mémoires et
+            publications. Chaque livrable est validé par un expert humain.
           </p>
         </div>
 
@@ -170,9 +167,7 @@ function PromiseCard({
       <p className="mt-1 font-display text-2xl font-extrabold tracking-tight text-brand sm:text-3xl">
         {value}
       </p>
-      {note ? (
-        <p className="mt-1 text-xs text-muted-foreground">{note}</p>
-      ) : null}
+      {note ? <p className="mt-1 text-xs text-muted-foreground">{note}</p> : null}
     </div>
   );
 }
@@ -197,9 +192,7 @@ function ProblemApproach() {
     <Section>
       <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
-            Le constat
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">Le constat</p>
           <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl text-balance">
             Une base prête, des résultats incertains, une deadline qui approche.
           </h2>
@@ -240,7 +233,6 @@ function ProblemApproach() {
           </ul>
         </div>
       </div>
-
     </Section>
   );
 }
@@ -248,9 +240,7 @@ function ProblemApproach() {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="text-center sm:text-left">
-      <div className="font-display text-3xl font-extrabold tracking-tight text-brand">
-        {value}
-      </div>
+      <div className="font-display text-3xl font-extrabold tracking-tight text-brand">{value}</div>
       <div className="mt-1 text-sm text-muted-foreground">{label}</div>
     </div>
   );
@@ -269,15 +259,13 @@ function AuditTeaser() {
             Votre base évaluée en quelques minutes.
           </h2>
           <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-            Téléversez votre base, quel que soit le format. Notre module en
-            contrôle la qualité, en analyse la structure et vous remet un
-            score sur 100 et un rapport PDF avec des recommandations
-            concrètes.
+            Téléversez votre base, quel que soit le format. Notre module en contrôle la qualité, en
+            analyse la structure et vous remet un score sur 100 et un rapport PDF avec des
+            recommandations concrètes.
           </p>
           <p className="mt-3 inline-flex items-start gap-2 text-sm text-muted-foreground/90">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-            Chaque chiffre du rapport est calculé directement sur vos données
-            — rien n'est estimé.
+            Chaque chiffre du rapport est calculé directement sur vos données — rien n'est estimé.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" className="bg-brand text-brand-foreground hover:bg-brand/90">
@@ -361,9 +349,7 @@ function AiHuman() {
           <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Cpu className="h-5 w-5" />
           </div>
-          <h3 className="mt-4 font-display text-xl font-bold">
-            Ce que l'IA prend en charge
-          </h3>
+          <h3 className="mt-4 font-display text-xl font-bold">Ce que l'IA prend en charge</h3>
           <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
             <li className="flex gap-2.5">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
@@ -383,9 +369,7 @@ function AiHuman() {
           <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/15 text-brand">
             <HeartHandshake className="h-5 w-5" />
           </div>
-          <h3 className="mt-4 font-display text-xl font-bold">
-            Ce qu'un expert valide
-          </h3>
+          <h3 className="mt-4 font-display text-xl font-bold">Ce qu'un expert valide</h3>
           <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
             <li className="flex gap-2.5">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
@@ -421,7 +405,6 @@ function ServicesTeaser() {
     highlighted: o.highlight,
     badge: o.badge,
   }));
-
 
   return (
     <Section className="bg-surface/60 border-y border-border/60">
@@ -479,9 +462,7 @@ function ServicesTeaser() {
             key={o.title}
             className={
               "relative flex flex-col rounded-2xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md " +
-              (o.highlighted
-                ? "border-brand/50 ring-1 ring-brand/30 shadow-md"
-                : "border-border")
+              (o.highlighted ? "border-brand/50 ring-1 ring-brand/30 shadow-md" : "border-border")
             }
           >
             {o.badge && (
@@ -519,9 +500,7 @@ function ServicesTeaser() {
                 asChild
                 className={
                   "w-full " +
-                  (o.highlighted
-                    ? "bg-brand text-brand-foreground hover:bg-brand/90"
-                    : "")
+                  (o.highlighted ? "bg-brand text-brand-foreground hover:bg-brand/90" : "")
                 }
                 variant={o.highlighted ? "default" : "outline"}
               >
@@ -726,7 +705,11 @@ function TestimonialsMobileCarousel({ items }: { items: Testimonial[] }) {
           <ChevronLeft className="h-4 w-4" />
         </button>
 
-        <div className="flex items-center gap-1.5" role="tablist" aria-label="Sélection du témoignage">
+        <div
+          className="flex items-center gap-1.5"
+          role="tablist"
+          aria-label="Sélection du témoignage"
+        >
           {items.map((t, i) => (
             <button
               key={t.name + t.city}
@@ -812,13 +795,12 @@ function FinalCta() {
               Auditez votre base aujourd'hui. Avancez sereinement.
             </h2>
             <p className="mt-3 text-base text-primary-foreground/80 sm:text-lg">
-              En quelques minutes, vous saurez si votre base est exploitable
-              et ce qu'il reste à corriger.
+              En quelques minutes, vous saurez si votre base est exploitable et ce qu'il reste à
+              corriger.
             </p>
             <p className="mt-4 inline-flex items-center gap-2 text-sm text-primary-foreground/80">
               <AlertTriangle className="h-4 w-4" />
-              En cas d'alerte critique, un expert vous recontacte sous 48h
-              ouvrées.
+              En cas d'alerte critique, un expert vous recontacte sous 48h ouvrées.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">

@@ -64,23 +64,15 @@ export function OfferCard({
       <h3 className="mt-4 font-display text-base font-semibold tracking-tight sm:mt-5 sm:text-lg">
         {title}
       </h3>
-      {tagline && (
-        <p className="mt-1 text-xs text-muted-foreground">{tagline}</p>
-      )}
+      {tagline && <p className="mt-1 text-xs text-muted-foreground">{tagline}</p>}
       {description && (
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          {description}
-        </p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
       )}
 
       <div className="mt-5 font-display text-3xl font-extrabold tracking-tight text-brand">
         {price}
       </div>
-      {delay && (
-        <p className="mt-1 text-xs font-medium text-muted-foreground">
-          {delay}
-        </p>
-      )}
+      {delay && <p className="mt-1 text-xs font-medium text-muted-foreground">{delay}</p>}
 
       <ul className="mt-5 space-y-2.5 text-sm">
         {features.map((f) => (
@@ -95,10 +87,7 @@ export function OfferCard({
         <Button
           asChild
           variant={highlight ? "default" : "outline"}
-          className={cn(
-            "w-full",
-            highlight && "bg-brand text-brand-foreground hover:bg-brand/90",
-          )}
+          className={cn("w-full", highlight && "bg-brand text-brand-foreground hover:bg-brand/90")}
         >
           <Link to={ctaHref}>
             {ctaLabel}

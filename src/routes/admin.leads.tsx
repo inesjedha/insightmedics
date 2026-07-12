@@ -48,8 +48,8 @@ function LeadsPage() {
               {leads.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
-                    Aucun lead pour l'instant. Les soumissions du formulaire de
-                    contact et de l'audit alimenteront cette table.
+                    Aucun lead pour l'instant. Les soumissions du formulaire de contact et de
+                    l'audit alimenteront cette table.
                   </td>
                 </tr>
               )}
@@ -72,11 +72,7 @@ function LeadsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 font-medium">
-                    <Link
-                      to="/admin/leads/$id"
-                      params={{ id: l.id }}
-                      className="hover:text-brand"
-                    >
+                    <Link to="/admin/leads/$id" params={{ id: l.id }} className="hover:text-brand">
                       {l.name || "—"}
                     </Link>
                   </td>

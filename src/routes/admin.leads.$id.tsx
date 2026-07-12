@@ -39,9 +39,7 @@ function LeadDetail() {
   }, [id]);
 
   if (!lead) {
-    return (
-      <div className="text-sm text-muted-foreground">Chargement…</div>
-    );
+    return <div className="text-sm text-muted-foreground">Chargement…</div>;
   }
 
   const onSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -71,7 +69,10 @@ function LeadDetail() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <Link to="/admin/leads" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/admin/leads"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
           Retour
         </Link>
@@ -82,9 +83,7 @@ function LeadDetail() {
 
       <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-2xl font-bold">
-            {lead.name || "Lead sans nom"}
-          </h1>
+          <h1 className="font-display text-2xl font-bold">{lead.name || "Lead sans nom"}</h1>
           <Badge variant="outline" className="border-border">
             {lead.source === "audit" ? "Audit" : "Contact"}
           </Badge>
@@ -103,11 +102,19 @@ function LeadDetail() {
             value={lead.lastContactAt ? new Date(lead.lastContactAt).toLocaleString("fr-FR") : "—"}
           />
           {lead.subject && <Info label="Sujet" value={lead.subject} className="sm:col-span-2" />}
-          {lead.problem && <Info label="Problématique" value={lead.problem} className="sm:col-span-2" />}
-          {lead.objective && <Info label="Objectif" value={lead.objective} className="sm:col-span-2" />}
+          {lead.problem && (
+            <Info label="Problématique" value={lead.problem} className="sm:col-span-2" />
+          )}
+          {lead.objective && (
+            <Info label="Objectif" value={lead.objective} className="sm:col-span-2" />
+          )}
           {lead.message && <Info label="Message" value={lead.message} className="sm:col-span-2" />}
           {lead.auditId && (
-            <Info label="Audit" value={`${lead.auditId} — score ${lead.auditScore ?? "?"} /100`} className="sm:col-span-2" />
+            <Info
+              label="Audit"
+              value={`${lead.auditId} — score ${lead.auditScore ?? "?"} /100`}
+              className="sm:col-span-2"
+            />
           )}
         </dl>
       </div>
@@ -151,7 +158,11 @@ function LeadDetail() {
           />
         </div>
         <div className="flex justify-end">
-          <Button type="submit" disabled={saving} className="bg-brand text-brand-foreground hover:bg-brand/90">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="bg-brand text-brand-foreground hover:bg-brand/90"
+          >
             <Save className="mr-2 h-4 w-4" />
             {saving ? "Enregistrement…" : "Enregistrer"}
           </Button>
@@ -159,10 +170,7 @@ function LeadDetail() {
       </form>
 
       <div>
-        <Button
-          variant="ghost"
-          onClick={() => navigate({ to: "/admin/leads" })}
-        >
+        <Button variant="ghost" onClick={() => navigate({ to: "/admin/leads" })}>
           Retour à la liste
         </Button>
       </div>
@@ -170,15 +178,7 @@ function LeadDetail() {
   );
 }
 
-function Info({
-  label,
-  value,
-  className,
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
+function Info({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
     <div className={className}>
       <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>

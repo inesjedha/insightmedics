@@ -23,12 +23,7 @@ import { Section, SectionHeader } from "@/components/site/Section";
 import { runAudit, createLead, updateLead } from "@/lib/api/client";
 import type { AuditEvent, AuditResult } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import {
-  HONEYPOT_FIELD,
-  honeypotStyle,
-  isHoneypotTripped,
-  isTooFast,
-} from "@/lib/anti-spam";
+import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
 
 export const Route = createFileRoute("/audit")({
   head: () => ({
@@ -169,12 +164,10 @@ function AuditUploader({
       <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-brand">
         <Upload className="h-6 w-6" />
       </div>
-      <h3 className="mt-4 font-display text-lg font-bold">
-        Téléversez votre base de données
-      </h3>
+      <h3 className="mt-4 font-display text-lg font-bold">Téléversez votre base de données</h3>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Tous formats acceptés : SPSS (.sav), Excel (.xlsx, .xls), CSV, Stata
-        (.dta), JSON, Parquet, etc.
+        Tous formats acceptés : SPSS (.sav), Excel (.xlsx, .xls), CSV, Stata (.dta), JSON, Parquet,
+        etc.
       </p>
 
       <input
@@ -186,11 +179,7 @@ function AuditUploader({
       />
 
       <div className="mt-5">
-        <Button
-          variant="outline"
-          onClick={() => inputRef.current?.click()}
-          disabled={disabled}
-        >
+        <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={disabled}>
           Choisir un fichier
         </Button>
       </div>
@@ -199,9 +188,7 @@ function AuditUploader({
         <div className="mt-5 inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm">
           <FileBarChart2 className="h-4 w-4 text-brand" />
           <span className="font-medium">{file.name}</span>
-          <span className="text-muted-foreground">
-            · {(file.size / 1024).toFixed(1)} Ko
-          </span>
+          <span className="text-muted-foreground">· {(file.size / 1024).toFixed(1)} Ko</span>
         </div>
       )}
     </div>
@@ -258,11 +245,7 @@ function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: Phase })
 
 function AuditScoreCard({ result }: { result: AuditResult }) {
   const scoreColor =
-    result.score >= 80
-      ? "text-brand"
-      : result.score >= 60
-        ? "text-amber-600"
-        : "text-destructive";
+    result.score >= 80 ? "text-brand" : result.score >= 60 ? "text-amber-600" : "text-destructive";
 
   return (
     <div className="mt-2 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
@@ -294,8 +277,10 @@ function AuditScoreCard({ result }: { result: AuditResult }) {
               key={i}
               className={cn(
                 "flex gap-2.5 rounded-md border px-3 py-2 text-sm",
-                iss.level === "critical" && "border-destructive/30 bg-destructive/5 text-destructive",
-                iss.level === "warn" && "border-amber-300/40 bg-amber-500/5 text-amber-700 dark:text-amber-300",
+                iss.level === "critical" &&
+                  "border-destructive/30 bg-destructive/5 text-destructive",
+                iss.level === "warn" &&
+                  "border-amber-300/40 bg-amber-500/5 text-amber-700 dark:text-amber-300",
                 iss.level === "info" && "border-border bg-surface text-foreground/80",
               )}
             >
@@ -331,9 +316,9 @@ function HumanAlert() {
           Un expert humain reviendra vers vous sous 48h.
         </p>
         <p className="mt-1 text-sm">
-          Plusieurs alertes critiques ont été détectées dans votre base. Notre
-          équipe (médecin + biostatisticien) va analyser le rapport et vous
-          recontactera personnellement par téléphone.
+          Plusieurs alertes critiques ont été détectées dans votre base. Notre équipe (médecin +
+          biostatisticien) va analyser le rapport et vous recontactera personnellement par
+          téléphone.
         </p>
       </div>
     </div>
@@ -365,10 +350,7 @@ function AuditReportForm({ result }: { result: AuditResult }) {
     const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
 
     // Anti-spam silencieux : honeypot + soumission trop rapide => faux succès.
-    if (
-      isHoneypotTripped(data[HONEYPOT_FIELD]) ||
-      isTooFast(mountedAtRef.current)
-    ) {
+    if (isHoneypotTripped(data[HONEYPOT_FIELD]) || isTooFast(mountedAtRef.current)) {
       setSent(true);
       return;
     }
@@ -418,12 +400,9 @@ function AuditReportForm({ result }: { result: AuditResult }) {
           <Download className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="font-display text-lg font-bold">
-            Recevoir le rapport PDF complet
-          </h3>
+          <h3 className="font-display text-lg font-bold">Recevoir le rapport PDF complet</h3>
           <p className="text-sm text-muted-foreground">
-            Nous vous envoyons le rapport par SMS et email. Le numéro est
-            prioritaire.
+            Nous vous envoyons le rapport par SMS et email. Le numéro est prioritaire.
           </p>
         </div>
       </div>
@@ -434,8 +413,7 @@ function AuditReportForm({ result }: { result: AuditResult }) {
           <div>
             <p className="font-semibold">Rapport en route.</p>
             <p className="mt-1 text-muted-foreground">
-              Vous allez recevoir le PDF par SMS et email. Pensez à vérifier
-              vos spams.
+              Vous allez recevoir le PDF par SMS et email. Pensez à vérifier vos spams.
             </p>
           </div>
         </div>
@@ -460,7 +438,14 @@ function AuditReportForm({ result }: { result: AuditResult }) {
               </Label>
               <span className="text-xs text-brand">Prioritaire</span>
             </div>
-            <Input id="phone" name="phone" type="tel" required placeholder="+216 ..." maxLength={25} />
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              required
+              placeholder="+216 ..."
+              maxLength={25}
+            />
             {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
           </div>
 
@@ -492,8 +477,8 @@ function AuditReportForm({ result }: { result: AuditResult }) {
                 className="mt-0.5"
               />
               <span className="leading-relaxed text-foreground/90">
-                J'accepte que mon fichier et mes coordonnées soient traités pour
-                générer cet audit et d'être recontacté(e) par Insight Medics.{" "}
+                J'accepte que mon fichier et mes coordonnées soient traités pour générer cet audit
+                et d'être recontacté(e) par Insight Medics.{" "}
                 <a
                   href="/confidentialite"
                   target="_blank"
@@ -505,9 +490,7 @@ function AuditReportForm({ result }: { result: AuditResult }) {
                 .
               </span>
             </label>
-            {errors.consent && (
-              <p className="mt-1.5 text-xs text-destructive">{errors.consent}</p>
-            )}
+            {errors.consent && <p className="mt-1.5 text-xs text-destructive">{errors.consent}</p>}
           </div>
 
           <div className="sm:col-span-2 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">

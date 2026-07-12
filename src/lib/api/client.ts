@@ -17,8 +17,7 @@ import { needsHumanReview } from "@/lib/audit/thresholds";
 
 const STORAGE_KEY = "im_mock_db_v1";
 const USE_MOCK =
-  (import.meta.env.VITE_USE_MOCK_API ?? "true") !== "false" ||
-  !import.meta.env.VITE_API_BASE_URL;
+  (import.meta.env.VITE_USE_MOCK_API ?? "true") !== "false" || !import.meta.env.VITE_API_BASE_URL;
 
 interface MockDb {
   leads: Lead[];
@@ -42,9 +41,7 @@ function writeDb(db: MockDb) {
 }
 
 function uid(prefix: string) {
-  return `${prefix}_${Date.now().toString(36)}${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
 // --- LEADS ---
@@ -90,10 +87,7 @@ export async function getLead(id: string): Promise<Lead | null> {
   return (await res.json()) as Lead;
 }
 
-export async function updateLead(
-  id: string,
-  patch: Partial<Lead>,
-): Promise<Lead | null> {
+export async function updateLead(id: string, patch: Partial<Lead>): Promise<Lead | null> {
   if (USE_MOCK) {
     const db = readDb();
     const idx = db.leads.findIndex((l) => l.id === id);
@@ -118,18 +112,15 @@ export interface RunAuditOptions {
   onEvent?: (evt: AuditEvent) => void;
 }
 
-export async function runAudit({
-  file,
-  onEvent,
-}: RunAuditOptions): Promise<AuditResult> {
+export async function runAudit({ file, onEvent }: RunAuditOptions): Promise<AuditResult> {
   if (!USE_MOCK) {
     // Backend réel
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/audit/upload`,
-      { method: "POST", body: fd },
-    );
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/audit/upload`, {
+      method: "POST",
+      body: fd,
+    });
     if (!res.ok) throw new Error("Erreur lors de l'audit");
     return (await res.json()) as AuditResult;
   }
@@ -176,7 +167,7 @@ export async function runAudit({
   const score = 55 + (seed % 40); // 55–94
   const missingPct = Math.round(((seed * 7) % 30) * 10) / 10;
   const duplicatesPct = Math.round(((seed * 3) % 9) * 10) / 10;
-  const rowCount = 80 + (seed * 17);
+  const rowCount = 80 + seed * 17;
   const columnCount = 12 + (seed % 35);
 
   const issues: AuditResult["issues"] = [];

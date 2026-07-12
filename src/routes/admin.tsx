@@ -5,10 +5,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
-    meta: [
-      { title: "Admin — Insight Medics" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Admin — Insight Medics" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: AdminLayout,
 });
@@ -31,14 +28,9 @@ function AdminLayout() {
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link to="/admin" className="flex items-center gap-3">
             <Logo showWordmark={false} />
-            <span className="font-display text-sm font-semibold text-foreground">
-              Admin · CRM
-            </span>
+            <span className="font-display text-sm font-semibold text-foreground">Admin · CRM</span>
           </Link>
-          <Link
-            to="/"
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
+          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
             ← Retour au site
           </Link>
         </div>
@@ -63,9 +55,7 @@ function AdminLayout() {
           ))}
           <div className="mt-4 rounded-md border border-amber-300/40 bg-amber-500/5 p-3 text-xs text-amber-800 dark:text-amber-300">
             <ShieldAlert className="mb-1 inline h-3.5 w-3.5" />
-            <p>
-              Zone non protégée (dev). À sécuriser avant publication.
-            </p>
+            <p>Zone non protégée (dev). À sécuriser avant publication.</p>
           </div>
         </aside>
 

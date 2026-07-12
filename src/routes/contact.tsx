@@ -36,12 +36,7 @@ import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
-import {
-  HONEYPOT_FIELD,
-  honeypotStyle,
-  isHoneypotTripped,
-  isTooFast,
-} from "@/lib/anti-spam";
+import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/contact")({
@@ -50,14 +45,12 @@ export const Route = createFileRoute("/contact")({
       { title: "Contact — Insight Medics" },
       {
         name: "description",
-        content:
-          "Décrivez votre projet de thèse ou de publication. Réponse sous 48h.",
+        content: "Décrivez votre projet de thèse ou de publication. Réponse sous 48h.",
       },
       { property: "og:title", content: "Contact — Insight Medics" },
       {
         property: "og:description",
-        content:
-          "Réponse sous 48h. Décrivez votre projet et nous revenons vers vous.",
+        content: "Réponse sous 48h. Décrivez votre projet et nous revenons vers vous.",
       },
     ],
   }),
@@ -82,10 +75,7 @@ const COUNTRY_CODES = [
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Nom trop court").max(100, "Nom trop long"),
   email: z.string().trim().email("Email invalide").max(255, "Email trop long"),
-  phone: z
-    .string()
-    .trim()
-    .regex(phoneLocalRegex, "Numéro à 6-12 chiffres requis"),
+  phone: z.string().trim().regex(phoneLocalRegex, "Numéro à 6-12 chiffres requis"),
   subject: z.string().trim().min(3, "Sujet trop court").max(150, "Sujet trop long"),
   problem: z
     .string()
@@ -123,12 +113,7 @@ const SERVICE_OFFERS: ServiceOffer[] = [
   { id: "imrad", name: "Thèse complète", price: "1 200", tier: "Le plus choisi", featured: true },
 ];
 
-const URGENCIES = [
-  "< 2 semaines",
-  "2-4 semaines",
-  "> 1 mois",
-  "Pas de deadline",
-] as const;
+const URGENCIES = ["< 2 semaines", "2-4 semaines", "> 1 mois", "Pas de deadline"] as const;
 
 const SUBJECT_EXAMPLES = [
   "Thèse rétrospective en cardiologie",
@@ -207,9 +192,7 @@ function ContactPage() {
       setShowErrorBanner(true);
       const firstError = Object.keys(fe)[0];
       if (firstError) {
-        const el = formRef.current?.querySelector<HTMLElement>(
-          `[name="${firstError}"]`
-        );
+        const el = formRef.current?.querySelector<HTMLElement>(`[name="${firstError}"]`);
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
         setTimeout(() => el?.focus(), 300);
       } else if (hasConsentError) {
@@ -227,14 +210,11 @@ function ContactPage() {
       .map((id) => SERVICE_OFFERS.find((o) => o.id === id)?.name)
       .filter(Boolean)
       .join(", ");
-    const metaParts = [
-      offersLabel ? `Offres : ${offersLabel}` : null,
-      `Délai : ${urgency}`,
-    ].filter(Boolean);
+    const metaParts = [offersLabel ? `Offres : ${offersLabel}` : null, `Délai : ${urgency}`].filter(
+      Boolean,
+    );
     const meta = metaParts.join(" | ");
-    const finalMessage = parsed.data.message
-      ? `${meta}\n${parsed.data.message}`
-      : meta;
+    const finalMessage = parsed.data.message ? `${meta}\n${parsed.data.message}` : meta;
     try {
       await createLead({
         source: "contact",
@@ -312,10 +292,9 @@ function ContactPage() {
                     defaultValue=""
                   />
                   <p className="text-xs text-muted-foreground">
-                    Les champs marqués d'un{" "}
-                    <span className="text-destructive">*</span> sont obligatoires.
+                    Les champs marqués d'un <span className="text-destructive">*</span> sont
+                    obligatoires.
                   </p>
-
 
                   {showErrorBanner && (
                     <div
@@ -323,9 +302,7 @@ function ContactPage() {
                       className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
                     >
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                      <span>
-                        Merci de compléter les champs obligatoires avant l'envoi.
-                      </span>
+                      <span>Merci de compléter les champs obligatoires avant l'envoi.</span>
                     </div>
                   )}
 
@@ -385,9 +362,7 @@ function ContactPage() {
                                       {c.flag}
                                     </span>
                                     <span className="font-medium">{c.code}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {c.name}
-                                    </span>
+                                    <span className="text-xs text-muted-foreground">{c.name}</span>
                                   </span>
                                 </SelectItem>
                               ))}
@@ -442,9 +417,7 @@ function ContactPage() {
                         />
                       </IconInput>
                       <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          Inspirations :
-                        </span>
+                        <span className="text-xs text-muted-foreground">Inspirations :</span>
                         {SUBJECT_EXAMPLES.map((ex) => (
                           <button
                             key={ex}
@@ -456,13 +429,9 @@ function ContactPage() {
                           </button>
                         ))}
                       </div>
-
                     </Field>
 
-                    <OffersField
-                      value={selectedOffers}
-                      onChange={setSelectedOffers}
-                    />
+                    <OffersField value={selectedOffers} onChange={setSelectedOffers} />
 
                     <PillsField
                       label="Délai souhaité"
@@ -539,9 +508,7 @@ function ContactPage() {
                     <label
                       className={cn(
                         "flex items-start gap-3 rounded-xl border bg-background/60 p-3.5 text-sm transition-colors",
-                        consentError
-                          ? "border-destructive/40 bg-destructive/5"
-                          : "border-border",
+                        consentError ? "border-destructive/40 bg-destructive/5" : "border-border",
                       )}
                     >
                       <Checkbox
@@ -555,10 +522,11 @@ function ContactPage() {
                         className="mt-0.5"
                       />
                       <span className="leading-relaxed text-foreground/90">
-                        <span aria-hidden className="mr-0.5 text-destructive">*</span>
-                        J'accepte d'être recontacté(e) par {siteConfig.name} au
-                        sujet de ma demande et le traitement de mes données
-                        comme décrit dans la{" "}
+                        <span aria-hidden className="mr-0.5 text-destructive">
+                          *
+                        </span>
+                        J'accepte d'être recontacté(e) par {siteConfig.name} au sujet de ma demande
+                        et le traitement de mes données comme décrit dans la{" "}
                         <a
                           href="/confidentialite"
                           target="_blank"
@@ -599,7 +567,6 @@ function ContactPage() {
             </div>
           </div>
 
-
           <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               <div className="sm:col-span-2 lg:col-span-1">
@@ -634,7 +601,6 @@ function ContactPage() {
               />
             </div>
           </aside>
-
         </div>
       </Section>
 
@@ -660,9 +626,7 @@ function SuccessState({ onReset }: { onReset: () => void }) {
         <CheckCircle2 className="h-5 w-5" />
       </div>
       <div>
-        <h3 className="font-display text-xl font-bold tracking-tight">
-          Message envoyé.
-        </h3>
+        <h3 className="font-display text-xl font-bold tracking-tight">Message envoyé.</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Merci. Voici ce qui se passe maintenant :
         </p>
@@ -676,9 +640,7 @@ function SuccessState({ onReset }: { onReset: () => void }) {
             <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 font-display text-xs font-bold text-brand">
               {i + 1}
             </span>
-            <span className="text-sm leading-relaxed text-foreground/90">
-              {s}
-            </span>
+            <span className="text-sm leading-relaxed text-foreground/90">{s}</span>
           </li>
         ))}
       </ol>
@@ -729,9 +691,7 @@ function InfoCard({
     <div
       className={cn(
         "flex h-full items-start gap-3 rounded-2xl border p-4 sm:gap-4 sm:p-5",
-        highlight
-          ? "border-brand/30 bg-brand/5"
-          : "border-border bg-surface/60",
+        highlight ? "border-brand/30 bg-brand/5" : "border-border bg-surface/60",
       )}
     >
       <span
@@ -743,17 +703,12 @@ function InfoCard({
         {icon}
       </span>
       <div className="min-w-0">
-        <h3 className="font-display text-sm font-semibold tracking-tight sm:text-base">
-          {title}
-        </h3>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-          {text}
-        </p>
+        <h3 className="font-display text-sm font-semibold tracking-tight sm:text-base">{title}</h3>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{text}</p>
       </div>
     </div>
   );
 }
-
 
 function Field({
   id,
@@ -779,9 +734,7 @@ function Field({
         )}
       </Label>
       {children}
-      {hint && (
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      )}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -816,7 +769,7 @@ function CharCount({ value, max }: { value: string; max: number }) {
       className={cn(
         "mt-1 text-right text-[11px] tabular-nums text-muted-foreground",
         ratio >= 0.8 && ratio < 1 && "text-brand",
-        ratio >= 1 && "text-destructive"
+        ratio >= 1 && "text-destructive",
       )}
     >
       {len}/{max}
@@ -852,7 +805,7 @@ function PillsField({
                 "rounded-full border px-3.5 py-2 text-sm font-medium transition-colors",
                 selected
                   ? "border-brand bg-brand/10 text-brand"
-                  : "border-border bg-surface/60 text-muted-foreground hover:border-brand/40 hover:text-foreground"
+                  : "border-border bg-surface/60 text-muted-foreground hover:border-brand/40 hover:text-foreground",
               )}
             >
               {opt}
@@ -864,13 +817,7 @@ function PillsField({
   );
 }
 
-function OffersField({
-  value,
-  onChange,
-}: {
-  value: string[];
-  onChange: (next: string[]) => void;
-}) {
+function OffersField({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
   const toggle = (id: string) => {
     if (value.includes(id)) {
       onChange(value.filter((v) => v !== id));
@@ -883,9 +830,7 @@ function OffersField({
     <div className="space-y-2.5">
       <div className="flex items-baseline justify-between gap-3">
         <Label>Offres qui vous intéressent</Label>
-        <span className="text-xs text-muted-foreground">
-          Sélectionnez une ou plusieurs
-        </span>
+        <span className="text-xs text-muted-foreground">Sélectionnez une ou plusieurs</span>
       </div>
       <div role="group" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {SERVICE_OFFERS.map((offer) => {
@@ -902,7 +847,7 @@ function OffersField({
                 "group relative flex h-full flex-col overflow-hidden rounded-xl border-2 p-4 text-left transition-all",
                 selected
                   ? "border-brand bg-brand/5"
-                  : "border-border bg-surface/40 hover:border-brand/40"
+                  : "border-border bg-surface/40 hover:border-brand/40",
               )}
             >
               {offer.featured && (
@@ -917,13 +862,13 @@ function OffersField({
                   "absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors",
                   selected
                     ? "border-brand bg-brand text-brand-foreground"
-                    : "border-border bg-background"
+                    : "border-border bg-background",
                 )}
               >
                 <Check
                   className={cn(
                     "h-3 w-3 transition-opacity",
-                    selected ? "opacity-100" : "opacity-0"
+                    selected ? "opacity-100" : "opacity-0",
                   )}
                   strokeWidth={3}
                 />
@@ -938,7 +883,7 @@ function OffersField({
                   <span
                     className={cn(
                       "text-[11px] font-bold uppercase tracking-wider",
-                      accent ? "text-brand" : "text-muted-foreground"
+                      accent ? "text-brand" : "text-muted-foreground",
                     )}
                   >
                     {offer.tier}
@@ -948,16 +893,14 @@ function OffersField({
               <span
                 className={cn(
                   "mt-1.5 text-sm font-semibold transition-colors",
-                  selected ? "text-brand" : "text-foreground group-hover:text-brand"
+                  selected ? "text-brand" : "text-foreground group-hover:text-brand",
                 )}
               >
                 {offer.name}
               </span>
               <span className="mt-4 text-lg font-bold tabular-nums text-foreground">
                 {offer.price}{" "}
-                <span className="text-xs font-medium uppercase text-muted-foreground">
-                  DT
-                </span>
+                <span className="text-xs font-medium uppercase text-muted-foreground">DT</span>
               </span>
             </button>
           );

@@ -31,15 +31,23 @@ function AdminDashboard() {
       <div>
         <h1 className="font-display text-2xl font-bold">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Vue d'ensemble des prospects et clients (données locales — branchera
-          ton backend via VITE_API_BASE_URL).
+          Vue d'ensemble des prospects et clients (données locales — branchera ton backend via
+          VITE_API_BASE_URL).
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={<Users className="h-4 w-4" />} label="Total leads" value={stats.total} />
-        <StatCard icon={<Users className="h-4 w-4" />} label="Prospects actifs" value={stats.prospects} />
-        <StatCard icon={<UserCheck className="h-4 w-4" />} label="Clients gagnés" value={stats.won} />
+        <StatCard
+          icon={<Users className="h-4 w-4" />}
+          label="Prospects actifs"
+          value={stats.prospects}
+        />
+        <StatCard
+          icon={<UserCheck className="h-4 w-4" />}
+          label="Clients gagnés"
+          value={stats.won}
+        />
         <StatCard icon={<UserX className="h-4 w-4" />} label="Perdus" value={stats.lost} />
       </div>
 
@@ -69,15 +77,7 @@ function AdminDashboard() {
   );
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <div className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-brand/10 text-brand">

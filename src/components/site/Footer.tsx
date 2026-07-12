@@ -16,12 +16,8 @@ export function SiteFooter() {
                 {siteConfig.name}
               </span>
             </Link>
-            <p className="mt-4 max-w-md text-sm text-muted-foreground">
-              {siteConfig.description}
-            </p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Basé à {siteConfig.location}.
-            </p>
+            <p className="mt-4 max-w-md text-sm text-muted-foreground">{siteConfig.description}</p>
+            <p className="mt-3 text-xs text-muted-foreground">Basé à {siteConfig.location}.</p>
           </div>
 
           <div>
@@ -83,7 +79,9 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} {siteConfig.name}. Tous droits réservés.</p>
+          <p>
+            © {new Date().getFullYear()} {siteConfig.name}. Tous droits réservés.
+          </p>
           <p>Conçu pour les médecins, résidents et thésards francophones.</p>
         </div>
       </div>

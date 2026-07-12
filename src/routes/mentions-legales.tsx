@@ -28,7 +28,11 @@ function MentionsPage() {
     <SiteLayout>
       <PageHero
         eyebrow="Informations légales"
-        title={<>Mentions <span className="text-brand">légales</span>.</>}
+        title={
+          <>
+            Mentions <span className="text-brand">légales</span>.
+          </>
+        }
         description="Informations sur l'éditeur du site et les conditions d'utilisation."
       />
 
@@ -36,16 +40,13 @@ function MentionsPage() {
         <article className="mx-auto max-w-3xl space-y-10 text-sm leading-relaxed text-foreground/90">
           <LegalBlock title="Éditeur du site">
             <p>
-              <strong>{siteConfig.name}</strong> — accompagnement à la rédaction
-              de thèses et publications scientifiques en médecine.
+              <strong>{siteConfig.name}</strong> — accompagnement à la rédaction de thèses et
+              publications scientifiques en médecine.
             </p>
             <p>Basé à {siteConfig.location}.</p>
             <p>
               Contact :{" "}
-              <a
-                href={`mailto:${siteConfig.email}`}
-                className="text-brand hover:underline"
-              >
+              <a href={`mailto:${siteConfig.email}`} className="text-brand hover:underline">
                 {siteConfig.email}
               </a>
             </p>
@@ -53,30 +54,27 @@ function MentionsPage() {
 
           <LegalBlock title="Directeur de la publication">
             <p>
-              La direction de la publication est assurée par l'équipe{" "}
-              {siteConfig.name}. Pour toute question éditoriale, contactez-nous
-              par email.
+              La direction de la publication est assurée par l'équipe {siteConfig.name}. Pour toute
+              question éditoriale, contactez-nous par email.
             </p>
           </LegalBlock>
 
           <LegalBlock title="Hébergement">
             <p>
-              Les coordonnées complètes de l'hébergeur seront précisées lors de
-              la mise en production sur un domaine définitif.
+              Les coordonnées complètes de l'hébergeur seront précisées lors de la mise en
+              production sur un domaine définitif.
             </p>
           </LegalBlock>
 
           <LegalBlock title="Propriété intellectuelle">
             <p>
-              L'ensemble des contenus présents sur ce site (textes, visuels,
-              méthode, marque) est la propriété d'{siteConfig.name} ou de ses
-              partenaires. Toute reproduction, totale ou partielle, est
-              interdite sans autorisation écrite préalable.
+              L'ensemble des contenus présents sur ce site (textes, visuels, méthode, marque) est la
+              propriété d'{siteConfig.name} ou de ses partenaires. Toute reproduction, totale ou
+              partielle, est interdite sans autorisation écrite préalable.
             </p>
             <p>
-              Les livrables remis aux clients (analyses, rédactions, rapports)
-              deviennent leur propriété pleine et entière après règlement, dans
-              les conditions définies par nos{" "}
+              Les livrables remis aux clients (analyses, rédactions, rapports) deviennent leur
+              propriété pleine et entière après règlement, dans les conditions définies par nos{" "}
               <a href="/cgv" className="text-brand hover:underline">
                 conditions générales de vente
               </a>
@@ -86,23 +84,21 @@ function MentionsPage() {
 
           <LegalBlock title="Limites de responsabilité">
             <p>
-              {siteConfig.name} apporte le plus grand soin à la qualité des
-              informations diffusées sur ce site, sans toutefois pouvoir
-              garantir l'absence totale d'inexactitudes. L'utilisateur reste
-              seul responsable de l'usage qu'il fait des informations
+              {siteConfig.name} apporte le plus grand soin à la qualité des informations diffusées
+              sur ce site, sans toutefois pouvoir garantir l'absence totale d'inexactitudes.
+              L'utilisateur reste seul responsable de l'usage qu'il fait des informations
               consultées.
             </p>
             <p>
-              Les contenus à visée médicale ou scientifique sont fournis à titre
-              informatif et ne se substituent pas à un avis professionnel
-              qualifié.
+              Les contenus à visée médicale ou scientifique sont fournis à titre informatif et ne se
+              substituent pas à un avis professionnel qualifié.
             </p>
           </LegalBlock>
 
           <LegalBlock title="Données personnelles">
             <p>
-              Le traitement des données personnelles collectées via les
-              formulaires de ce site est détaillé dans notre{" "}
+              Le traitement des données personnelles collectées via les formulaires de ce site est
+              détaillé dans notre{" "}
               <a href="/confidentialite" className="text-brand hover:underline">
                 politique de confidentialité
               </a>
@@ -112,15 +108,14 @@ function MentionsPage() {
 
           <LegalBlock title="Droit applicable">
             <p>
-              Les présentes mentions sont régies par le droit tunisien. Tout
-              litige relèvera de la compétence exclusive des tribunaux de
-              Sousse, sauf disposition légale contraire.
+              Les présentes mentions sont régies par le droit tunisien. Tout litige relèvera de la
+              compétence exclusive des tribunaux de Sousse, sauf disposition légale contraire.
             </p>
           </LegalBlock>
 
           <p className="text-xs italic text-muted-foreground">
-            Dernière mise à jour : juin 2026 — version initiale, à faire valider
-            par un juriste avant exploitation commerciale.
+            Dernière mise à jour : juin 2026 — version initiale, à faire valider par un juriste
+            avant exploitation commerciale.
           </p>
         </article>
       </Section>
@@ -128,18 +123,10 @@ function MentionsPage() {
   );
 }
 
-function LegalBlock({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function LegalBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <h2 className="font-display text-xl font-bold tracking-tight text-foreground">
-        {title}
-      </h2>
+      <h2 className="font-display text-xl font-bold tracking-tight text-foreground">{title}</h2>
       <div className="space-y-2 text-muted-foreground">{children}</div>
     </section>
   );

@@ -49,14 +49,13 @@ function MethodePage() {
             Notre méthode
           </span>
           <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-balance sm:mt-5 sm:text-5xl lg:text-6xl">
-            Des résultats que vous comprenez et pouvez{" "}
-            <span className="text-brand">justifier</span>.
+            Des résultats que vous comprenez et pouvez <span className="text-brand">justifier</span>
+            .
           </h1>
           <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground text-balance sm:mt-5 sm:text-lg">
-            Votre thèse engage votre nom et celui de votre directeur. Notre
-            méthode vise une chose : que chaque chiffre de votre travail soit
-            calculé directement sur vos données, traçable et reproductible — du
-            premier calcul à la soutenance.
+            Votre thèse engage votre nom et celui de votre directeur. Notre méthode vise une chose :
+            que chaque chiffre de votre travail soit calculé directement sur vos données, traçable
+            et reproductible — du premier calcul à la soutenance.
           </p>
           <div className="mx-auto mt-6 h-px w-16 bg-brand/40 sm:mt-8" aria-hidden />
         </div>
@@ -100,9 +99,8 @@ function MethodePage() {
             <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
           </span>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Deux allers-retours avec vous sont inclus dans la prestation
-            complète : un pour cadrer le plan d'analyse, un pour ajuster après
-            restitution.
+            Deux allers-retours avec vous sont inclus dans la prestation complète : un pour cadrer
+            le plan d'analyse, un pour ajuster après restitution.
           </p>
         </div>
       </Section>
@@ -125,8 +123,8 @@ function MethodePage() {
                 Voyez la méthode appliquée à votre base.
               </h2>
               <p className="mt-3 text-[15px] leading-relaxed text-primary-foreground/80 sm:text-base">
-                L'audit est gratuit. Vous recevez un rapport clair sur l'état
-                de votre base — et un aperçu concret de notre méthode.
+                L'audit est gratuit. Vous recevez un rapport clair sur l'état de votre base — et un
+                aperçu concret de notre méthode.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
@@ -146,9 +144,7 @@ function MethodePage() {
                 variant="outline"
                 className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
               >
-                <Link to={siteConfig.cta.order.to}>
-                  Consulter le barème du score
-                </Link>
+                <Link to={siteConfig.cta.order.to}>Consulter le barème du score</Link>
               </Button>
             </div>
           </div>
@@ -185,9 +181,7 @@ function Pillar({
       <h3 className="mt-4 font-display text-base font-semibold tracking-tight sm:mt-5 sm:text-lg">
         {title}
       </h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        {text}
-      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p>
     </div>
   );
 }
@@ -258,11 +252,9 @@ function PipelineTimeline() {
   ];
 
   const dotByRole: Record<Role, string> = {
-    client:
-      "border-2 border-primary bg-card text-primary",
+    client: "border-2 border-primary bg-card text-primary",
     team: "border border-primary bg-primary text-primary-foreground",
-    exchange:
-      "border-2 border-brand bg-brand/10 text-brand ring-4 ring-brand/10",
+    exchange: "border-2 border-brand bg-brand/10 text-brand ring-4 ring-brand/10",
   };
 
   const badgeByRole: Record<Role, string> = {
@@ -323,9 +315,7 @@ function PipelineTimeline() {
               <h3 className="mt-3 font-display text-base font-semibold tracking-tight sm:text-lg">
                 {s.title}
               </h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                {s.text}
-              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.text}</p>
 
               {s.highlight && (
                 <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
