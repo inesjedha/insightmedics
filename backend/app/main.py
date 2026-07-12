@@ -3,23 +3,15 @@
 Démarrage local :  uvicorn app.main:app --reload --port 8000
 """
 
-import sys
-
-if sys.version_info < (3, 10):
-    raise RuntimeError(
-        f"Python 3.10+ requis (vous utilisez {sys.version_info.major}.{sys.version_info.minor}). "
-        "Sur macOS : brew install python@3.12, puis recréez le venv avec python3.12 -m venv .venv"
-    )
-
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .db import Base, engine
+from .db import Base, apply_light_migrations, engine
 from .routers import audits, leads
 
 Base.metadata.create_all(bind=engine)
+apply_light_migrations()
 
 app = FastAPI(title="Insight Medics API", version="0.2.0")
 

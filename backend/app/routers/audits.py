@@ -96,6 +96,7 @@ def upload_and_audit(file: UploadFile, db: Session = Depends(get_db)):
         r["score"], r["missing_pct"], r["duplicates_pct"], r["critical_issues"]
     )
     audit.profiling = r["profiling"]
+    audit.score_detail = r["score_detail"]
     audit.events = r["events"]
     db.commit()
     db.refresh(audit)
@@ -126,6 +127,15 @@ def get_profiling(audit_id: str, db: Session = Depends(get_db)):
     if not a or not a.profiling:
         raise HTTPException(404, "Audit introuvable")
     return a.profiling
+
+
+@router.get("/{audit_id}/score")
+def get_score_detail(audit_id: str, db: Session = Depends(get_db)):
+    """Décomposition complète du score : 8 domaines, critères, plafonds, confiance."""
+    a = db.get(Audit, audit_id)
+    if not a or not a.score_detail:
+        raise HTTPException(404, "Audit introuvable")
+    return a.score_detail
 
 
 @router.get("/{audit_id}/report.pdf")

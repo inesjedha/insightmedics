@@ -57,4 +57,5 @@ class Audit(Base):
 
     # Détail complet (interne / futur rapport)
     profiling: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    score_detail: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     events: Mapped[list | None] = mapped_column(JSON, nullable=True)

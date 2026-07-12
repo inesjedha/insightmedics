@@ -142,6 +142,15 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
             top_pct = s.value_counts(normalize=True).iloc[0] * 100
             if top_pct >= 95:
                 near_constant.append({"col": str(c), "dominant_pct": round(float(top_pct), 1)})
+    # Colonnes au contenu strictement identique sous deux noms (§9)
+    dup_col_mask = df.T.duplicated(keep=False)
+    duplicated_columns: list[list[str]] = []
+    if dup_col_mask.any():
+        groups: dict[int, list[str]] = {}
+        for c in df.columns[dup_col_mask]:
+            key = hash(tuple(df[c].fillna("__na__").astype(str).tolist()))
+            groups.setdefault(key, []).append(str(c))
+        duplicated_columns = [g for g in groups.values() if len(g) >= 2]
 
     structure = {
         "n_rows": n_rows,
@@ -156,6 +165,7 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
         "empty_columns": empty_cols,
         "constant_columns": constant_cols,
         "near_constant_columns": near_constant,
+        "duplicated_columns": duplicated_columns,
     }
 
     # --- Colonnes ---
@@ -192,6 +202,7 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
                         "mean": v.mean(), "sd": v.std(), "median": v.median(),
                         "q1": q1, "q3": q3, "min": v.min(), "max": v.max(),
                         "skew": v.skew() if len(v) > 2 else None,
+                        "kurtosis": v.kurt() if len(v) > 3 else None,
                         "n_zeros": (v == 0).sum(), "n_negative": (v < 0).sum(),
                     }.items()
                 }
@@ -209,6 +220,15 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
                 col["flags"].append("rare_categories")
         if col["suspected_missing_codes"]:
             col["flags"].append("suspected_missing_code_in_values")
+        # Valeurs observées absentes des libellés de valeurs SPSS déclarés (§13)
+        if vlabels:
+            declared = {str(k) for k in vlabels} | {str(float(k)) for k in vlabels
+                                                    if str(k).lstrip("-").isdigit()}
+            observed = {str(v) for v in s.dropna().unique()}
+            outside = sorted(observed - declared)[:10]
+            if outside:
+                col["values_outside_labels"] = outside
+                col["flags"].append("values_outside_labels")
         columns.append(col)
 
     # --- Manquants ---

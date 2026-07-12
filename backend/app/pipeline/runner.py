@@ -9,6 +9,7 @@ from typing import Any
 from .ingest import ingest
 from .profile import profile
 from .score import score_and_issues
+from .score_engine import compute_score
 
 
 def _now() -> str:
@@ -32,11 +33,18 @@ def run_audit(path: str | Path, original_name: str) -> dict[str, Any]:
     log("info", "Profilage des variables, manquants, doublons, dates…")
     profiling = profile(df, meta)
 
-    log("info", "Calcul du score de qualité /100…")
-    score, issues, notes = score_and_issues(profiling)
+    log("info", "Calcul du score de qualité /100 (grille officielle en 8 domaines)…")
+    _, issues, notes = score_and_issues(profiling)  # issues lisibles pour le front
+    score_detail = compute_score(profiling)          # grille de Hamza (M3)
+    score = score_detail["score_final"]
+    if score_detail["plafonds_appliques"]:
+        for c in score_detail["plafonds_appliques"]:
+            issues.insert(0, {"level": "critical",
+                              "label": f"Plafond appliqué ({c['plafond']}/100) : {c['defaut']}"})
     n_crit = sum(1 for i in issues if i["level"] == "critical")
     log("success" if n_crit == 0 else "warn",
-        f"Audit terminé — score {score}/100, {n_crit} anomalie(s) critique(s)")
+        f"Audit terminé — score {score}/100 ({score_detail['niveau_qualite']}), "
+        f"{n_crit} anomalie(s) critique(s), confiance {score_detail['confiance']['niveau']}")
 
     m = profiling["missing_summary"]
     s = profiling["structure"]
@@ -51,6 +59,7 @@ def run_audit(path: str | Path, original_name: str) -> dict[str, Any]:
         "issues": issues,
         "critical_issues": n_crit,
         "profiling": profiling,
+        "score_detail": score_detail,
         "events": events,
         "internal_notes": notes,
     }
