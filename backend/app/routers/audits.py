@@ -47,7 +47,8 @@ def _to_result(a: Audit) -> AuditResult:
 
 
 @router.post("/upload", response_model=AuditResult, response_model_by_alias=True)
-def upload_and_audit(file: UploadFile, db: Session = Depends(get_db)):
+def upload_and_audit(file: UploadFile, protocol: UploadFile | None = None,
+                     db: Session = Depends(get_db)):
     ext = Path(file.filename or "").suffix.lower()
     if ext not in ALLOWED_EXT:
         raise HTTPException(415, f"Format non supporté : {ext or 'inconnu'}. "
@@ -66,13 +67,26 @@ def upload_and_audit(file: UploadFile, db: Session = Depends(get_db)):
                 raise HTTPException(413, "Fichier trop volumineux (max 50 MB)")
             out.write(chunk)
 
+    # Protocole optionnel : extrait en texte pour l'audit IA
+    protocol_text = None
+    if protocol and protocol.filename:
+        from ..pipeline.docs_extract import extract_text
+
+        pdest = dest_dir / f"protocol{Path(protocol.filename).suffix.lower()}"
+        with open(pdest, "wb") as out:
+            out.write(protocol.file.read())
+        try:
+            protocol_text = extract_text(pdest)
+        except ValueError as exc:
+            raise HTTPException(415, str(exc)) from exc
+
     audit = Audit(id=audit_id, file_name=file.filename or dest.name,
                   file_size=size, stored_path=str(dest), started_at=utcnow_iso())
     db.add(audit)
     db.commit()
 
     try:
-        r = run_audit(dest, file.filename or dest.name)
+        r = run_audit(dest, file.filename or dest.name, protocol_text)
     except IngestError as exc:
         audit.status, audit.error, audit.finished_at = "failed", str(exc), utcnow_iso()
         db.commit()
@@ -97,6 +111,7 @@ def upload_and_audit(file: UploadFile, db: Session = Depends(get_db)):
     )
     audit.profiling = r["profiling"]
     audit.score_detail = r["score_detail"]
+    audit.ai_audit = r["ai_audit"]
     audit.events = r["events"]
     db.commit()
     db.refresh(audit)
@@ -136,6 +151,18 @@ def get_score_detail(audit_id: str, db: Session = Depends(get_db)):
     if not a or not a.score_detail:
         raise HTTPException(404, "Audit introuvable")
     return a.score_detail
+
+
+@router.get("/{audit_id}/ai")
+def get_ai_audit(audit_id: str, db: Session = Depends(get_db)):
+    """Audit IA : étude reconstruite, dictionnaire, règles et violations."""
+    a = db.get(Audit, audit_id)
+    if not a:
+        raise HTTPException(404, "Audit introuvable")
+    if not a.ai_audit:
+        raise HTTPException(404, "Audit IA non exécuté pour cet audit "
+                                 "(clé API absente au moment du traitement ?)")
+    return a.ai_audit
 
 
 @router.get("/{audit_id}/report.pdf")

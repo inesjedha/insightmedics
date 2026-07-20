@@ -23,7 +23,7 @@ def apply_light_migrations() -> None:
     """
     from sqlalchemy import text
 
-    wanted = {"audits": {"score_detail": "JSON"}}
+    wanted = {"audits": {"score_detail": "JSON", "ai_audit": "JSON"}}
     with engine.begin() as conn:
         for table, columns in wanted.items():
             for col, coltype in columns.items():

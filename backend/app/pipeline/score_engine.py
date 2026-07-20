@@ -71,7 +71,10 @@ def compute_score(profiling: dict[str, Any],
     m = profiling["missing_summary"]
     cols = profiling["columns"]
     n_rows, n_cols = s["n_rows"], s["n_cols"]
-    has_si = bool(scoring_inputs)
+    # Les jugements méthodologiques (M5) sont distincts des sorties mécaniques
+    # du moteur de règles (M4) : seuls les premiers élèvent la confiance.
+    has_si = any(k not in ("rule_violations", "primary_endpoint_missing_pct")
+                 for k in si)
 
     domains: list[Domain] = []
 

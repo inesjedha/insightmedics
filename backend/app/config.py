@@ -14,8 +14,10 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
     # Rétention des fichiers uploadés (jours) — purge à implémenter (tâche cron).
     file_retention_days: int = 30
-    # Clé Anthropic (jalons M4/M5 — inutilisée pour l'instant).
+    # Clé Anthropic (jalons M4/M5).
     anthropic_api_key: str = ""
+    # Modèle utilisé pour les appels d'audit IA.
+    llm_model: str = "claude-sonnet-5"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
