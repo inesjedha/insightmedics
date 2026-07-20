@@ -92,10 +92,12 @@ def upload_and_audit(file: UploadFile, protocol: UploadFile | None = None,
         db.commit()
         raise HTTPException(422, str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
+        import traceback
+
+        traceback.print_exc()  # visible dans les logs uvicorn pour le débogage
         audit.status, audit.error, audit.finished_at = "failed", str(exc), utcnow_iso()
         db.commit()
-        shutil.rmtree(dest_dir, ignore_errors=True)
-        raise HTTPException(500, "Erreur interne pendant l'audit") from exc
+        raise HTTPException(500, f"Erreur interne pendant l'audit : {exc}") from exc
 
     audit.status = "done"
     audit.started_at = r["started_at"]
