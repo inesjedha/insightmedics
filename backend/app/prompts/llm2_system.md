@@ -50,6 +50,13 @@ EXACTES ci-dessous (jamais de texte libre). En l'absence d'information suffisant
 - structure_fits_study : true|false|null
 - primary_endpoint_status : "exploitable"|"exploitable_reserves"|"partiel"|
   "non_exploitable"|"inevaluable" (état du critère de jugement principal, Hamza §25)
+- primary_endpoint_operationally_defined : true|false|null. RÈGLE CRITIQUE DE HAMZA :
+  des colonnes candidates qui existent NE SUFFISENT PAS. Un critère est « opérationnellement
+  défini » seulement si le protocole précise SANS AMBIGUÏTÉ : (1) LA variable unique (ou le
+  score composite) qui le mesure, (2) le moment/temps de mesure, (3) le contraste ou la
+  comparaison, (4) la méthode statistique. Si l'objectif reste large (« évaluer l'évolution
+  de… »), avec plusieurs mesures candidates et aucun choix préspécifié → false. En cas de
+  false, le score global est plafonné à 49/100 (défaut méthodologique majeur).
 - primary_objective_vars_available : "complet"|"partiel"|"absent"|"inevaluable"
 - secondary_objectives_vars_available : "complet"|"partiel"|"absent"|"inevaluable"
 - inclusion_criteria_verifiable : true|false|null

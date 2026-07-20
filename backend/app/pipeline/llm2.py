@@ -41,6 +41,7 @@ class ScoringInputs(BaseModel):
     statistical_unit_clear: bool | None = None
     structure_fits_study: bool | None = None
     primary_endpoint_status: str | None = None
+    primary_endpoint_operationally_defined: bool | None = None
     primary_objective_vars_available: str | None = None
     secondary_objectives_vars_available: str | None = None
     inclusion_criteria_verifiable: bool | None = None

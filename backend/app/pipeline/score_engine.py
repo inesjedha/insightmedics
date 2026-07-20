@@ -335,6 +335,10 @@ def compute_score(profiling: dict[str, Any],
 
     cap(n_rows == 0, "Absence de véritables observations / table vide", 10)
     cap(cjp_status in ("non_exploitable", "absent"), "Critère principal totalement absent", 49)
+    # Hamza : un critère principal identifié mais non opérationnalisé (variable/temps/
+    # contraste/méthode non préspécifiés) plafonne aussi à 49 — 3 bases sur 4 concernées.
+    cap(si.get("primary_endpoint_operationally_defined") is False,
+        "Critère de jugement principal non défini opérationnellement", 49)
     cap(id_col is None, "Identifiant absent et patients non individualisables", 49)
     cap(si.get("groups_reconstructible") == "non",
         "Groupes principaux impossibles à reconstruire", 59)

@@ -113,3 +113,17 @@ def test_doublons_ids_massifs_plafonnent():
 
 def test_determinisme():
     assert compute_score(CLEAN, FULL_SI) == compute_score(CLEAN, FULL_SI)
+
+
+def test_plafond_critere_principal_non_operationnel():
+    """Hamza : CJP identifié mais non opérationnalisé → plafond 49 (3 bases /4)."""
+    si = {**FULL_SI, "primary_endpoint_operationally_defined": False}
+    r = compute_score(CLEAN, si)
+    assert r["score_final"] <= 49
+    assert any("non défini opérationnellement" in c["defaut"] for c in r["plafonds_appliques"])
+
+
+def test_pas_de_plafond_si_critere_operationnel():
+    si = {**FULL_SI, "primary_endpoint_operationally_defined": True}
+    r = compute_score(CLEAN, si)
+    assert r["score_final"] > 49
