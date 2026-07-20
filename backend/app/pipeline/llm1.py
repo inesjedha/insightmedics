@@ -138,17 +138,41 @@ def _extract_json(text: str) -> dict:
     return json.loads(text[start:end + 1])
 
 
+def _call_llm(system: str, user: str) -> str:
+    """Appelle le fournisseur configuré (anthropic ou openai) et retourne le texte."""
+    provider = settings.resolved_provider
+    model = settings.resolved_model
+    if provider == "anthropic":
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        resp = client.messages.create(
+            model=model, max_tokens=16000, temperature=0,
+            system=system, messages=[{"role": "user", "content": user}],
+        )
+        return "".join(b.text for b in resp.content if b.type == "text")
+    if provider == "openai":
+        from openai import OpenAI
+
+        client = OpenAI(api_key=settings.openai_api_key)
+        resp = client.chat.completions.create(
+            model=model, temperature=0,
+            messages=[{"role": "system", "content": system},
+                      {"role": "user", "content": user}],
+        )
+        return resp.choices[0].message.content or ""
+    raise RuntimeError(f"Fournisseur IA inconnu : {provider}")
+
+
 def run_llm1(profiling: dict, df: pd.DataFrame,
              protocol_text: str | None = None) -> tuple[Llm1Output | None, list[str]]:
     """Retourne (sortie validée | None, notes). None si pas de clé API ou échec."""
     notes: list[str] = []
-    if not settings.anthropic_api_key:
-        notes.append("ANTHROPIC_API_KEY absente : audit IA sauté")
+    if not settings.resolved_provider:
+        notes.append("Aucune clé API IA configurée (ANTHROPIC_API_KEY ou "
+                     "OPENAI_API_KEY) : audit IA sauté")
         return None, notes
 
-    import anthropic
-
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     system = PROMPT_PATH.read_text(encoding="utf-8")
     user = build_user_message(profiling, df, protocol_text)
     known_cols = {c["name"] for c in profiling["columns"]}
@@ -158,11 +182,7 @@ def run_llm1(profiling: dict, df: pd.DataFrame,
         msg = user if attempt == 0 else (
             user + f"\n\n## CORRECTION DEMANDÉE\nTa réponse précédente était invalide"
                    f" ({last_error}). Renvoie UNIQUEMENT le JSON conforme au schéma.")
-        resp = client.messages.create(
-            model=settings.llm_model, max_tokens=16000, temperature=0,
-            system=system, messages=[{"role": "user", "content": msg}],
-        )
-        raw = "".join(b.text for b in resp.content if b.type == "text")
+        raw = _call_llm(system, msg)
         try:
             out = Llm1Output.model_validate(_extract_json(raw))
         except (ValueError, ValidationError, json.JSONDecodeError) as exc:
@@ -182,7 +202,8 @@ def run_llm1(profiling: dict, df: pd.DataFrame,
         if rejected:
             notes.append(f"{rejected} règle(s) rejetée(s) (hors DSL ou colonne inconnue)")
         out.coherence_rules = kept
-        notes.append(f"LLM-1 OK : {len(out.dictionary)} variables documentées, "
+        notes.append(f"LLM-1 OK ({settings.resolved_provider}/{settings.resolved_model}) : "
+                     f"{len(out.dictionary)} variables documentées, "
                      f"{len(kept)} règles retenues (tentative {attempt + 1})")
         return out, notes
 

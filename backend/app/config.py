@@ -14,10 +14,29 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
     # Rétention des fichiers uploadés (jours) — purge à implémenter (tâche cron).
     file_retention_days: int = 30
-    # Clé Anthropic (jalons M4/M5).
+    # Fournisseur IA : "anthropic" ou "openai" ("" = auto selon la clé disponible).
+    llm_provider: str = ""
     anthropic_api_key: str = ""
-    # Modèle utilisé pour les appels d'audit IA.
-    llm_model: str = "claude-sonnet-5"
+    openai_api_key: str = ""
+    # Modèle utilisé ("" = défaut du fournisseur).
+    llm_model: str = ""
+
+    @property
+    def resolved_provider(self) -> str:
+        if self.llm_provider:
+            return self.llm_provider
+        if self.anthropic_api_key:
+            return "anthropic"
+        if self.openai_api_key:
+            return "openai"
+        return ""
+
+    @property
+    def resolved_model(self) -> str:
+        if self.llm_model:
+            return self.llm_model
+        return {"anthropic": "claude-sonnet-5", "openai": "gpt-4o"}.get(
+            self.resolved_provider, "")
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
