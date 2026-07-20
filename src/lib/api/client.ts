@@ -12,7 +12,14 @@
 //   GET    /audit/:id/events       -> AuditEvent[] (ou SSE)
 //   GET    /audit/:id/report.pdf   -> binaire
 
-import type { AuditEvent, AuditResult, Lead } from "./types";
+import type {
+  AiAssessment,
+  AuditDetail,
+  AuditEvent,
+  AuditResult,
+  Lead,
+  ScoreDetail,
+} from "./types";
 import { needsHumanReview } from "@/lib/audit/thresholds";
 
 const STORAGE_KEY = "im_mock_db_v1";
@@ -109,19 +116,56 @@ export async function updateLead(id: string, patch: Partial<Lead>): Promise<Lead
 
 export interface RunAuditOptions {
   file: File;
+  protocol?: File | null;
   onEvent?: (evt: AuditEvent) => void;
 }
 
-export async function runAudit({ file, onEvent }: RunAuditOptions): Promise<AuditResult> {
+/**
+ * Récupère le détail complet d'un audit (score détaillé, jugement IA, journal).
+ * En mode mock, renvoie des valeurs nulles : la page se contente alors du résumé.
+ */
+export async function getAuditDetail(id: string): Promise<AuditDetail> {
+  if (USE_MOCK) {
+    const db = readDb();
+    return { events: db.audits[id]?.events ?? [], scoreDetail: null, assessment: null };
+  }
+  const base = import.meta.env.VITE_API_BASE_URL;
+  const safe = async <T>(url: string): Promise<T | null> => {
+    try {
+      const r = await fetch(url);
+      return r.ok ? ((await r.json()) as T) : null;
+    } catch {
+      return null;
+    }
+  };
+  const [events, scoreDetail, assessment] = await Promise.all([
+    safe<AuditEvent[]>(`${base}/audit/${id}/events`),
+    safe<ScoreDetail>(`${base}/audit/${id}/score`),
+    safe<AiAssessment>(`${base}/audit/${id}/assessment`),
+  ]);
+  return { events: events ?? [], scoreDetail, assessment };
+}
+
+export async function runAudit({ file, protocol, onEvent }: RunAuditOptions): Promise<AuditResult> {
   if (!USE_MOCK) {
     // Backend réel
     const fd = new FormData();
     fd.append("file", file);
+    if (protocol) fd.append("protocol", protocol);
     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/audit/upload`, {
       method: "POST",
       body: fd,
     });
-    if (!res.ok) throw new Error("Erreur lors de l'audit");
+    if (!res.ok) {
+      let detail = "Erreur lors de l'audit";
+      try {
+        const body = (await res.json()) as { detail?: string };
+        if (body?.detail) detail = body.detail;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(detail);
+    }
     return (await res.json()) as AuditResult;
   }
 

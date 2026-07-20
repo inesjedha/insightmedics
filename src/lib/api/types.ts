@@ -54,3 +54,65 @@ export interface AuditEvent {
   level: "info" | "warn" | "critical" | "success";
   message: string;
 }
+
+// --- Détail du score (grille Hamza en 8 domaines) — renvoyé par /audit/:id/score ---
+export interface ScoreCriterion {
+  critere: string;
+  max: number;
+  obtenu: number;
+  motif: string;
+  inevaluable: boolean;
+}
+export interface ScoreDomain {
+  domaine: number;
+  nom: string;
+  max: number;
+  obtenu: number;
+  criteres: ScoreCriterion[];
+}
+export interface ScoreDetail {
+  score_brut: number;
+  score_final: number;
+  niveau_qualite: string;
+  interpretation: string;
+  confiance: { niveau: string; raisons: string[] };
+  plafonds_appliques: { defaut: string; plafond: number }[];
+  domaines: ScoreDomain[];
+}
+
+// --- Jugement IA (LLM-2) — renvoyé par /audit/:id/assessment ---
+export interface Finding {
+  id: string;
+  anomaly_class: "A" | "B" | "C" | "D";
+  severity: "critique" | "majeure" | "moderee" | "mineure";
+  certainty: "certain" | "probable" | "possible";
+  column: string | null;
+  observed: string | null;
+  rule_violated: string | null;
+  title_fr: string;
+  explanation_fr: string;
+  proposed_correction: string | null;
+  requires_source_verification: boolean;
+}
+export interface Verdict {
+  level: number;
+  label: string;
+  justification_fr: string;
+}
+export interface AiAssessment {
+  findings: Finding[];
+  exploitability_verdict: Verdict | null;
+  executive_summary_fr: string;
+  report_sections_fr: {
+    limites: string;
+    plan_action: string;
+    plan_analyse_conditionnel: string;
+  };
+  pii_assessment: { column: string; risk: string; recommendation_fr: string }[];
+}
+
+export interface AuditDetail {
+  events: AuditEvent[];
+  scoreDetail: ScoreDetail | null;
+  assessment: AiAssessment | null;
+}

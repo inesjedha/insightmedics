@@ -12,6 +12,10 @@ import {
   Mail,
   Loader2,
   Download,
+  FileText,
+  ShieldAlert,
+  Gauge,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +24,15 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
-import { runAudit, createLead, updateLead } from "@/lib/api/client";
-import type { AuditEvent, AuditResult } from "@/lib/api/types";
+import { runAudit, getAuditDetail, createLead, updateLead } from "@/lib/api/client";
+import type {
+  AuditEvent,
+  AuditResult,
+  AuditDetail,
+  ScoreDetail,
+  AiAssessment,
+  Finding,
+} from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
 
@@ -50,13 +61,18 @@ type Phase = "idle" | "running" | "done";
 function AuditPage() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [file, setFile] = useState<File | null>(null);
+  const [protocol, setProtocol] = useState<File | null>(null);
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [result, setResult] = useState<AuditResult | null>(null);
+  const [detail, setDetail] = useState<AuditDetail | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const onFile = (f: File | null) => {
     setFile(f);
     setResult(null);
+    setDetail(null);
     setEvents([]);
+    setError(null);
     setPhase("idle");
   };
 
@@ -65,12 +81,23 @@ function AuditPage() {
     setPhase("running");
     setEvents([]);
     setResult(null);
-    const r = await runAudit({
-      file,
-      onEvent: (e) => setEvents((prev) => [...prev, e]),
-    });
-    setResult(r);
-    setPhase("done");
+    setDetail(null);
+    setError(null);
+    try {
+      const r = await runAudit({
+        file,
+        protocol,
+        onEvent: (e) => setEvents((prev) => [...prev, e]),
+      });
+      setResult(r);
+      const d = await getAuditDetail(r.id);
+      setDetail(d);
+      if (d.events.length) setEvents(d.events);
+      setPhase("done");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      setPhase("idle");
+    }
   };
 
   return (
@@ -87,6 +114,11 @@ function AuditPage() {
         <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
           <div className="space-y-6">
             <AuditUploader file={file} onFile={onFile} disabled={phase === "running"} />
+            <ProtocolUploader
+              protocol={protocol}
+              onProtocol={setProtocol}
+              disabled={phase === "running"}
+            />
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button
                 size="lg"
@@ -112,6 +144,12 @@ function AuditPage() {
                 </Button>
               )}
             </div>
+            {error && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
           </div>
 
           <AuditLiveLog events={events} phase={phase} />
@@ -120,7 +158,20 @@ function AuditPage() {
 
       {phase === "done" && result && (
         <Section className="pt-0">
-          <AuditScoreCard result={result} />
+          {detail?.assessment?.exploitability_verdict && detail.scoreDetail && (
+            <VerdictBanner
+              verdict={detail.assessment.exploitability_verdict}
+              scoreDetail={detail.scoreDetail}
+            />
+          )}
+          <AuditScoreCard result={result} scoreDetail={detail?.scoreDetail ?? null} />
+          {detail?.assessment?.executive_summary_fr && (
+            <ExecutiveSummaryCard assessment={detail.assessment} />
+          )}
+          {detail?.assessment?.findings?.length ? (
+            <FindingsCard findings={detail.assessment.findings} />
+          ) : null}
+          {detail?.scoreDetail && <DomainsCard scoreDetail={detail.scoreDetail} />}
           {result.needsHumanReview && <HumanAlert />}
           <AuditReportForm result={result} />
         </Section>
@@ -195,6 +246,70 @@ function AuditUploader({
   );
 }
 
+function ProtocolUploader({
+  protocol,
+  onProtocol,
+  disabled,
+}: {
+  protocol: File | null;
+  onProtocol: (f: File | null) => void;
+  disabled?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="rounded-xl border border-border bg-card/60 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand/10 text-brand">
+            <FileText className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">
+              Protocole de recherche{" "}
+              <span className="font-normal text-muted-foreground">(optionnel)</span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Word ou PDF. Avec le protocole, l'audit évalue aussi la faisabilité de vos analyses.
+            </p>
+          </div>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".docx,.pdf,.txt"
+          className="hidden"
+          onChange={(e) => onProtocol(e.target.files?.[0] ?? null)}
+          disabled={disabled}
+        />
+        {protocol ? (
+          <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs">
+            <FileText className="h-3.5 w-3.5 text-brand" />
+            <span className="font-medium">{protocol.name}</span>
+            {!disabled && (
+              <button
+                onClick={() => onProtocol(null)}
+                className="text-muted-foreground hover:text-destructive"
+                aria-label="Retirer le protocole"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => inputRef.current?.click()}
+            disabled={disabled}
+          >
+            Ajouter le protocole
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: Phase }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -235,7 +350,7 @@ function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: Phase })
         {phase === "running" && (
           <li className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Calculs en cours…
+            L'analyse IA peut prendre 1 à 2 minutes (deux passages d'intelligence artificielle)…
           </li>
         )}
       </ul>
@@ -243,12 +358,248 @@ function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: Phase })
   );
 }
 
-function AuditScoreCard({ result }: { result: AuditResult }) {
+const VERDICT_STYLES: Record<number, { ring: string; text: string; bg: string }> = {
+  1: {
+    ring: "border-emerald-300/50",
+    text: "text-emerald-700 dark:text-emerald-300",
+    bg: "bg-emerald-500/5",
+  },
+  2: { ring: "border-brand/40", text: "text-brand", bg: "bg-brand/5" },
+  3: {
+    ring: "border-amber-300/50",
+    text: "text-amber-700 dark:text-amber-300",
+    bg: "bg-amber-500/5",
+  },
+  4: {
+    ring: "border-orange-400/50",
+    text: "text-orange-700 dark:text-orange-300",
+    bg: "bg-orange-500/5",
+  },
+  5: { ring: "border-destructive/40", text: "text-destructive", bg: "bg-destructive/5" },
+};
+
+function VerdictBanner({
+  verdict,
+  scoreDetail,
+}: {
+  verdict: NonNullable<AiAssessment["exploitability_verdict"]>;
+  scoreDetail: ScoreDetail;
+}) {
+  const st = VERDICT_STYLES[verdict.level] ?? VERDICT_STYLES[3];
+  return (
+    <div className={cn("mt-2 rounded-2xl border p-6 sm:p-7", st.ring, st.bg)}>
+      <div className="flex flex-wrap items-center gap-3">
+        <Gauge className={cn("h-5 w-5", st.text)} />
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Verdict d'exploitabilité
+        </p>
+        <Badge variant="outline" className="border-border text-muted-foreground">
+          Confiance : {scoreDetail.confiance.niveau}
+        </Badge>
+      </div>
+      <p className={cn("mt-2 font-display text-2xl font-extrabold tracking-tight", st.text)}>
+        {verdict.label}
+      </p>
+      <p className="mt-2 max-w-3xl text-sm leading-relaxed text-foreground/85">
+        {verdict.justification_fr}
+      </p>
+    </div>
+  );
+}
+
+function ExecutiveSummaryCard({ assessment }: { assessment: AiAssessment }) {
+  const r = assessment.report_sections_fr;
+  return (
+    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+        <ClipboardList className="h-5 w-5 text-brand" />
+        Synthèse de l'audit
+      </h3>
+      <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground/90">
+        {assessment.executive_summary_fr}
+      </p>
+      {r?.limites && (
+        <div className="mt-5">
+          <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Limites de la base
+          </h4>
+          <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-foreground/85">
+            {r.limites}
+          </p>
+        </div>
+      )}
+      {r?.plan_action && (
+        <div className="mt-5">
+          <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Plan d'action recommandé
+          </h4>
+          <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-foreground/85">
+            {r.plan_action}
+          </p>
+        </div>
+      )}
+      {r?.plan_analyse_conditionnel && (
+        <div className="mt-5">
+          <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Analyses envisageables
+          </h4>
+          <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-foreground/85">
+            {r.plan_analyse_conditionnel}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const SEVERITY_ORDER = ["critique", "majeure", "moderee", "mineure"] as const;
+const SEVERITY_LABEL: Record<string, string> = {
+  critique: "Critique",
+  majeure: "Majeure",
+  moderee: "Modérée",
+  mineure: "Mineure",
+};
+const CLASS_LABEL: Record<string, string> = {
+  A: "Erreur certaine",
+  B: "Incohérence très probable",
+  C: "Atypique mais plausible",
+  D: "Ambiguë / à vérifier",
+};
+
+function FindingsCard({ findings }: { findings: Finding[] }) {
+  const sorted = [...findings].sort(
+    (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
+  );
+  return (
+    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+        <ShieldAlert className="h-5 w-5 text-brand" />
+        Anomalies détectées
+        <span className="text-sm font-normal text-muted-foreground">({findings.length})</span>
+      </h3>
+      <ul className="mt-4 space-y-3">
+        {sorted.map((f) => {
+          const crit = f.severity === "critique";
+          const maj = f.severity === "majeure";
+          return (
+            <li
+              key={f.id}
+              className={cn(
+                "rounded-xl border p-4",
+                crit && "border-destructive/30 bg-destructive/5",
+                maj && "border-amber-300/40 bg-amber-500/5",
+                !crit && !maj && "border-border bg-surface/50",
+              )}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "border-transparent font-semibold",
+                    crit && "bg-destructive/15 text-destructive",
+                    maj && "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+                    !crit && !maj && "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {SEVERITY_LABEL[f.severity] ?? f.severity}
+                </Badge>
+                <Badge variant="outline" className="border-border text-xs text-muted-foreground">
+                  {CLASS_LABEL[f.anomaly_class] ?? f.anomaly_class}
+                </Badge>
+                {f.column && (
+                  <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground/80">
+                    {f.column}
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 font-semibold text-foreground">{f.title_fr}</p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/85">{f.explanation_fr}</p>
+              {f.proposed_correction && (
+                <p className="mt-2 text-sm text-foreground/80">
+                  <span className="font-medium text-brand">Correction proposée : </span>
+                  {f.proposed_correction}
+                </p>
+              )}
+              {f.requires_source_verification && (
+                <p className="mt-1 text-xs italic text-muted-foreground">
+                  À vérifier dans le dossier source.
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
+  return (
+    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+        <Gauge className="h-5 w-5 text-brand" />
+        Détail du score par domaine
+      </h3>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Grille d'audit en 8 domaines. Note globale : {scoreDetail.score_final}/100 —{" "}
+        {scoreDetail.niveau_qualite}.
+      </p>
+      <ul className="mt-4 space-y-3">
+        {scoreDetail.domaines.map((d) => {
+          const pct = d.max ? Math.round((d.obtenu / d.max) * 100) : 0;
+          const good = pct >= 80;
+          const mid = pct >= 55 && pct < 80;
+          return (
+            <li key={d.domaine}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="font-medium text-foreground/90">{d.nom}</span>
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                  {d.obtenu}/{d.max}
+                </span>
+              </div>
+              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className={cn(
+                    "h-full rounded-full",
+                    good && "bg-emerald-500",
+                    mid && "bg-amber-500",
+                    !good && !mid && "bg-destructive",
+                  )}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {scoreDetail.plafonds_appliques.length > 0 && (
+        <div className="mt-5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+          <p className="font-semibold">Plafond appliqué</p>
+          <ul className="mt-1 list-disc pl-5">
+            {scoreDetail.plafonds_appliques.map((p, i) => (
+              <li key={i}>
+                {p.defaut} → score plafonné à {p.plafond}/100
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AuditScoreCard({
+  result,
+  scoreDetail,
+}: {
+  result: AuditResult;
+  scoreDetail: ScoreDetail | null;
+}) {
   const scoreColor =
     result.score >= 80 ? "text-brand" : result.score >= 60 ? "text-amber-600" : "text-destructive";
 
   return (
-    <div className="mt-2 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
       <div className="grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -258,6 +609,11 @@ function AuditScoreCard({ result }: { result: AuditResult }) {
             {result.score}
             <span className="text-2xl text-muted-foreground">/100</span>
           </p>
+          {scoreDetail && (
+            <p className="mt-1 text-sm font-medium text-foreground/80">
+              {scoreDetail.niveau_qualite}
+            </p>
+          )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Metric label="Lignes" value={result.rowCount.toLocaleString("fr-FR")} />
