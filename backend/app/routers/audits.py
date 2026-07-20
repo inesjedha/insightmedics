@@ -167,6 +167,15 @@ def get_ai_audit(audit_id: str, db: Session = Depends(get_db)):
     return a.ai_audit
 
 
+@router.get("/{audit_id}/assessment")
+def get_assessment(audit_id: str, db: Session = Depends(get_db)):
+    """Jugement IA (LLM-2) : anomalies classées, verdict, résumé exécutif FR."""
+    a = db.get(Audit, audit_id)
+    if not a or not a.ai_audit or not a.ai_audit.get("assessment"):
+        raise HTTPException(404, "Jugement IA non disponible pour cet audit")
+    return a.ai_audit["assessment"]
+
+
 @router.get("/{audit_id}/report.pdf")
 def get_report(audit_id: str):
     raise HTTPException(501, "Rapport PDF : jalon M6 (à venir)")

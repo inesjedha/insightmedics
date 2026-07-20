@@ -13,9 +13,9 @@ from pathlib import Path
 from typing import Any, Literal
 
 import pandas as pd
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from ..config import settings
+from .llm_client import call_and_validate
 
 PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "llm1_system.md"
 ALLOWED_OPS = {"gte", "lte", "gt", "lt", "eq", "neq", "not_null", "in_set",
@@ -109,11 +109,12 @@ def build_user_message(profiling: dict, df: pd.DataFrame,
                                        "suspected_missing_codes")}
         if c.get("numeric_stats"):
             ns = c["numeric_stats"]
-            entry["stats"] = {k: ns.get(k) for k in ("mean", "median", "min", "max")}
+            entry["stats_observees"] = {k: ns.get(k) for k in ("mean", "median", "min", "max")}
         cols_summary.append(entry)
 
     parts = [
-        "## VARIABLES (nom, label SPSS, labels de valeurs, type, stats)",
+        "## VARIABLES (nom, label SPSS, labels de valeurs, type ; stats_observees "
+        "DÉCRIVENT les données, ce ne sont PAS des bornes)",
         json.dumps(cols_summary, ensure_ascii=False),
         f"\n## STRUCTURE\n{json.dumps(profiling['structure'], ensure_ascii=False, default=str)}",
         f"\n## ÉCHANTILLON ({n} lignes, colonnes identifiantes masquées)",
@@ -128,84 +129,30 @@ def build_user_message(profiling: dict, df: pd.DataFrame,
 
 # ---------------------------------------------------------------- appel
 
-def _extract_json(text: str) -> dict:
-    text = text.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.S)
-    start, end = text.find("{"), text.rfind("}")
-    if start == -1 or end == -1:
-        raise ValueError("Aucun JSON dans la réponse")
-    return json.loads(text[start:end + 1])
-
-
-def _call_llm(system: str, user: str) -> str:
-    """Appelle le fournisseur configuré (anthropic ou openai) et retourne le texte."""
-    provider = settings.resolved_provider
-    model = settings.resolved_model
-    if provider == "anthropic":
-        import anthropic
-
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        resp = client.messages.create(
-            model=model, max_tokens=16000, temperature=0,
-            system=system, messages=[{"role": "user", "content": user}],
-        )
-        return "".join(b.text for b in resp.content if b.type == "text")
-    if provider == "openai":
-        from openai import OpenAI
-
-        client = OpenAI(api_key=settings.openai_api_key)
-        resp = client.chat.completions.create(
-            model=model, temperature=0,
-            messages=[{"role": "system", "content": system},
-                      {"role": "user", "content": user}],
-        )
-        return resp.choices[0].message.content or ""
-    raise RuntimeError(f"Fournisseur IA inconnu : {provider}")
-
-
 def run_llm1(profiling: dict, df: pd.DataFrame,
              protocol_text: str | None = None) -> tuple[Llm1Output | None, list[str]]:
     """Retourne (sortie validée | None, notes). None si pas de clé API ou échec."""
-    notes: list[str] = []
-    if not settings.resolved_provider:
-        notes.append("Aucune clé API IA configurée (ANTHROPIC_API_KEY ou "
-                     "OPENAI_API_KEY) : audit IA sauté")
-        return None, notes
-
     system = PROMPT_PATH.read_text(encoding="utf-8")
     user = build_user_message(profiling, df, protocol_text)
     known_cols = {c["name"] for c in profiling["columns"]}
 
-    last_error = ""
-    for attempt in range(3):
-        msg = user if attempt == 0 else (
-            user + f"\n\n## CORRECTION DEMANDÉE\nTa réponse précédente était invalide"
-                   f" ({last_error}). Renvoie UNIQUEMENT le JSON conforme au schéma.")
-        raw = _call_llm(system, msg)
-        try:
-            out = Llm1Output.model_validate(_extract_json(raw))
-        except (ValueError, ValidationError, json.JSONDecodeError) as exc:
-            last_error = str(exc)[:300]
-            continue
-        # Filtrage strict : DSL valide + colonnes existantes uniquement
+    def _filter_rules(out: Llm1Output) -> tuple[Llm1Output, list[str]]:
         kept, rejected = [], 0
         for r in out.coherence_rules:
             cols_in_rule = re.findall(r'"col":\s*"([^"]+)"', json.dumps(r.rule))
-            cols_in_rule += r.rule.get("cols", []) if r.rule.get("op") == "chrono_order" else []
+            if r.rule.get("op") == "chrono_order":
+                cols_in_rule += r.rule.get("cols", [])
             if r.rule.get("op") == "bounds":
                 cols_in_rule.append(r.rule.get("col", ""))
             if _validate_rule_ast(r.rule) and all(c in known_cols for c in cols_in_rule if c):
                 kept.append(r)
             else:
                 rejected += 1
-        if rejected:
-            notes.append(f"{rejected} règle(s) rejetée(s) (hors DSL ou colonne inconnue)")
         out.coherence_rules = kept
-        notes.append(f"LLM-1 OK ({settings.resolved_provider}/{settings.resolved_model}) : "
-                     f"{len(out.dictionary)} variables documentées, "
-                     f"{len(kept)} règles retenues (tentative {attempt + 1})")
-        return out, notes
+        extra = [f"{len(out.dictionary)} variables documentées, {len(kept)} règles retenues"]
+        if rejected:
+            extra.append(f"{rejected} règle(s) rejetée(s) (hors DSL ou colonne inconnue)")
+        return out, extra
 
-    notes.append(f"LLM-1 : échec après 3 tentatives ({last_error})")
-    return None, notes
+    out, notes = call_and_validate(system, user, Llm1Output, post=_filter_rules)
+    return out, ["LLM-1 : " + n for n in notes]

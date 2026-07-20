@@ -8,6 +8,7 @@ from typing import Any
 
 from .ingest import ingest
 from .llm1 import run_llm1
+from .llm2 import run_llm2
 from .profile import profile
 from .rules_engine import execute_rules
 from .score import score_and_issues
@@ -71,6 +72,30 @@ def run_audit(path: str | Path, original_name: str,
                          if c["name"] in ep.candidate_columns), None)
             if cand:
                 scoring_inputs["primary_endpoint_missing_pct"] = cand["pct_missing"]
+
+        # --- M5 : jugement méthodologique (classification, verdict, rédaction FR) ---
+        log("info", "Audit IA : classification des anomalies, faisabilité et "
+                    "verdict d'exploitabilité…")
+        llm2_out, llm2_notes = run_llm2(profiling, ai_audit)
+        if llm2_out is not None:
+            si = llm2_out.scoring_inputs.model_dump(exclude_none=True)
+            scoring_inputs.update(si)  # jugements enum → grille (domaines 5/6/8, confiance)
+            ai_audit["assessment"] = {
+                "findings": [f.model_dump() for f in llm2_out.findings],
+                "client_decisions": [d.model_dump() for d in llm2_out.client_decisions],
+                "cleaning_plan": [c.model_dump() for c in llm2_out.cleaning_plan],
+                "exploitability_verdict": llm2_out.exploitability_verdict.model_dump()
+                if llm2_out.exploitability_verdict else None,
+                "executive_summary_fr": llm2_out.executive_summary_fr,
+                "report_sections_fr": llm2_out.report_sections_fr.model_dump(),
+                "pii_assessment": [p.model_dump() for p in llm2_out.pii_assessment],
+                "notes": llm2_notes,
+            }
+            v = llm2_out.exploitability_verdict
+            log("success", f"Jugement IA : {len(llm2_out.findings)} anomalie(s) classée(s)"
+                           + (f", verdict « {v.label} »" if v else ""))
+        else:
+            log("warn", "Jugement IA (LLM-2) non produit : " + "; ".join(llm2_notes))
     else:
         log("warn", "Audit IA non exécuté : " + "; ".join(llm_notes))
 
