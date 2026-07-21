@@ -77,13 +77,31 @@ def test_classeur_complet_8_onglets():
     assert wb.sheetnames == EXPECTED_SHEETS
     # Registre : 2 anomalies, la critique en premier (tri par gravité)
     reg = wb["Registre anomalies"]
-    assert reg["A2"].value == "F001" and reg["E2"].value == "critique"
+    assert reg["A2"].value == "F001" and reg["F2"].value == "critique"
     # Variables exclues : PII 'tel' listée (déterministe)
     exclues = [r[0].value for r in wb["Variables exclues"].iter_rows(min_row=2)]
     assert "tel" in exclues
     # Résumé : le score final figure
     resume_vals = [c.value for row in wb["Résumé audit"].iter_rows() for c in row]
     assert score["score_final"] in resume_vals
+
+
+def test_registre_anomalie_consolidee_par_famille():
+    """Une anomalie de famille liste les variables visées et leur nombre."""
+    prof = _profiling_min()
+    score = compute_score(CLEAN, FULL_SI)
+    ai = {"study": SYNTH_AI["study"], "dictionary": SYNTH_AI["dictionary"],
+          "assessment": {**SYNTH_AI["assessment"], "findings": [
+              {"id": "F001", "anomaly_class": "D", "severity": "moderee",
+               "certainty": "certain", "column": None,
+               "affected_columns": ["v1", "v2", "v3"], "n_affected": 3,
+               "observed": None, "rule_violated": "colonnes vides",
+               "title_fr": "3 variables vides", "explanation_fr": "…",
+               "proposed_correction": "exclure", "requires_source_verification": False}]}}
+    wb = load_workbook(io.BytesIO(build_workbook(prof, score, ai)))
+    reg = wb["Registre anomalies"]
+    assert reg["B2"].value == "v1, v2, v3"   # familles listées
+    assert reg["C2"].value == 3              # n visés
 
 
 def test_classeur_sans_audit_ia_reste_coherent():

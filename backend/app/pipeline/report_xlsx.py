@@ -116,16 +116,19 @@ def _sheet_resume(wb: Workbook, prof: dict, score: dict, ai: dict | None) -> Non
 def _sheet_registre(wb: Workbook, ai: dict | None) -> None:
     ws = wb.create_sheet("Registre anomalies")
     ws.sheet_view.showGridLines = False
-    hdr = ["id", "variable", "valeur observée", "classe (A/B/C/D)", "gravité",
+    hdr = ["id", "variable(s)", "n visés", "valeur observée", "classe (A/B/C/D)", "gravité",
            "certitude", "règle violée", "correction proposée", "vérif. dossier"]
-    _headers(ws, hdr, [8, 18, 16, 14, 12, 11, 30, 34, 12])
+    _headers(ws, hdr, [8, 22, 8, 16, 14, 12, 11, 28, 32, 12])
     findings = (ai or {}).get("assessment", {}).get("findings", [])
     if not findings:
         _note(ws, "Audit IA non exécuté : registre des anomalies à générer avec la clé API.")
         return
     order = {"critique": 0, "majeure": 1, "moderee": 2, "mineure": 3}
     for i, f in enumerate(sorted(findings, key=lambda x: order.get(x.get("severity"), 9)), 2):
-        vals = [f.get("id"), f.get("column"), f.get("observed"), f.get("anomaly_class"),
+        affected = f.get("affected_columns") or ([f["column"]] if f.get("column") else [])
+        var_label = ", ".join(affected) if affected else f.get("column")
+        n_aff = f.get("n_affected") or (len(affected) if affected else None)
+        vals = [f.get("id"), var_label, n_aff, f.get("observed"), f.get("anomaly_class"),
                 f.get("severity"), f.get("certainty"), f.get("rule_violated"),
                 f.get("proposed_correction"),
                 "Oui" if f.get("requires_source_verification") else "Non"]
@@ -135,7 +138,7 @@ def _sheet_registre(wb: Workbook, ai: dict | None) -> None:
             c.alignment = WRAP
         fill = SEV_FILL.get(f.get("severity"))
         if fill:
-            ws.cell(row=i, column=5).fill = fill
+            ws.cell(row=i, column=6).fill = fill  # colonne « gravité » (après ajout n visés)
 
 
 def _sheet_dictionnaire(wb: Workbook, prof: dict, ai: dict | None) -> None:
