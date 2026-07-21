@@ -100,8 +100,14 @@ def build_report(profiling: dict, score: dict, ai_audit: dict | None) -> bytes:
             + ("Un protocole de recherche a été fourni et exploité."
                if study.get("primary_objective") else
                "Aucun protocole n'a été fourni : la concordance méthodologique n'a pu être évaluée."))
+    if study.get("study_type"):
+        _p(doc, "Type d'étude : " + study["study_type"] + ".")
     if study.get("primary_objective"):
         _p(doc, "Objectif principal annoncé : " + study["primary_objective"])
+    plan_n, obs_n = study.get("planned_sample_size"), study.get("observed_sample_size")
+    if plan_n and obs_n and str(plan_n) != str(obs_n):
+        _p(doc, f"Effectif prévu au protocole : {plan_n} ; effectif observé dans la base : "
+                f"{obs_n} (écart à documenter).")
 
     # 3. Audit structurel, identifiants et confidentialité
     _h(doc, "3. Audit structurel, identifiants et confidentialité")

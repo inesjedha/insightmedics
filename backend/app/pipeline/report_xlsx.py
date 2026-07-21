@@ -230,18 +230,25 @@ def _sheet_concordance(wb: Workbook, ai: dict | None) -> None:
     ws.sheet_view.showGridLines = False
     _headers(ws, ["objectif", "critère de jugement", "variables candidates", "faisabilité"],
              [40, 30, 30, 20])
+    matrix = (ai or {}).get("objectives_matrix") or []
     study = (ai or {}).get("study")
-    if not study:
+    if not matrix and not study:
         _note(ws, "Concordance protocole disponible si un protocole a été fourni.")
         return
-    ep = study.get("primary_endpoint") or {}
-    ws.cell(row=2, column=1, value=study.get("primary_objective")).font = NORM
-    ws.cell(row=2, column=2, value=ep.get("description")).font = NORM
-    ws.cell(row=2, column=3, value=", ".join(ep.get("candidate_columns", []))).font = NORM
-    for r, obj in enumerate(study.get("secondary_objectives", []), 3):
-        ws.cell(row=r, column=1, value=obj).font = NORM
-    for row in ws.iter_rows(min_row=2):
-        for c in row:
+    if matrix:
+        for i, row in enumerate(matrix, 2):
+            vals = [row.get("objective"), row.get("endpoint"),
+                    ", ".join(row.get("variables", [])), row.get("availability")]
+            for j, v in enumerate(vals, 1):
+                c = ws.cell(row=i, column=j, value=v)
+                c.font = NORM
+                c.alignment = WRAP
+    else:
+        ep = study.get("primary_endpoint") or {}
+        ws.cell(row=2, column=1, value=study.get("primary_objective")).font = NORM
+        ws.cell(row=2, column=2, value=ep.get("description")).font = NORM
+        ws.cell(row=2, column=3, value=", ".join(ep.get("candidate_columns", []))).font = NORM
+        for c in ws["A2"], ws["B2"], ws["C2"]:
             c.alignment = WRAP
 
 

@@ -54,6 +54,7 @@ def run_audit(path: str | Path, original_name: str,
         scoring_inputs["rule_violations"] = violations
         ai_audit = {
             "study": llm_out.study.model_dump() if llm_out.study else None,
+            "objectives_matrix": [o.model_dump() for o in llm_out.objectives_matrix],
             "dictionary": [e.model_dump() for e in llm_out.dictionary],
             "rules": rules,
             "violations": violations,
