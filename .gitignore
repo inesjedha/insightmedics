@@ -31,3 +31,8 @@ dist-ssr
 *.sln
 *.sw?
 package-lock.json
+
+# Secrets et environnement
+.env
+.env.*
+!.env.example
