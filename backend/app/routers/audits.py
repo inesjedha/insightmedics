@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -174,6 +175,23 @@ def get_assessment(audit_id: str, db: Session = Depends(get_db)):
     if not a or not a.ai_audit or not a.ai_audit.get("assessment"):
         raise HTTPException(404, "Jugement IA non disponible pour cet audit")
     return a.ai_audit["assessment"]
+
+
+@router.get("/{audit_id}/workbook.xlsx")
+def get_workbook(audit_id: str, db: Session = Depends(get_db)):
+    """Classeur Excel d'audit (format Hamza) construit à la volée depuis l'audit stocké."""
+    a = db.get(Audit, audit_id)
+    if not a or not a.profiling or not a.score_detail:
+        raise HTTPException(404, "Audit introuvable")
+    from ..pipeline.report_xlsx import build_workbook
+
+    data = build_workbook(a.profiling, a.score_detail, a.ai_audit)
+    fname = f"audit_{(a.file_name or audit_id).rsplit('.', 1)[0]}.xlsx"
+    return Response(
+        content=data,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+    )
 
 
 @router.get("/{audit_id}/report.pdf")
