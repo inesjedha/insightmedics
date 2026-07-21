@@ -61,7 +61,14 @@ BASES = [
 
 
 def main() -> None:
-    dossier = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_DOSSIER
+    # Args : un chemin (dossier) et/ou un nom de base pour n'en tester qu'une seule.
+    known = {b["nom"].lower() for b in BASES}
+    dossier, only = DEFAULT_DOSSIER, None
+    for arg in sys.argv[1:]:
+        if arg.lower() in known:
+            only = arg.lower()
+        elif arg.strip():
+            dossier = Path(arg)
     if not dossier.exists():
         print(f"Dossier introuvable : {dossier}\n"
               f"Passe le chemin en argument : python scripts/calibrate_hamza.py \"/chemin\"")
@@ -77,6 +84,8 @@ def main() -> None:
 
     rows = []
     for b in BASES:
+        if only and b["nom"].lower() != only:
+            continue
         base_path = dossier / b["base"]
         if not base_path.exists():
             print(f"[{b['nom']}] fichier absent : {base_path}")
