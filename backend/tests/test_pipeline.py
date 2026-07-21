@@ -78,3 +78,71 @@ def test_api_refuse_mauvais_format():
     resp = client.post("/audit/upload",
                        files={"file": ("x.txt", io.BytesIO(b"abc"), "text/plain")})
     assert resp.status_code == 415
+
+
+# ---------------------------------------------------------------- livrables M6/M8
+
+def _upload(client: TestClient, path: Path) -> str:
+    with open(path, "rb") as f:
+        resp = client.post("/audit/upload", files={"file": ("dirty.csv", f, "text/csv")})
+    assert resp.status_code == 200
+    return resp.json()["id"]
+
+
+def test_api_classeur_xlsx_bout_en_bout(dirty_csv: Path):
+    """Le classeur téléchargé contient les 10 onglets, dont Base analyse et Source
+    anonymisée produits par le nettoyage M8 branché sur le fichier source persisté."""
+    from openpyxl import load_workbook
+
+    client = TestClient(app)
+    audit_id = _upload(client, dirty_csv)
+    resp = client.get(f"/audit/{audit_id}/workbook.xlsx")
+    assert resp.status_code == 200
+    assert "spreadsheetml" in resp.headers["content-type"]
+    wb = load_workbook(io.BytesIO(resp.content))
+    assert "Base analyse" in wb.sheetnames
+    assert "Source anonymisée" in wb.sheetnames
+    # Onglet Base analyse : id_anonyme en tête, PII et colonne vide retirées
+    base = wb["Base analyse"]
+    entetes = [c.value for c in next(base.iter_rows(max_row=1))]
+    assert "id_anonyme" in entetes and "ligne_source" in entetes
+    assert "tel_patient" not in entetes      # PII exclue
+    assert "commentaire" not in entetes      # colonne vide exclue
+
+
+def test_api_base_analyse_csv_anonymisee(dirty_csv: Path):
+    client = TestClient(app)
+    audit_id = _upload(client, dirty_csv)
+    resp = client.get(f"/audit/{audit_id}/base_analyse.csv")
+    assert resp.status_code == 200
+    texte = resp.content.decode("utf-8")
+    entete = texte.splitlines()[0]
+    assert "id_anonyme" in entete and "ligne_source" in entete
+    assert "tel_patient" not in entete       # PII jamais dans la base d'analyse
+    assert "P001" in texte                   # identifiant anonyme généré
+
+
+def test_api_base_analyse_sav_relisible(dirty_csv: Path, tmp_path: Path):
+    import pyreadstat
+
+    client = TestClient(app)
+    audit_id = _upload(client, dirty_csv)
+    resp = client.get(f"/audit/{audit_id}/base_analyse.sav")
+    assert resp.status_code == 200
+    out = tmp_path / "out.sav"
+    out.write_bytes(resp.content)
+    df, _ = pyreadstat.read_sav(str(out))    # doit se relire sans erreur
+    assert "id_anonyme" in df.columns and len(df) == 6
+
+
+def test_api_rapport_docx(dirty_csv: Path):
+    from docx import Document
+
+    client = TestClient(app)
+    audit_id = _upload(client, dirty_csv)
+    resp = client.get(f"/audit/{audit_id}/report.docx")
+    assert resp.status_code == 200
+    assert "wordprocessingml" in resp.headers["content-type"]
+    doc = Document(io.BytesIO(resp.content))
+    headings = [p.text for p in doc.paragraphs if p.style.name == "Heading 1"]
+    assert len(headings) == 11               # 11 sections comme Hamza
