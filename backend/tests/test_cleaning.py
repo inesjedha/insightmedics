@@ -113,6 +113,52 @@ def test_export_csv():
     assert isinstance(data, bytes) and b"id_anonyme" in data
 
 
+def test_operations_de_nettoyage_enum():
+    """Exerce les opérations de l'enum : trim, cast, rename, standardize, recode."""
+    df = pd.DataFrame({
+        "matricule": ["H1", "H2", "H3"],
+        "sexe": [" M ", "F ", " M"],          # trim_whitespace
+        "age_txt": ["30", "40", "50"],        # cast_type → float
+        "ancien": [1, 2, 3],                  # rename_column
+        "grp": ["a", "b", "a"],               # standardize_categories puis recode_value
+    })
+    prof = {
+        "structure": {"id_column": "matricule", "empty_columns": [], "constant_columns": [],
+                      "duplicates": {"exact_rows": 0}},
+        "pii_candidates": [],
+    }
+    ai = {"assessment": {"cleaning_plan": [
+        {"op_id": "o1", "operation": "trim_whitespace", "column": "sexe",
+         "params": {}, "rationale_fr": "", "auto_safe": True},
+        {"op_id": "o2", "operation": "cast_type", "column": "age_txt",
+         "params": {"type": "float"}, "rationale_fr": "", "auto_safe": True},
+        {"op_id": "o3", "operation": "rename_column", "column": "ancien",
+         "params": {"new_name": "nouveau"}, "rationale_fr": "", "auto_safe": True},
+        {"op_id": "o4", "operation": "standardize_categories", "column": "grp",
+         "params": {"mapping": {"a": "A", "b": "B"}}, "rationale_fr": "", "auto_safe": True},
+        {"op_id": "o5", "operation": "recode_value", "column": "grp",
+         "params": {"before": "A", "after": "Alpha"}, "rationale_fr": "", "auto_safe": False},
+    ]}}
+    base = clean(df, prof, ai, approved_op_ids={"o5"})["base_analyse"]
+    assert base["sexe"].tolist() == ["M", "F", "M"]                 # trim
+    assert base["age_txt"].dtype.kind in ("i", "f")                 # cast → numérique
+    assert "nouveau" in base.columns and "ancien" not in base.columns  # rename
+    assert set(base["grp"]) == {"Alpha", "B"}                       # standardize + recode
+
+
+def test_operation_sensible_non_validee_est_ignoree():
+    """Une opération non auto_safe sans validation n'est pas appliquée."""
+    df = pd.DataFrame({"matricule": ["H1", "H2"], "grp": ["a", "b"]})
+    prof = {"structure": {"id_column": "matricule", "empty_columns": [], "constant_columns": [],
+                          "duplicates": {"exact_rows": 0}}, "pii_candidates": []}
+    ai = {"assessment": {"cleaning_plan": [
+        {"op_id": "x", "operation": "recode_value", "column": "grp",
+         "params": {"before": "a", "after": "Z"}, "rationale_fr": "", "auto_safe": False},
+    ]}}
+    base = clean(df, prof, ai, approved_op_ids=set())["base_analyse"]
+    assert base["grp"].tolist() == ["a", "b"]  # inchangé, car non validé
+
+
 def test_variables_analyse_facon_hamza():
     """Reproduit les 3 types de variables dérivées d'analyse de Hamza :
     recodage binaire (deces_binaire), % de perte (perte_*_pct), somme (duree_somme)."""
