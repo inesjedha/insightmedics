@@ -43,12 +43,19 @@ def call_llm(system: str, user: str, max_tokens: int = 16000) -> str:
         from openai import OpenAI
 
         client = OpenAI(api_key=settings.openai_api_key)
-        resp = client.chat.completions.create(
-            model=model, temperature=0,
-            messages=[{"role": "system", "content": system},
-                      {"role": "user", "content": user}],
-        )
-        return resp.choices[0].message.content or ""
+        msgs = [{"role": "system", "content": system},
+                {"role": "user", "content": user}]
+        # Certains modèles récents (raisonnement) refusent temperature != 1 : on réessaie
+        # alors sans le paramètre. Robuste quel que soit le modèle configuré.
+        for kwargs in ({"temperature": 0}, {}):
+            try:
+                resp = client.chat.completions.create(model=model, messages=msgs, **kwargs)
+                return resp.choices[0].message.content or ""
+            except Exception as exc:  # noqa: BLE001
+                if "temperature" in str(exc).lower() and kwargs:
+                    continue
+                raise
+        return ""
     raise RuntimeError(f"Fournisseur IA inconnu : {provider}")
 
 

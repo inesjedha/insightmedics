@@ -39,6 +39,18 @@ Pour chaque anomalie : gravité (critique|majeure|moderee|mineure), niveau de ce
 observée, règle/borne violée, titre et explication EN FRANÇAIS, correction proposée
 (sans l'appliquer), et si une vérification au dossier source est nécessaire.
 
+EXHAUSTIVITÉ — RÈGLE CAPITALE (Hamza enregistre 30 à 150 anomalies par base) :
+vous devez enregistrer CHAQUE anomalie INDIVIDUELLEMENT, jamais regroupée. En particulier :
+- CHAQUE colonne entièrement vide = UNE anomalie critique distincte (variable planifiée
+  mais non recueillie) — une ligne par colonne, pas un constat global ;
+- CHAQUE variable dont le taux de manquants est élevé (≥ 50 %) = une anomalie ;
+- CHAQUE code de valeur manquante suspect (999, -1, 99…) présent = une anomalie ;
+- CHAQUE règle de cohérence violée = une anomalie (avec les identifiants concernés) ;
+- CHAQUE colonne identifiante/PII = une anomalie de confidentialité ;
+- CHAQUE incohérence inter-variables, doublon, valeur hors borne = une anomalie.
+Ne synthétisez JAMAIS plusieurs problèmes en un seul constat : listez-les tous, un par un.
+Un audit qui ne renvoie que 3-5 anomalies sur une base réelle est INSUFFISANT.
+
 ================================================================================
 2. ENTRÉES DE SCORE ("scoring_inputs") — enum stricts, alimentent la grille
 ================================================================================
@@ -50,6 +62,10 @@ EXACTES ci-dessous (jamais de texte libre). En l'absence d'information suffisant
 - structure_fits_study : true|false|null
 - primary_endpoint_status : "exploitable"|"exploitable_reserves"|"partiel"|
   "non_exploitable"|"inevaluable" (état du critère de jugement principal, Hamza §25)
+  N'utilisez « absent » que si le critère n'existe PAS DU TOUT dans la base. Si le critère
+  principal est imparfait mais que des critères secondaires restent exploitables, utilisez
+  « partiel » ou « exploitable_reserves » — jamais « absent » (cas Eya : utilisable pour
+  les critères secondaires → « partiel », pas « non exploitable »).
 - primary_endpoint_operationally_defined : true|false|null. RÈGLE CRITIQUE DE HAMZA :
   des colonnes candidates qui existent NE SUFFISENT PAS. Un critère est « opérationnellement
   défini » seulement si le protocole précise SANS AMBIGUÏTÉ : (1) LA variable unique (ou le
@@ -57,6 +73,12 @@ EXACTES ci-dessous (jamais de texte libre). En l'absence d'information suffisant
   comparaison, (4) la méthode statistique. Si l'objectif reste large (« évaluer l'évolution
   de… »), avec plusieurs mesures candidates et aucun choix préspécifié → false. En cas de
   false, le score global est plafonné à 49/100 (défaut méthodologique majeur).
+  EXCEPTION IMPORTANTE — critères de survie : un critère de SURVIE, de MORTALITÉ ou de
+  temps-jusqu'à-événement (décès, rechute, sevrage) avec des ÉVÉNEMENTS clairement
+  identifiables dans les données (ex. variable décès Oui/Non, date de rechute) et une
+  durée de suivi EST opérationnellement défini → true, MÊME si l'objectif de la thèse
+  est formulé largement. Ex. « pronostic d'un cancer » avec décès et rechutes codés =
+  survie globale et survie sans rechute calculables = true, PAS de plafond.
 - primary_objective_vars_available : "complet"|"partiel"|"absent"|"inevaluable"
 - secondary_objectives_vars_available : "complet"|"partiel"|"absent"|"inevaluable"
 - inclusion_criteria_verifiable : true|false|null

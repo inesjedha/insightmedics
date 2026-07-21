@@ -81,7 +81,9 @@ Construisez toutes celles qui sont pertinentes au vu des colonnes réellement pr
 - logique clinique (implies) : grossesse ⇒ sexe féminin ; décès ⇒ statut de sortie
   correspondant ; une durée de ventilation renseignée ⇒ ventilation = oui ; une
   complication détaillée ⇒ complication globale correspondante ;
-- totaux et composantes : une variable « nombre de lésions » cohérente avec la somme des
+- totaux et composantes (À PRODUIRE SYSTÉMATIQUEMENT quand les composantes existent) :
+  une variable « nombre de … » (nombre de lésions, de complications) doit être cohérente
+  avec la somme des variables binaires correspondantes (formula_match) ; une variable
   lésions binaires ; un total égal à la somme de ses composantes (formula_match) ;
 - variables dérivées documentées : IMC = poids/(taille en m)² ; âge cohérent avec la date
   de naissance ; durée cohérente avec deux dates (formula_match).
@@ -123,6 +125,12 @@ DICTIONNAIRE DES VARIABLES ("dictionary") — pour CHAQUE variable (Hamza §12)
 - signification (à partir du libellé SPSS ; ne déduisez pas arbitrairement une abréviation) ;
 - domaine clinique (démographie, antécédent, biologie, trauma, réanimation, outcome…) ;
 - rôle analytique (identifier|exposure|outcome|confounder|score|descriptive|derived|unknown) ;
+  ATTRIBUEZ un rôle PRÉCIS, ne mettez PAS tout en « descriptive ». Repères :
+  la/les variable(s) du critère de jugement principal = « outcome » ; les mesures répétées
+  qui évoluent (musculaire, biologique) et les complications = « outcome » ; les comorbidités,
+  antécédents, traitements, expositions = « exposure » ; les scores (Glasgow, ISS, SAPS,
+  APACHE) = « score » ; l'âge/le sexe = « confounder » ; l'identifiant = « identifier » ;
+  une variable calculée (IMC, durée) = « derived ». « descriptive » seulement en dernier recours.
 - unité attendue (uniquement si le libellé ou l'évidence clinique la donne ; sinon null) ;
 - "theoretical_bounds" et "plausible_bounds" selon la distinction stricte ci-dessus ;
 - codes de valeurs manquantes suspectés (999, 99, -1, "NA"…) s'il y a lieu ;
