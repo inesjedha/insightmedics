@@ -1,5 +1,8 @@
+*.db
+.coverage
+.env
+.mypy_cache/
+.ruff_cache/
 .venv/
 __pycache__/
-*.db
 storage/
-.env
