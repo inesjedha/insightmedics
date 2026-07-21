@@ -194,6 +194,18 @@ def get_workbook(audit_id: str, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/{audit_id}/report.pdf")
-def get_report(audit_id: str):
-    raise HTTPException(501, "Rapport PDF : jalon M6 (à venir)")
+@router.get("/{audit_id}/report.docx")
+def get_report_docx(audit_id: str, db: Session = Depends(get_db)):
+    """Rapport d'audit Word (11 sections, format Hamza), construit à la volée."""
+    a = db.get(Audit, audit_id)
+    if not a or not a.profiling or not a.score_detail:
+        raise HTTPException(404, "Audit introuvable")
+    from ..pipeline.report_docx import build_report
+
+    data = build_report(a.profiling, a.score_detail, a.ai_audit)
+    fname = f"rapport_audit_{(a.file_name or audit_id).rsplit('.', 1)[0]}.docx"
+    return Response(
+        content=data,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+    )

@@ -99,6 +99,11 @@ def run_audit(path: str | Path, original_name: str,
     else:
         log("warn", "Audit IA non exécuté : " + "; ".join(llm_notes))
 
+    # Sans protocole, le critère de jugement principal ne peut pas être défini
+    # opérationnellement (Hamza plafonne alors à 49 — cas Houssem, sans protocole).
+    if not protocol_text:
+        scoring_inputs["primary_endpoint_operationally_defined"] = False
+
     log("info", "Calcul du score de qualité /100 (grille officielle en 8 domaines)…")
     _, issues, notes = score_and_issues(profiling)  # issues lisibles pour le front
     score_detail = compute_score(profiling, scoring_inputs or None)  # grille M3
