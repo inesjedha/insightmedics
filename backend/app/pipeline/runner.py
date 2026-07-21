@@ -7,11 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from .ingest import ingest
+from .issues import detect_issues
 from .llm1 import run_llm1
 from .llm2 import run_llm2
 from .profile import profile
 from .rules_engine import execute_rules
-from .score import score_and_issues
 from .score_engine import compute_score
 
 
@@ -112,7 +112,7 @@ def run_audit(path: str | Path, original_name: str,
         scoring_inputs["primary_endpoint_operationally_defined"] = False
 
     log("info", "Calcul du score de qualité /100 (grille officielle en 8 domaines)…")
-    _, issues, notes = score_and_issues(profiling)  # issues lisibles pour le front
+    issues, notes = detect_issues(profiling)  # anomalies lisibles pour le front
     score_detail = compute_score(profiling, scoring_inputs or None)  # grille M3
     score = score_detail["score_final"]
     if score_detail["plafonds_appliques"]:
