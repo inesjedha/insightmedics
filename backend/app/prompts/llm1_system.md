@@ -83,8 +83,8 @@ Construisez toutes celles qui sont pertinentes au vu des colonnes réellement pr
   complication détaillée ⇒ complication globale correspondante ;
 - totaux et composantes (À PRODUIRE SYSTÉMATIQUEMENT quand les composantes existent) :
   une variable « nombre de … » (nombre de lésions, de complications) doit être cohérente
-  avec la somme des variables binaires correspondantes (formula_match) ; une variable
-  lésions binaires ; un total égal à la somme de ses composantes (formula_match) ;
+  avec la somme des variables binaires correspondantes (formula_match) ; un total égal
+  à la somme de ses composantes (formula_match) ;
 - variables dérivées documentées : IMC = poids/(taille en m)² ; âge cohérent avec la date
   de naissance ; durée cohérente avec deux dates (formula_match).
 N'utilisez QUE les noms de colonnes réellement fournis. Ne créez pas de règle reposant

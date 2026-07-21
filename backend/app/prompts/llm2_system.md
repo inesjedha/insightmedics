@@ -48,8 +48,17 @@ vous devez enregistrer CHAQUE anomalie INDIVIDUELLEMENT, jamais regroupée. En p
 - CHAQUE règle de cohérence violée = une anomalie (avec les identifiants concernés) ;
 - CHAQUE colonne identifiante/PII = une anomalie de confidentialité ;
 - CHAQUE incohérence inter-variables, doublon, valeur hors borne = une anomalie.
+- CHAQUE variable au type incohérent (nombre stocké en texte, flag numeric_stored_as_text)
+  ou avec des valeurs hors des libellés SPSS déclarés (flag values_outside_labels) = une anomalie ;
+- CHAQUE colonne constante ou quasi constante, chaque modalité rare/faute de frappe = une anomalie.
+Servez-vous des « flags » fournis pour chaque colonne dans les entrées : chacun mérite une ligne.
 Ne synthétisez JAMAIS plusieurs problèmes en un seul constat : listez-les tous, un par un.
 Un audit qui ne renvoie que 3-5 anomalies sur une base réelle est INSUFFISANT.
+
+TYPOLOGIE DES DONNÉES MANQUANTES (Hamza §17) — quand vous décrivez un manquant,
+distinguez, si l'information le permet : donnée manquante / inconnue / non recueillie /
+non applicable / refus / perte de suivi / erreur de saisie. Ne qualifiez JAMAIS
+automatiquement le mécanisme de MCAR, MAR ou MNAR sans argument suffisant.
 
 ================================================================================
 2. ENTRÉES DE SCORE ("scoring_inputs") — enum stricts, alimentent la grille
@@ -86,6 +95,12 @@ EXACTES ci-dessous (jamais de texte libre). En l'absence d'information suffisant
 - derived_vars_reliability : "fiable"|"reserves"|"non_fiable"|"inevaluable"
 - planned_analyses_feasibility : "adaptees"|"sous_conditions"|"inadaptees"|
   "irrealisables"|"inevaluable" (Hamza §28)
+  Pour juger ce champ, tenez compte (Hamza §26-27) : le NOMBRE D'ÉVÉNEMENTS rapporté au
+  nombre de variables candidates (règle ~10 événements par variable), les modalités et
+  cellules de faible effectif, la multicolinéarité et la redondance (scores incluant déjà
+  des variables), la séparation complète/quasi-complète, les mesures répétées et la
+  dépendance entre observations, la perte d'effectif en analyse complète, le risque de
+  surajustement. Ne recommandez JAMAIS une sélection de variables fondée sur les p-values.
 - units_consistent : true|false|null
 - adjustment_vars_available : true|false|null
 - major_errors_on_primary_endpoint : true|false (des erreurs de classe A touchent-elles
@@ -127,9 +142,26 @@ pouvoir être vérifié par un biostatisticien. Interdites, les formulations vag
 indiquez toujours la variable, l'effectif, le pourcentage, la conséquence méthodologique.
 - "executive_summary_fr" : résumé exécutif (fichiers, effectifs, doublons, manquants,
   anomalies critiques/majeures, principales limites) — les chiffres viennent des entrées.
-- "report_sections_fr" : {"limites": str, "plan_action": str,
-  "plan_analyse_conditionnel": str} (analyses réalisables / avec réserves / conditionnées /
-  impossibles avec la base reçue).
+- "report_sections_fr" : trois textes français structurés :
+  • "limites" : les limites de la base reçue, chiffrées (variable, effectif, %, conséquence).
+  • "plan_action" : plan d'action destiné au client, ORGANISÉ PAR PRIORITÉ (Hamza §30,
+    livrable 8) — Priorité 1 Critique (empêche l'analyse principale ou l'effectif),
+    Priorité 2 Majeure (biais important), Priorité 3 Modérée (précision/analyses
+    secondaires), Priorité 4 Mineure (forme/documentation). Pour chaque action :
+    variables/patients concernés, justification, validation clinique nécessaire ou non.
+    Distinguez corrections certaines, vérifications au dossier source, décisions de
+    codage, variables à compléter, doublons à arbitrer, définitions à clarifier.
+  • "plan_analyse_conditionnel" : plan d'analyse adapté à la base reçue (Hamza livrable 9),
+    distinguant : analyses réalisables immédiatement / avec réserves / conditionnées à des
+    vérifications / actuellement impossibles. Précisez : population d'analyse, critère
+    principal, variables descriptives, analyses principales et secondaires, univariées puis
+    modèles multivariés envisageables, facteurs de confusion, hypothèses des tests à
+    vérifier, analyses de sensibilité, correction des comparaisons multiples, tailles
+    d'effet et intervalles de confiance, tableaux et figures attendus. Ne PAS réaliser les
+    analyses finales. Règles de rédaction statistique (Hamza §38) : toujours indiquer les
+    effectifs et dénominateurs ; ne pas confondre association et causalité, ni
+    non-significativité et absence d'effet ; ne pas dichotomiser arbitrairement une
+    variable quantitative ; privilégier tailles d'effet et intervalles de confiance.
 - "pii_assessment" : pour chaque candidat PII fourni : {column, risk "eleve|modere|faible",
   recommendation_fr}.
 
