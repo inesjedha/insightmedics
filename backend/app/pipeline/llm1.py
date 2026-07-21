@@ -66,41 +66,33 @@ class Endpoint(BaseModel):
 
 class Study(BaseModel):
     design: str | None = None
-    study_type: str | None = None  # prospectif/rétrospectif, descriptif/analytique/pronostique…
-    hypothesis: str | None = None
     primary_objective: str | None = None
     secondary_objectives: list[str] = []
     primary_endpoint: Endpoint | None = None
-    inclusion_period: str | None = None
-    target_population: str | None = None
-    inclusion_criteria: list[str] = []
-    exclusion_criteria: list[str] = []
-    statistical_unit: str | None = None
-    planned_sample_size: str | None = None   # texte pour tolérer « 53 », « environ 60 »
-    observed_sample_size: str | None = None
-    groups: list[str] = []
-    exposures: list[str] = []
-    outcomes: list[str] = []
-    confounders: list[str] = []
-    repeated_measures: bool | None = None
-    planned_analyses: list[str] = []
 
 
-class ObjectiveRow(BaseModel):
-    objective: str
-    endpoint: str | None = None
-    variables: list[str] = []
-    availability: Literal["analysable", "analysable_avec_reserves", "partiellement",
-                          "non_analysable", "inevaluable"]
-    comment: str | None = None
+class DerivedAnalysisVar(BaseModel):
+    """Variable dérivée d'ANALYSE proposée par l'IA, exécutée par le code (méthode Hamza).
+    kind fermé : binary_recode, pct_change, row_sum, formula."""
+    name: str
+    kind: Literal["binary_recode", "pct_change", "row_sum", "formula"]
+    rationale_fr: str
+    # selon le kind :
+    source: str | None = None            # binary_recode
+    positive_values: list[float | int | str] = []  # binary_recode
+    baseline: str | None = None          # pct_change
+    follow_up: str | None = None         # pct_change
+    direction: Literal["loss", "gain", "change"] = "change"  # pct_change
+    sources: list[str] = []              # row_sum
+    formula: str | None = None           # formula
 
 
 class Llm1Output(BaseModel):
     study: Study | None = None
-    objectives_matrix: list[ObjectiveRow] = []
     dictionary: list[DictEntry] = []
     coherence_rules: list[Rule] = []
     derived_variables: list[DerivedVar] = []
+    derived_analysis_variables: list[DerivedAnalysisVar] = []
 
 
 def _validate_rule_ast(node: Any) -> bool:

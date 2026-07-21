@@ -54,11 +54,12 @@ def run_audit(path: str | Path, original_name: str,
         scoring_inputs["rule_violations"] = violations
         ai_audit = {
             "study": llm_out.study.model_dump() if llm_out.study else None,
-            "objectives_matrix": [o.model_dump() for o in llm_out.objectives_matrix],
             "dictionary": [e.model_dump() for e in llm_out.dictionary],
             "rules": rules,
             "violations": violations,
             "derived_variables": [d.model_dump() for d in llm_out.derived_variables],
+            "derived_analysis_variables": [
+                d.model_dump() for d in llm_out.derived_analysis_variables],
             "notes": llm_notes,
         }
         n_viol = violations["total_violations"]
@@ -99,11 +100,6 @@ def run_audit(path: str | Path, original_name: str,
             log("warn", "Jugement IA (LLM-2) non produit : " + "; ".join(llm2_notes))
     else:
         log("warn", "Audit IA non exécuté : " + "; ".join(llm_notes))
-
-    # Sans protocole, le critère de jugement principal ne peut pas être défini
-    # opérationnellement (Hamza plafonne alors à 49 — cas Houssem, sans protocole).
-    if not protocol_text:
-        scoring_inputs["primary_endpoint_operationally_defined"] = False
 
     log("info", "Calcul du score de qualité /100 (grille officielle en 8 domaines)…")
     _, issues, notes = score_and_issues(profiling)  # issues lisibles pour le front

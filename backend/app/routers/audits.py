@@ -9,7 +9,6 @@ import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
-from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from ..config import settings
@@ -168,44 +167,81 @@ def get_ai_audit(audit_id: str, db: Session = Depends(get_db)):
     return a.ai_audit
 
 
-@router.get("/{audit_id}/assessment")
-def get_assessment(audit_id: str, db: Session = Depends(get_db)):
-    """Jugement IA (LLM-2) : anomalies classées, verdict, résumé exécutif FR."""
+@router.get("/{audit_id}/report.pdf")
+def get_report(audit_id: str):
+    raise HTTPException(501, "Rapport PDF : jalon M6 (à venir)")
+
+
+# ---------------------------------------------------------------- livrables M6/M8
+
+def _load_or_404(audit_id: str, db: Session) -> Audit:
     a = db.get(Audit, audit_id)
-    if not a or not a.ai_audit or not a.ai_audit.get("assessment"):
-        raise HTTPException(404, "Jugement IA non disponible pour cet audit")
-    return a.ai_audit["assessment"]
+    if not a or not a.profiling or not a.score_detail:
+        raise HTTPException(404, "Audit introuvable ou incomplet")
+    return a
+
+
+def _run_cleaning(a: Audit) -> dict | None:
+    """Rejoue le nettoyage déterministe (M8) à partir du fichier source persisté."""
+    if not a.stored_path or not Path(a.stored_path).exists():
+        return None
+    from ..pipeline.cleaning import clean
+    from ..pipeline.ingest import ingest
+
+    df, _ = ingest(a.stored_path, a.file_name)
+    # opérations non-auto_safe validées par le client : à brancher sur l'UI ; ici aucune.
+    return clean(df, a.profiling, a.ai_audit, approved_op_ids=set())
+
+
+def _attach(data: bytes, filename: str, media: str):
+    from fastapi import Response
+    return Response(content=data, media_type=media,
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
 @router.get("/{audit_id}/workbook.xlsx")
 def get_workbook(audit_id: str, db: Session = Depends(get_db)):
-    """Classeur Excel d'audit (format Hamza) construit à la volée depuis l'audit stocké."""
-    a = db.get(Audit, audit_id)
-    if not a or not a.profiling or not a.score_detail:
-        raise HTTPException(404, "Audit introuvable")
+    """Classeur d'audit Excel (10 onglets) — inclut Base analyse et Source anonymisée."""
+    a = _load_or_404(audit_id, db)
     from ..pipeline.report_xlsx import build_workbook
 
-    data = build_workbook(a.profiling, a.score_detail, a.ai_audit)
-    fname = f"audit_{(a.file_name or audit_id).rsplit('.', 1)[0]}.xlsx"
-    return Response(
-        content=data,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
-    )
+    data = build_workbook(a.profiling, a.score_detail, a.ai_audit, cleaning=_run_cleaning(a))
+    return _attach(data, f"{audit_id}_classeur_audit.xlsx",
+                   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @router.get("/{audit_id}/report.docx")
 def get_report_docx(audit_id: str, db: Session = Depends(get_db)):
-    """Rapport d'audit Word (11 sections, format Hamza), construit à la volée."""
-    a = db.get(Audit, audit_id)
-    if not a or not a.profiling or not a.score_detail:
-        raise HTTPException(404, "Audit introuvable")
+    """Rapport d'audit Word (11 sections) au format du livrable de Hamza."""
+    a = _load_or_404(audit_id, db)
     from ..pipeline.report_docx import build_report
 
     data = build_report(a.profiling, a.score_detail, a.ai_audit)
-    fname = f"rapport_audit_{(a.file_name or audit_id).rsplit('.', 1)[0]}.docx"
-    return Response(
-        content=data,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
-    )
+    return _attach(data, f"{audit_id}_rapport_audit.docx",
+                   "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+
+@router.get("/{audit_id}/base_analyse.csv")
+def get_base_csv(audit_id: str, db: Session = Depends(get_db)):
+    """Base nettoyée et anonymisée (CSV). Original inchangé."""
+    a = _load_or_404(audit_id, db)
+    res = _run_cleaning(a)
+    if not res:
+        raise HTTPException(404, "Fichier source indisponible pour le nettoyage")
+    from ..pipeline.cleaning import to_csv_bytes
+
+    return _attach(to_csv_bytes(res["base_analyse"]),
+                   f"{audit_id}_base_analyse.csv", "text/csv")
+
+
+@router.get("/{audit_id}/base_analyse.sav")
+def get_base_sav(audit_id: str, db: Session = Depends(get_db)):
+    """Base nettoyée et anonymisée (SPSS .sav)."""
+    a = _load_or_404(audit_id, db)
+    res = _run_cleaning(a)
+    if not res:
+        raise HTTPException(404, "Fichier source indisponible pour le nettoyage")
+    from ..pipeline.cleaning import to_sav_bytes
+
+    return _attach(to_sav_bytes(res["base_analyse"]),
+                   f"{audit_id}_base_analyse.sav", "application/octet-stream")

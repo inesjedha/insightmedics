@@ -188,9 +188,25 @@ def _sheet_variables_exclues(wb: Workbook, prof: dict) -> None:
         _note(ws, "Aucune variable à exclure détectée.")
 
 
-def _sheet_journal(wb: Workbook, ai: dict | None) -> None:
+def _sheet_journal(wb: Workbook, ai: dict | None, cleaning: dict | None = None) -> None:
     ws = wb.create_sheet("Journal corrections")
     ws.sheet_view.showGridLines = False
+    # Si le nettoyage (M8) a été exécuté, on consigne les corrections RÉELLEMENT
+    # appliquées à la copie ; sinon on liste les opérations PROPOSÉES par l'IA.
+    if cleaning and cleaning.get("journal"):
+        _headers(ws, ["id", "variable", "action appliquée (copie)", "raison",
+                      "méthode", "n concerné", "vérif. dossier"],
+                 [8, 26, 30, 34, 26, 11, 12])
+        for i, e in enumerate(cleaning["journal"], 2):
+            vals = [e.get("id_correction"), e.get("variable"),
+                    e.get("action_appliquee_dans_copie"), e.get("raison"),
+                    e.get("methode"), e.get("n_concerne"),
+                    e.get("verification_dossier_necessaire")]
+            for j, v in enumerate(vals, 1):
+                c = ws.cell(row=i, column=j, value=v)
+                c.font = NORM
+                c.alignment = WRAP
+        return
     _headers(ws, ["id", "opération", "variable", "justification", "auto-applicable"],
              [8, 22, 18, 40, 14])
     plan = (ai or {}).get("assessment", {}).get("cleaning_plan", [])
@@ -230,25 +246,18 @@ def _sheet_concordance(wb: Workbook, ai: dict | None) -> None:
     ws.sheet_view.showGridLines = False
     _headers(ws, ["objectif", "critère de jugement", "variables candidates", "faisabilité"],
              [40, 30, 30, 20])
-    matrix = (ai or {}).get("objectives_matrix") or []
     study = (ai or {}).get("study")
-    if not matrix and not study:
+    if not study:
         _note(ws, "Concordance protocole disponible si un protocole a été fourni.")
         return
-    if matrix:
-        for i, row in enumerate(matrix, 2):
-            vals = [row.get("objective"), row.get("endpoint"),
-                    ", ".join(row.get("variables", [])), row.get("availability")]
-            for j, v in enumerate(vals, 1):
-                c = ws.cell(row=i, column=j, value=v)
-                c.font = NORM
-                c.alignment = WRAP
-    else:
-        ep = study.get("primary_endpoint") or {}
-        ws.cell(row=2, column=1, value=study.get("primary_objective")).font = NORM
-        ws.cell(row=2, column=2, value=ep.get("description")).font = NORM
-        ws.cell(row=2, column=3, value=", ".join(ep.get("candidate_columns", []))).font = NORM
-        for c in ws["A2"], ws["B2"], ws["C2"]:
+    ep = study.get("primary_endpoint") or {}
+    ws.cell(row=2, column=1, value=study.get("primary_objective")).font = NORM
+    ws.cell(row=2, column=2, value=ep.get("description")).font = NORM
+    ws.cell(row=2, column=3, value=", ".join(ep.get("candidate_columns", []))).font = NORM
+    for r, obj in enumerate(study.get("secondary_objectives", []), 3):
+        ws.cell(row=r, column=1, value=obj).font = NORM
+    for row in ws.iter_rows(min_row=2):
+        for c in row:
             c.alignment = WRAP
 
 
@@ -269,20 +278,59 @@ def _sheet_plan(wb: Workbook, ai: dict | None) -> None:
     c.alignment = WRAP
 
 
+def _sheet_data(wb: Workbook, title: str, df, note: str, max_rows: int = 500) -> None:
+    """Écrit un DataFrame (base nettoyée / source anonymisée) en onglet, entêtes figées."""
+    ws = wb.create_sheet(title)
+    ws.sheet_view.showGridLines = False
+    cols = list(df.columns)
+    for j, name in enumerate(cols, 1):
+        c = ws.cell(row=1, column=j, value=str(name))
+        c.font = H
+        c.fill = HFILL
+        c.alignment = Alignment(vertical="center", wrap_text=True)
+        ws.column_dimensions[get_column_letter(j)].width = min(max(12, len(str(name)) + 2), 24)
+    ws.freeze_panes = "A2"
+    shown = df.head(max_rows)
+    for i, (_, r) in enumerate(shown.iterrows(), 2):
+        for j, name in enumerate(cols, 1):
+            v = r[name]
+            try:
+                import pandas as _pd
+                if _pd.isna(v):
+                    v = None
+            except Exception:  # noqa: BLE001
+                pass
+            ws.cell(row=i, column=j, value=v).font = NORM
+    if len(df) > max_rows:
+        r = len(shown) + 3
+        ws.cell(row=r, column=1,
+                value=f"… {len(df) - max_rows} ligne(s) supplémentaire(s). "
+                      f"Base complète dans les fichiers .sav / .csv joints.").font = \
+            Font(name="Arial", italic=True, size=10, color="888888")
+    elif note:
+        pass
+
+
 # ---------------------------------------------------------------- entrée
 
 def build_workbook(profiling: dict, score_detail: dict,
-                   ai_audit: dict | None) -> bytes:
+                   ai_audit: dict | None, cleaning: dict | None = None) -> bytes:
     wb = Workbook()
     wb.remove(wb.active)  # retire la feuille vide par défaut
     _sheet_resume(wb, profiling, score_detail, ai_audit)
     _sheet_registre(wb, ai_audit)
     _sheet_dictionnaire(wb, profiling, ai_audit)
     _sheet_concordance(wb, ai_audit)
-    _sheet_journal(wb, ai_audit)
+    _sheet_journal(wb, ai_audit, cleaning)
     _sheet_variables_exclues(wb, profiling)
     _sheet_decisions(wb, ai_audit)
     _sheet_plan(wb, ai_audit)
+    # Onglets de données produits au jalon M8 (nettoyage). Ajoutés seulement si dispo.
+    if cleaning:
+        _sheet_data(wb, "Base analyse", cleaning["base_analyse"],
+                    "Copie nettoyée et anonymisée ; original inchangé.")
+        _sheet_data(wb, "Source anonymisée", cleaning["source_anonymisee"],
+                    "Toutes les colonnes, identifiants directs retirés.")
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
