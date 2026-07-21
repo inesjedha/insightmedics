@@ -14,15 +14,14 @@ Usage :
 
 from __future__ import annotations
 
-import os
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.pipeline.docs_extract import extract_text  # noqa: E402
-from app.pipeline.runner import run_audit  # noqa: E402
+from app.pipeline.docs_extract import extract_text
+from app.pipeline.runner import run_audit
 
 DEFAULT_DOSSIER = Path.home() / "Downloads" / "Dossier LLM ines"
 

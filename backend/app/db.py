@@ -21,16 +21,17 @@ def apply_light_migrations() -> None:
     ajouts de colonnes simples sans outil de migration complet (Alembic viendra
     avec la prod Postgres si besoin).
     """
+    import contextlib
+
     from sqlalchemy import text
 
     wanted = {"audits": {"score_detail": "JSON", "ai_audit": "JSON"}}
     with engine.begin() as conn:
         for table, columns in wanted.items():
             for col, coltype in columns.items():
-                try:
+                # La colonne existe déjà : l'ALTER échoue, ce qui est attendu.
+                with contextlib.suppress(Exception):
                     conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {coltype}"))
-                except Exception:  # noqa: BLE001 — colonne déjà présente
-                    pass
 
 
 def get_db():

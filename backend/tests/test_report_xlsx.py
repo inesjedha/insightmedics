@@ -3,10 +3,10 @@
 import io
 
 from openpyxl import load_workbook
+from tests.test_score_engine import CLEAN, FULL_SI
 
 from app.pipeline.report_xlsx import build_workbook
 from app.pipeline.score_engine import compute_score
-from tests.test_score_engine import CLEAN, FULL_SI
 
 SYNTH_AI = {
     "study": {

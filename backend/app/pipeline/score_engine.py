@@ -70,7 +70,7 @@ def compute_score(profiling: dict[str, Any],
     s = profiling["structure"]
     m = profiling["missing_summary"]
     cols = profiling["columns"]
-    n_rows, n_cols = s["n_rows"], s["n_cols"]
+    n_rows = s["n_rows"]
     # Les jugements méthodologiques (M5) sont distincts des sorties mécaniques
     # du moteur de règles (M4) : seuls les premiers élèvent la confiance.
     has_si = any(k not in ("rule_violations", "primary_endpoint_missing_pct")
@@ -93,10 +93,11 @@ def compute_score(profiling: dict[str, Any],
         # part d'identifiants renseignés
         idc = next((c for c in cols if c["name"] == id_col), None)
         pct_missing_id = (idc["pct_missing"] / 100) if idc else 0.0
+        n_missing_id = idc["n_missing"] if idc else 0
         d1.add("Identifiant présent pour toutes les observations", 3,
                3 * (1 - pct_missing_id),
                "" if pct_missing_id == 0 else
-               f"{idc['n_missing']} identifiant(s) manquant(s) sur {n_rows}")
+               f"{n_missing_id} identifiant(s) manquant(s) sur {n_rows}")
         uniq_ratio = s["n_unique_ids"] / max(n_rows, 1)
         dup_ids = s["duplicates"]["duplicate_ids"]
         d1.add("Identifiants uniques ou répétitions documentées", 3, 3 * uniq_ratio,
@@ -230,14 +231,15 @@ def compute_score(profiling: dict[str, Any],
     else:
         d5.add("Critère principal disponible et correctement défini", 4,
                cjp_pts.get(cjp_status, 2), f"statut : {cjp_status}")
-    for label, mx, key, table in [
+    d5_rows: list[tuple[str, int, str, dict[str, float]]] = [
         ("Variables de l'objectif principal disponibles", 3, "primary_objective_vars_available",
          {"complet": 3, "partiel": 1.5, "absent": 0, "inevaluable": 1.5}),
         ("Variables des objectifs secondaires disponibles", 2, "secondary_objectives_vars_available",
          {"complet": 2, "partiel": 1, "absent": 0, "inevaluable": 1}),
         ("Groupes et expositions reconstructibles", 2, "groups_reconstructible",
          {"oui": 2, "avec_reserves": 1, "non": 0, "non_applicable": 2, "inevaluable": 1}),
-    ]:
+    ]
+    for label, mx, key, table in d5_rows:
         v = si.get(key)
         if v is None:
             d5.add(label, mx, mx / 2, INEV, True)
@@ -306,12 +308,12 @@ def compute_score(profiling: dict[str, Any],
     feas = si.get("planned_analyses_feasibility")
     feas_pts = {"adaptees": 1, "sous_conditions": 0.5, "inadaptees": 0,
                 "irrealisables": 0, "inevaluable": 0.5}
-    for label, key in [("Nombre d'événements compatible avec les analyses", feas),
-                       ("Structure compatible avec les méthodes prévues", feas)]:
-        if key is None:
+    for label, feas_key in [("Nombre d'événements compatible avec les analyses", feas),
+                            ("Structure compatible avec les méthodes prévues", feas)]:
+        if feas_key is None:
             d8.add(label, 1, 0.5, INEV, True)
         else:
-            d8.add(label, 1, feas_pts.get(key, 0.5), f"statut : {key}")
+            d8.add(label, 1, feas_pts.get(feas_key, 0.5), f"statut : {feas_key}")
     grp = si.get("groups_reconstructible")
     if grp is None:
         d8.add("Groupes correctement définis", 1, 0.5, INEV, True)

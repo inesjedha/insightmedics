@@ -80,7 +80,7 @@ def _stat_type(s: pd.Series, value_labels: dict | None) -> str:
 
 
 def _suspect_missing_codes(s: pd.Series, declared: Any) -> list:
-    found = []
+    found: list[Any] = []
     if pd.api.types.is_numeric_dtype(s):
         vals = s.dropna()
         if len(vals) == 0:
@@ -94,9 +94,9 @@ def _suspect_missing_codes(s: pd.Series, declared: Any) -> list:
                     found.append(code)
     else:
         lowered = s.dropna().astype(str).str.strip().str.lower()
-        for code in sorted(SUSPECT_TEXT_CODES - {""}):
-            if (lowered == code).any():
-                found.append(code)
+        for text_code in sorted(SUSPECT_TEXT_CODES - {""}):
+            if (lowered == text_code).any():
+                found.append(text_code)
     return found
 
 
@@ -284,7 +284,7 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
             if s.str.match(EMAIL_CONTENT_RE).mean() > 0.5:
                 kinds.append("email_content")
         if kinds:
-            pii.append({"column": str(c), "kinds": sorted(set(kinds)), "n_values": int(len(s))})
+            pii.append({"column": str(c), "kinds": sorted(set(kinds)), "n_values": len(s)})
 
     return {
         "file": {k: meta.get(k) for k in ("file_name", "format", "size_bytes", "sha256",

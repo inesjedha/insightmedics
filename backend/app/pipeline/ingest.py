@@ -29,8 +29,8 @@ def _read_sav(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
     import pyreadstat
 
     df, meta = pyreadstat.read_sav(str(path))
-    file_meta = {
-        "spss_column_labels": dict(zip(meta.column_names, meta.column_labels)),
+    file_meta: dict[str, Any] = {
+        "spss_column_labels": dict(zip(meta.column_names, meta.column_labels, strict=True)),
         "spss_value_labels": meta.variable_value_labels or {},
         "spss_missing_ranges": meta.missing_ranges or {},
         "spss_variable_measure": getattr(meta, "variable_measure", {}) or {},
@@ -50,7 +50,7 @@ def _read_excel(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
         )
         if best is None or len(sheet_df) * max(len(sheet_df.columns), 1) > best[1]:
             best = (sheet_df, len(sheet_df) * max(len(sheet_df.columns), 1), name)
-    if best is None or best[0].empty and best[1] == 0:
+    if best is None or (best[0].empty and best[1] == 0):
         raise IngestError("Aucune feuille contenant des données.")
     hidden = []
     if path.suffix.lower() == ".xlsx":
@@ -59,7 +59,7 @@ def _read_excel(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
 
             wb = load_workbook(path, read_only=True)
             hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != "visible"]
-        except Exception:
+        except Exception:  # noqa: BLE001 — détection des feuilles cachées best-effort
             pass
     return best[0], {
         "sheets": sheets_info,
@@ -113,7 +113,7 @@ def ingest(path: str | Path, original_name: str | None = None) -> tuple[pd.DataF
         df, meta = reader(path)
     except IngestError:
         raise
-    except Exception as exc:  # noqa: BLE001 — remonté proprement à l'API
+    except Exception as exc:
         raise IngestError(f"Fichier illisible ({ext}) : {exc}") from exc
 
     meta.update(

@@ -13,7 +13,6 @@ IA a été exécuté ; sinon une note l'indique (le classeur reste cohérent).
 from __future__ import annotations
 
 import io
-from typing import Any
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -34,7 +33,7 @@ SEV_FILL = {
 
 
 def _headers(ws, headers: list[str], widths: list[int]) -> None:
-    for j, (h, w) in enumerate(zip(headers, widths), start=1):
+    for j, (h, w) in enumerate(zip(headers, widths, strict=True), start=1):
         c = ws.cell(row=1, column=j, value=h)
         c.font = H
         c.fill = HFILL

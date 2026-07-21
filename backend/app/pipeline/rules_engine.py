@@ -8,6 +8,7 @@ les lignes non testables sont comptées à part, jamais en violation.
 from __future__ import annotations
 
 import ast
+import itertools
 import operator
 from typing import Any
 
@@ -118,7 +119,7 @@ def _satisfied(node: dict, df: pd.DataFrame) -> pd.Series:
     if op == "chrono_order":
         cols = [pd.to_datetime(df[c], errors="coerce") for c in node["cols"]]
         ok = pd.Series(True, index=df.index)
-        for a, b in zip(cols, cols[1:]):
+        for a, b in itertools.pairwise(cols):
             ok &= a <= b
         return ok
     raise ValueError(f"op inconnu : {op}")

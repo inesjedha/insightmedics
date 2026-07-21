@@ -3,11 +3,11 @@
 import io
 
 from docx import Document
+from tests.test_report_xlsx import SYNTH_AI, _profiling_min
+from tests.test_score_engine import CLEAN, FULL_SI
 
 from app.pipeline.report_docx import build_report
 from app.pipeline.score_engine import compute_score
-from tests.test_report_xlsx import SYNTH_AI, _profiling_min
-from tests.test_score_engine import CLEAN, FULL_SI
 
 
 def test_rapport_word_11_sections():

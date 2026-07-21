@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import io
 from datetime import date
-from typing import Any
 
 from docx import Document
+from docx.document import Document as DocxDocument
 from docx.shared import Pt, RGBColor
 
 
@@ -43,13 +43,13 @@ def _fig_scores(score: dict) -> io.BytesIO | None:
     return buf
 
 
-def _h(doc: Document, text: str) -> None:
+def _h(doc: DocxDocument, text: str) -> None:
     p = doc.add_heading(text, level=1)
     for run in p.runs:
         run.font.color.rgb = RGBColor(0x1F, 0x3B, 0x57)
 
 
-def _p(doc: Document, text: str) -> None:
+def _p(doc: DocxDocument, text: str) -> None:
     if text:
         doc.add_paragraph(text)
 
@@ -75,7 +75,8 @@ def build_report(profiling: dict, score: dict, ai_audit: dict | None) -> bytes:
     meta.add_run(f"Population auditée : {s['n_rows']} observations · "
                  f"Structure source : {s['n_cols']} variables · "
                  f"Date de l'audit : {date.today():%d/%m/%Y}").italic = True
-    doc.add_paragraph("Principe : source originale inchangée ; copie nettoyée traçable.").italic = True
+    principe = doc.add_paragraph("Principe : source originale inchangée ; copie nettoyée traçable.")
+    principe.runs[0].italic = True
 
     # 1. Synthèse exécutive
     _h(doc, "1. Synthèse exécutive")
@@ -183,8 +184,9 @@ def build_report(profiling: dict, score: dict, ai_audit: dict | None) -> bytes:
     if fig is not None:
         from docx.shared import Inches
         doc.add_picture(fig, width=Inches(6.0))
-        doc.add_paragraph("Figure 1. Sous-scores de qualité rapportés au maximum de "
-                          "chaque domaine.").italic = True
+        legende = doc.add_paragraph("Figure 1. Sous-scores de qualité rapportés au maximum de "
+                                    "chaque domaine.")
+        legende.runs[0].italic = True
 
     # 8. Nettoyage appliqué à la copie dérivée
     _h(doc, "8. Nettoyage appliqué à la copie dérivée")

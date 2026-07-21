@@ -1,0 +1,55 @@
+[project]
+name = "insightmedics-backend"
+version = "0.1.0"
+description = "Insight Medics — moteur d'audit de bases de données médicales (FastAPI)"
+requires-python = ">=3.12"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120  # code data-heavy : tables de score alignées, f-strings en français
+src = ["app", "scripts", "tests"]
+
+[tool.ruff.lint]
+# Sélection volontairement large mais pragmatique pour un backend data-heavy.
+select = [
+    "E",    # pycodestyle (erreurs)
+    "W",    # pycodestyle (avertissements)
+    "F",    # pyflakes (imports/variables inutilisés, etc.)
+    "I",    # isort (tri des imports)
+    "UP",   # pyupgrade (syntaxe moderne)
+    "B",    # flake8-bugbear (pièges courants)
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "BLE",  # flake8-blind-except (except larges → à justifier par un noqa explicite)
+    "RUF",  # règles spécifiques à ruff
+]
+ignore = [
+    "B008",   # appels dans les valeurs par défaut : idiome FastAPI (Depends(...), etc.)
+    "RUF001", # caractères unicode ambigus : faux positifs sur le français (accents, «»)
+    "RUF002",
+    "RUF003",
+    "UP047",  # génériques PEP 695 (def f[T]) : syntaxe 3.12 only ; on garde TypeVar (3.10+)
+    "UP017",  # datetime.UTC : 3.11+ ; on garde timezone.utc, portable (3.10+)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Les tests peuvent utiliser des assertions et des fixtures moins strictes.
+"tests/*" = ["B011"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.mypy]
+python_version = "3.12"
+# Bibliothèques data sans stubs typés : on n'exige pas leurs annotations.
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+# Périmètre : le code applicatif. Tests et scripts restent souples pour l'instant.
+files = ["app"]
+
+[[tool.mypy.overrides]]
+module = ["pandas.*", "pyreadstat.*", "openpyxl.*", "docx.*", "matplotlib.*"]
+ignore_missing_imports = true

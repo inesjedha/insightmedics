@@ -5,7 +5,6 @@ asynchrone quand les appels IA (M4/M5) allongeront le traitement.
 """
 
 import secrets
-import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
@@ -91,7 +90,7 @@ def upload_and_audit(file: UploadFile, protocol: UploadFile | None = None,
         audit.status, audit.error, audit.finished_at = "failed", str(exc), utcnow_iso()
         db.commit()
         raise HTTPException(422, str(exc)) from exc
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         import traceback
 
         traceback.print_exc()  # visible dans les logs uvicorn pour le débogage
@@ -188,6 +187,7 @@ def _run_cleaning(a: Audit) -> dict | None:
     from ..pipeline.cleaning import clean
     from ..pipeline.ingest import ingest
 
+    assert a.profiling is not None  # garanti par _load_or_404
     df, _ = ingest(a.stored_path, a.file_name)
     # opérations non-auto_safe validées par le client : à brancher sur l'UI ; ici aucune.
     return clean(df, a.profiling, a.ai_audit, approved_op_ids=set())
@@ -203,6 +203,7 @@ def _attach(data: bytes, filename: str, media: str):
 def get_workbook(audit_id: str, db: Session = Depends(get_db)):
     """Classeur d'audit Excel (10 onglets) — inclut Base analyse et Source anonymisée."""
     a = _load_or_404(audit_id, db)
+    assert a.profiling is not None and a.score_detail is not None  # garanti par _load_or_404
     from ..pipeline.report_xlsx import build_workbook
 
     data = build_workbook(a.profiling, a.score_detail, a.ai_audit, cleaning=_run_cleaning(a))
@@ -214,6 +215,7 @@ def get_workbook(audit_id: str, db: Session = Depends(get_db)):
 def get_report_docx(audit_id: str, db: Session = Depends(get_db)):
     """Rapport d'audit Word (11 sections) au format du livrable de Hamza."""
     a = _load_or_404(audit_id, db)
+    assert a.profiling is not None and a.score_detail is not None  # garanti par _load_or_404
     from ..pipeline.report_docx import build_report
 
     data = build_report(a.profiling, a.score_detail, a.ai_audit)

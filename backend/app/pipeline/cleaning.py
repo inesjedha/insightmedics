@@ -12,7 +12,6 @@ la valeur à manquant tout en conservant l'originale (méthode de Hamza).
 
 from __future__ import annotations
 
-import io
 from typing import Any
 
 import numpy as np
@@ -223,8 +222,9 @@ def to_csv_bytes(df: pd.DataFrame) -> bytes:
 
 def to_sav_bytes(df: pd.DataFrame) -> bytes:
     """Écrit un .sav via pyreadstat (nécessite un fichier temporaire)."""
-    import tempfile
     import os
+    import tempfile
+
     import pyreadstat
 
     # pyreadstat n'aime pas les colonnes object mixtes : normaliser en str/num
