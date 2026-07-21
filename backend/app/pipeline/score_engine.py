@@ -339,7 +339,12 @@ def compute_score(profiling: dict[str, Any],
     # contraste/méthode non préspécifiés) plafonne aussi à 49 — 3 bases sur 4 concernées.
     cap(si.get("primary_endpoint_operationally_defined") is False,
         "Critère de jugement principal non défini opérationnellement", 49)
-    cap(id_col is None, "Identifiant absent et patients non individualisables", 49)
+    # Hamza plafonne pour l'identité UNIQUEMENT si les patients ne sont pas
+    # individualisables : pas d'ID ET des lignes strictement dupliquées. Sans ID mais
+    # avec des lignes toutes distinctes, les patients restent identifiables → pas de plafond
+    # (cas Syrine : pas d'ID, 0 doublon → Hamza note 73 sans plafond).
+    cap(id_col is None and s["duplicates"]["exact_rows"] > 0,
+        "Identifiant absent et patients non individualisables", 49)
     cap(si.get("groups_reconstructible") == "non",
         "Groupes principaux impossibles à reconstruire", 59)
     cap(cjp_missing is not None and cjp_missing > 40,

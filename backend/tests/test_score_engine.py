@@ -78,11 +78,16 @@ def test_plafond_critere_principal_absent():
     assert any("Critère principal" in c["defaut"] for c in r["plafonds_appliques"])
 
 
-def test_plafond_identifiant_absent():
+def test_plafond_identifiant_absent_seulement_si_lignes_indistinctes():
+    # Pas d'ID mais lignes toutes distinctes : patients individualisables → PAS de plafond
     p = copy.deepcopy(CLEAN)
     p["structure"]["id_column"] = None
     r = compute_score(p, FULL_SI)
-    assert r["score_final"] <= 49
+    assert r["score_final"] > 49, "sans doublon, l'absence d'ID ne doit pas plafonner (cas Syrine)"
+    # Pas d'ID ET des lignes dupliquées : patients non individualisables → plafond 49
+    p["structure"]["duplicates"]["exact_rows"] = 3
+    r2 = compute_score(p, FULL_SI)
+    assert r2["score_final"] <= 49
 
 
 def test_plafond_manquants_critere_principal():
