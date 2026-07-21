@@ -21,7 +21,7 @@ def _fig_scores(score: dict) -> io.BytesIO | None:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
-    except Exception:  # noqa: BLE001
+    except ImportError:  # matplotlib optionnel : pas de figure si absent
         return None
     doms = score["domaines"]
     labels = [f"D{d['domaine']}" for d in doms]

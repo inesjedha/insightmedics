@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import io
 
+import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
@@ -296,11 +297,12 @@ def _sheet_data(wb: Workbook, title: str, df, note: str, max_rows: int = 500) ->
     for i, (_, r) in enumerate(shown.iterrows(), 2):
         for j, name in enumerate(cols, 1):
             v = r[name]
+            # pd.isna lève ValueError sur un array-like, TypeError sur certains objets :
+            # dans ce cas la valeur n'est pas « manquante », on la garde telle quelle.
             try:
-                import pandas as _pd
-                if _pd.isna(v):
+                if pd.isna(v):
                     v = None
-            except Exception:  # noqa: BLE001
+            except (TypeError, ValueError):
                 pass
             ws.cell(row=i, column=j, value=v).font = NORM
     if len(df) > max_rows:

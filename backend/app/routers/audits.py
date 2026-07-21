@@ -4,6 +4,7 @@ POST /audit/upload est synchrone (M1+M2 : quelques secondes). À passer en
 asynchrone quand les appels IA (M4/M5) allongeront le traitement.
 """
 
+import logging
 import secrets
 from pathlib import Path
 
@@ -16,6 +17,8 @@ from ..models import Audit, utcnow_iso
 from ..pipeline.ingest import IngestError
 from ..pipeline.runner import run_audit
 from ..schemas import AuditEvent, AuditResult
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
@@ -91,12 +94,11 @@ def upload_and_audit(file: UploadFile, protocol: UploadFile | None = None,
         db.commit()
         raise HTTPException(422, str(exc)) from exc
     except Exception as exc:
-        import traceback
-
-        traceback.print_exc()  # visible dans les logs uvicorn pour le débogage
+        logger.exception("Échec de l'audit %s", audit_id)
         audit.status, audit.error, audit.finished_at = "failed", str(exc), utcnow_iso()
         db.commit()
-        raise HTTPException(500, f"Erreur interne pendant l'audit : {exc}") from exc
+        # On ne divulgue pas le détail interne au client ; il est tracé côté serveur.
+        raise HTTPException(500, "Erreur interne pendant l'audit") from exc
 
     audit.status = "done"
     audit.started_at = r["started_at"]
