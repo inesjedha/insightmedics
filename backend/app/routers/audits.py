@@ -1,7 +1,8 @@
 """Endpoints /audit — contrat de src/lib/api/client.ts.
 
-POST /audit/upload est synchrone (M1+M2 : quelques secondes). À passer en
-asynchrone quand les appels IA (M4/M5) allongeront le traitement.
+POST /audit/upload est synchrone : rapide sans audit IA, mais potentiellement plusieurs
+minutes lorsque l'IA (LLM-1/LLM-2) est active. Passage en traitement asynchrone
+(file d'attente + polling) prévu comme amélioration.
 """
 
 import logging
@@ -170,7 +171,9 @@ def get_ai_audit(audit_id: str, db: Session = Depends(get_db)):
 
 @router.get("/{audit_id}/report.pdf")
 def get_report(audit_id: str):
-    raise HTTPException(501, "Rapport PDF : jalon M6 (à venir)")
+    # Le rapport est disponible au format Word (/report.docx) ; l'export PDF n'est pas
+    # encore implémenté.
+    raise HTTPException(501, "Export PDF non disponible — utiliser /report.docx")
 
 
 # ---------------------------------------------------------------- livrables M6/M8

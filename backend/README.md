@@ -1,11 +1,15 @@
 # Backend Insight Medics
 
-API REST + pipeline d'audit de bases de données médicales (SPSS .sav, Excel, CSV).
+API REST + pipeline d'audit de bases de données médicales (SPSS `.sav`, Excel, CSV).
 Implémente le contrat attendu par le front (`src/lib/api/client.ts`).
+
+Principe directeur : **l'IA propose, le code exécute.** La base originale n'est jamais
+modifiée ; le score /100 est calculé de façon déterministe par le code (jamais par l'IA),
+ce qui le rend reproductible.
 
 ## Démarrage local
 
-**Prérequis : Python 3.10 ou plus** (`python3 --version` pour vérifier ; sur macOS : `brew install python@3.12`).
+**Prérequis : Python 3.10 ou plus** (`python3 --version` ; le projet cible la 3.12 en CI).
 
 ```bash
 cd backend
@@ -14,38 +18,70 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --reload-dir app --port 8000
 ```
 
-Puis côté front, dans `.env` : `VITE_USE_MOCK_API=false` et
+Côté front, dans `.env` : `VITE_USE_MOCK_API=false` et
 `VITE_API_BASE_URL=http://localhost:8000`.
+
+## Qualité du code (lint, typage, tests)
+
+```bash
+pip install -r requirements-dev.txt
+ruff check app scripts tests      # lint + tri d'imports
+mypy                              # typage statique (config dans pyproject.toml)
+pytest -q                         # tests
+```
+
+Ces trois commandes sont exécutées par la CI (`.github/workflows/ci.yml`) à chaque push.
 
 ## Endpoints
 
-| Méthode        | Route                   | Description                                                 |
-| -------------- | ----------------------- | ----------------------------------------------------------- |
-| POST           | `/audit/upload`         | Upload multipart (`file`) → audit synchrone → `AuditResult` |
-| GET            | `/audit/:id`            | Résumé de l'audit                                           |
-| GET            | `/audit/:id/events`     | Journal des étapes                                          |
-| GET            | `/audit/:id/profiling`  | Profiling complet (interne/admin)                           |
-| GET            | `/audit/:id/report.pdf` | 501 — jalon M6                                              |
-| POST/GET/PATCH | `/leads`, `/leads/:id`  | CRM leads                                                   |
-| GET            | `/health`               | Healthcheck                                                 |
+| Méthode        | Route                          | Description                                              |
+| -------------- | ------------------------------ | -------------------------------------------------------- |
+| POST           | `/audit/upload`                | Upload multipart (`file`, `protocol` optionnel) → audit → `AuditResult` |
+| GET            | `/audit/:id`                   | Résumé de l'audit                                        |
+| GET            | `/audit/:id/events`            | Journal des étapes                                       |
+| GET            | `/audit/:id/profiling`         | Profiling complet (interne/admin)                        |
+| GET            | `/audit/:id/score`             | Décomposition du score (8 domaines, plafonds, confiance) |
+| GET            | `/audit/:id/ai`                | Audit IA (étude, dictionnaire, règles, violations)       |
+| GET            | `/audit/:id/workbook.xlsx`     | Classeur d'audit (10 onglets)                            |
+| GET            | `/audit/:id/report.docx`       | Rapport d'audit Word (11 sections)                       |
+| GET            | `/audit/:id/base_analyse.csv`  | Base nettoyée et anonymisée (CSV)                        |
+| GET            | `/audit/:id/base_analyse.sav`  | Base nettoyée et anonymisée (SPSS)                       |
+| POST/GET/PATCH | `/leads`, `/leads/:id`         | CRM leads                                                |
+| GET            | `/health`                      | Healthcheck                                              |
 
-## Pipeline (voir doc d'architecture du 12/07/2026)
+> L'upload est **synchrone** et peut prendre plusieurs minutes lorsque l'audit IA est actif.
+> Le passage en traitement asynchrone (file d'attente + polling) reste une amélioration à venir.
 
-- **M1 Ingest** (`app/pipeline/ingest.py`) : .sav (labels + missing values SPSS via
-  pyreadstat), .xlsx/.xls (feuilles masquées détectées), .csv (encodage + séparateur
-  auto). Original en lecture seule.
-- **M2 Profile** (`app/pipeline/profile.py`) : structure, identifiants, doublons,
-  types, codes manquants suspects (999, -1, "NA"…), stats descriptives, outliers IQR,
-  manquants (global/variable/patient/blocs), dates, PII.
-- **Score v0** (`app/pipeline/score.py`) : provisoire — sera remplacé par la grille
-  8 domaines + plafonds (M3).
-- À venir : M3 grille de score complète, M4 LLM-1 (dictionnaire + règles DSL),
-  M5 LLM-2 (classification + verdict), M6 rapport PDF, M8 nettoyage payant.
+## Pipeline
+
+L'orchestrateur `app/pipeline/runner.py` enchaîne les étapes :
+
+- **Ingest** (`ingest.py`) : `.sav` (labels + valeurs manquantes SPSS via pyreadstat),
+  `.xlsx/.xls` (feuilles masquées détectées), `.csv` (encodage + séparateur auto).
+  Original en lecture seule.
+- **Profile** (`profile.py`) : structure, identifiants, doublons, types, codes manquants
+  suspects (999, -1, « NA »…), stats descriptives, outliers IQR, manquants
+  (global/variable/patient/blocs), dates, PII.
+- **LLM-1** (`llm1.py`) : reconstruction de l'étude, dictionnaire des variables, règles de
+  cohérence DSL, variables dérivées. L'IA propose ; elle ne calcule ni ne modifie rien.
+- **Moteur de règles** (`rules_engine.py`) : interpréteur DSL sûr (AST fermé, jamais `eval`)
+  qui exécute les règles sur toute la base.
+- **LLM-2** (`llm2.py`) : classification des anomalies (A/B/C/D), verdict d'exploitabilité,
+  entrées de score (enums), rédaction française.
+- **Score** (`score_engine.py`) : grille déterministe en 8 domaines + plafonds + niveau de
+  confiance. **Seule source du /100.** (`issues.py` ne produit que les libellés d'anomalies
+  pour le front, aucun score.)
+- **Livrables** (`report_xlsx.py`, `report_docx.py`) : classeur 10 onglets + rapport Word.
+- **Nettoyage** (`cleaning.py`) : copie nettoyée et anonymisée (`id_anonyme` + `ligne_source`,
+  PII retirées, colonnes vides exclues, variables dérivées d'analyse). Aucune imputation ;
+  valeurs extrêmes jamais écrasées (colonne `_analyse` dédiée).
 
 ## Config (variables d'environnement)
 
-`DATABASE_URL` (Postgres en prod, SQLite par défaut), `STORAGE_DIR`,
-`CORS_ORIGINS`, `FILE_RETENTION_DAYS`, `ANTHROPIC_API_KEY` (M4+).
+`DATABASE_URL` (Postgres en prod, SQLite par défaut), `STORAGE_DIR`, `CORS_ORIGINS`,
+`FILE_RETENTION_DAYS`, `LLM_PROVIDER` (`anthropic`|`openai`|vide=auto), `LLM_MODEL`,
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`. Les clés API ne sont jamais versionnées (`.env`
+est gitignoré).
 
 ## Déploiement Railway
 
