@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 export type Offer = {
   id: "analyses" | "discussion" | "these";
   number: string;

@@ -34,5 +34,21 @@ bun run dev
 
 ## Qualité
 
-CI GitHub Actions à chaque push : lint + build du front, tests du backend.
-Tests backend : `cd backend && pip install -r requirements-dev.txt && pytest`.
+CI GitHub Actions à chaque push :
+
+- **Front** : `bun run lint` (ESLint), `bun run typecheck` (`tsc`), `bun run format:check`
+  (Prettier), `bun run build`.
+- **Backend** : `ruff check`, `mypy`, `pytest` (voir `backend/README.md`).
+
+En local (front) : `bun run lint && bun run typecheck && bun run format:check` ;
+`bun run format` applique Prettier. Backend : `cd backend && pip install -r requirements-dev.txt && pytest`.
+
+## Structure du front
+
+- `src/routes/` — une route par page (TanStack Router) ; les pages composent des sections.
+- `src/components/site/` — blocs de mise en page partagés (Header, Footer, Section…).
+- `src/components/{home,audit,contact}/` — composants de section propres à une page,
+  extraits des routes pour garder les fichiers de route courts et lisibles.
+- `src/components/ui/` — primitives shadcn/ui (générées, ne pas modifier à la main).
+- `src/lib/` — client API, types, configuration, utilitaires.
+- `src/routeTree.gen.ts` — généré par TanStack Router, ne pas éditer.
