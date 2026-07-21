@@ -66,7 +66,14 @@ EXACTES ci-dessous (jamais de texte libre). En l'absence d'information suffisant
   est-elle clairement définie ?)
 - structure_fits_study : true|false|null
 - primary_endpoint_status : "exploitable"|"exploitable_reserves"|"partiel"|
-  "non_exploitable"|"inevaluable" (état du critère de jugement principal, Hamza §25)
+  "non_exploitable"|"inevaluable" (état du critère de jugement principal, Hamza §25).
+  IMPÉRATIF DE COHÉRENCE : cette valeur DOIT refléter votre jugement réel sur le critère
+  PRINCIPAL, indépendamment du sort des objectifs secondaires. Si le critère de jugement
+  principal ne peut pas être mesuré/analysé tel quel (variable(s) absente(s), mal définie(s),
+  taux de manquants rédhibitoire, non reconstructible) → "non_exploitable". S'il n'est que
+  partiellement mesurable → "partiel". Ne mettez JAMAIS "exploitable"/"exploitable_reserves"
+  si par ailleurs votre verdict global dit que le critère principal échoue : le statut et le
+  verdict doivent raconter la même histoire (voir §5).
 - primary_objective_vars_available : "complet"|"partiel"|"absent"|"inevaluable"
 - secondary_objectives_vars_available : "complet"|"partiel"|"absent"|"inevaluable"
 - inclusion_criteria_verifiable : true|false|null
@@ -105,6 +112,23 @@ Un niveau de 1 à 5 : 1 exploitable sans réserve majeure ; 2 exploitable avec r
 3 partiellement exploitable ; 4 non exploitable actuellement ; 5 absence de données
 analysables. Avec une justification française. La faisabilité de l'objectif principal
 prévaut sur toute autre considération.
+
+DISTINCTION CRUCIALE — objectif PRINCIPAL vs objectifs SECONDAIRES (méthode Hamza).
+Une base dont le critère de jugement PRINCIPAL échoue n'est PAS forcément « non
+exploitable » : si les variables des objectifs SECONDAIRES sont disponibles et fiables,
+elle reste PARTIELLEMENT EXPLOITABLE (niveau 3), avec un label du type « utilisable pour
+les objectifs secondaires ». Ne réservez le niveau 4 (« non exploitable actuellement »)
+qu'au cas où NI le principal NI les secondaires ne sont exploitables. Le niveau 5 est pour
+l'absence quasi totale de données analysables.
+- Si primary_endpoint_status = "non_exploitable"/"absent" ET secondary_objectives_vars_
+  available ∈ {"complet","partiel"} → niveau 3, label « utilisable (objectifs secondaires) ».
+- Si primary_endpoint_status = "non_exploitable" ET secondaires aussi indisponibles →
+  niveau 4.
+COHÉRENCE OBLIGATOIRE verdict ↔ scoring_inputs : le niveau du verdict et
+primary_endpoint_status doivent concorder. Il est INTERDIT de rendre un verdict de niveau
+3 ou 4 fondé sur l'échec du critère principal tout en laissant primary_endpoint_status à
+"exploitable"/"exploitable_reserves". Le score (plafonné par le code quand le principal est
+non exploitable) et le verdict doivent aboutir à la même conclusion.
 
 ================================================================================
 6. RÉDACTION FRANÇAISE (Hamza §40) — factuelle, chiffrée, vérifiable

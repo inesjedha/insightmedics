@@ -132,3 +132,29 @@ def test_pas_de_plafond_si_critere_operationnel():
     si = {**FULL_SI, "primary_endpoint_operationally_defined": True}
     r = compute_score(CLEAN, si)
     assert r["score_final"] > 49
+
+
+def test_verdict_niveau_4_plafonne_a_49():
+    """Filet de cohérence : un verdict IA « non exploitable » (4) plafonne le score à 49,
+    même si les autres jugements sont bons (cas Eya)."""
+    si = copy.deepcopy(FULL_SI)
+    si["global_verdict_level"] = 4
+    r = compute_score(CLEAN, si)
+    assert r["score_final"] <= 49
+    assert any("verdict" in c["defaut"].lower() for c in r["plafonds_appliques"])
+
+
+def test_verdict_niveau_5_plafonne_a_20():
+    si = copy.deepcopy(FULL_SI)
+    si["global_verdict_level"] = 5
+    r = compute_score(CLEAN, si)
+    assert r["score_final"] <= 20
+
+
+def test_verdict_niveau_3_ne_plafonne_pas_seul():
+    """Niveau 3 ne déclenche PAS le filet verdict (le plafond vient alors de l'état du
+    critère principal, pas du niveau de verdict)."""
+    si = copy.deepcopy(FULL_SI)
+    si["global_verdict_level"] = 3
+    r = compute_score(CLEAN, si)
+    assert not any("verdict IA" in c["defaut"] for c in r["plafonds_appliques"])

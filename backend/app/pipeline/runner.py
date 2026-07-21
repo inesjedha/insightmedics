@@ -94,6 +94,10 @@ def run_audit(path: str | Path, original_name: str,
                 "notes": llm2_notes,
             }
             v = llm2_out.exploitability_verdict
+            # Filet de cohérence verdict ↔ score : un verdict « non exploitable » (4) ou
+            # « absence de données » (5) ne peut pas coexister avec un score élevé.
+            if v is not None:
+                scoring_inputs["global_verdict_level"] = v.level
             log("success", f"Jugement IA : {len(llm2_out.findings)} anomalie(s) classée(s)"
                            + (f", verdict « {v.label} »" if v else ""))
         else:

@@ -355,6 +355,13 @@ def compute_score(profiling: dict[str, Any],
         "Variables indispensables à l'objectif principal absentes", 59)
     cap(s["duplicates"]["duplicate_ids"] > 0.1 * n_rows,
         "Doublons majeurs empêchant de déterminer l'effectif réel", 59)
+    # Filet de cohérence verdict ↔ score : le verdict d'exploitabilité de l'IA (1-5) ne peut
+    # pas contredire le score. Un verdict « non exploitable actuellement » (4) plafonne à 49,
+    # « absence de données analysables » (5) à 20. Évite qu'un verdict dur coexiste avec un
+    # score élevé (cas Eya : verdict 4 mais brut 69,5 non plafonné).
+    verdict_level = si.get("global_verdict_level")
+    cap(verdict_level == 4, "Base jugée non exploitable en l'état (verdict IA)", 49)
+    cap(verdict_level == 5, "Absence de données analysables (verdict IA)", 20)
 
     score_final = score_brut
     applied = []
