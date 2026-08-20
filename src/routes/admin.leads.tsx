@@ -18,7 +18,9 @@ const STATUS_LABEL: Record<LeadStatus, string> = {
 function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   useEffect(() => {
-    listLeads().then(setLeads);
+    listLeads()
+      .then(setLeads)
+      .catch(() => setLeads([]));
   }, []);
 
   return (

@@ -51,6 +51,27 @@ function uid(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// --- ADMIN (clé d'API stockée localement, envoyée en en-tête X-Admin-Key) ---
+
+const ADMIN_KEY_STORAGE = "im_admin_key";
+
+export class UnauthorizedError extends Error {}
+
+export function getAdminKey(): string {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(ADMIN_KEY_STORAGE) ?? "";
+}
+
+export function setAdminKey(key: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(ADMIN_KEY_STORAGE, key.trim());
+}
+
+function adminHeaders(): Record<string, string> {
+  const key = getAdminKey();
+  return key ? { "X-Admin-Key": key } : {};
+}
+
 // --- LEADS ---
 
 export async function createLead(
@@ -82,14 +103,20 @@ export async function createLead(
 
 export async function listLeads(): Promise<Lead[]> {
   if (USE_MOCK) return readDb().leads;
-  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads`);
+  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads`, {
+    headers: adminHeaders(),
+  });
+  if (res.status === 401) throw new UnauthorizedError("Clé admin requise ou invalide");
   if (!res.ok) throw new Error("Erreur réseau");
   return (await res.json()) as Lead[];
 }
 
 export async function getLead(id: string): Promise<Lead | null> {
   if (USE_MOCK) return readDb().leads.find((l) => l.id === id) ?? null;
-  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${id}`);
+  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${id}`, {
+    headers: adminHeaders(),
+  });
+  if (res.status === 401) throw new UnauthorizedError("Clé admin requise ou invalide");
   if (!res.ok) return null;
   return (await res.json()) as Lead;
 }
@@ -105,11 +132,35 @@ export async function updateLead(id: string, patch: Partial<Lead>): Promise<Lead
   }
   const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...adminHeaders() },
     body: JSON.stringify(patch),
   });
+  if (res.status === 401) throw new UnauthorizedError("Clé admin requise ou invalide");
   if (!res.ok) return null;
   return (await res.json()) as Lead;
+}
+
+// --- AUDITS (admin) ---
+
+export async function listAudits(): Promise<AuditResult[]> {
+  if (USE_MOCK) return [];
+  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/audit`, {
+    headers: adminHeaders(),
+  });
+  if (res.status === 401) throw new UnauthorizedError("Clé admin requise ou invalide");
+  if (!res.ok) throw new Error("Erreur réseau");
+  return (await res.json()) as AuditResult[];
+}
+
+export async function unlockAudit(id: string): Promise<AuditResult> {
+  if (USE_MOCK) throw new Error("Déblocage indisponible en mode démo");
+  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/audit/${id}/unlock`, {
+    method: "POST",
+    headers: adminHeaders(),
+  });
+  if (res.status === 401) throw new UnauthorizedError("Clé admin requise ou invalide");
+  if (!res.ok) throw new Error("Erreur lors du déblocage");
+  return (await res.json()) as AuditResult;
 }
 
 // --- AUDIT (mock simule un run Python côté backend) ---

@@ -12,7 +12,9 @@ export const Route = createFileRoute("/admin/")({
 function AdminDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   useEffect(() => {
-    listLeads().then(setLeads);
+    listLeads()
+      .then(setLeads)
+      .catch(() => setLeads([]));
   }, []);
 
   const now = Date.now();

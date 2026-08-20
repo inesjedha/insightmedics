@@ -1,6 +1,10 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, ShieldAlert } from "lucide-react";
+import { useState } from "react";
+import { LayoutDashboard, Users, FileBarChart2, KeyRound, Check } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { getAdminKey, setAdminKey } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
@@ -16,6 +20,7 @@ function AdminLayout() {
 
   const nav = [
     { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+    { to: "/admin/audits", label: "Audits", icon: FileBarChart2, exact: false },
     { to: "/admin/leads", label: "Prospects & clients", icon: Users, exact: false },
   ] as const;
 
@@ -53,16 +58,52 @@ function AdminLayout() {
               {n.label}
             </Link>
           ))}
-          <div className="mt-4 rounded-md border border-amber-300/40 bg-amber-500/5 p-3 text-xs text-amber-800 dark:text-amber-300">
-            <ShieldAlert className="mb-1 inline h-3.5 w-3.5" />
-            <p>Zone non protégée (dev). À sécuriser avant publication.</p>
-          </div>
+          <AdminKeyBox />
         </aside>
 
         <main className="min-w-0">
           <Outlet />
         </main>
       </div>
+    </div>
+  );
+}
+
+function AdminKeyBox() {
+  const [value, setValue] = useState(getAdminKey());
+  const hasKey = getAdminKey().length > 0;
+
+  const save = () => {
+    setAdminKey(value);
+    // On recharge pour que toutes les pages refassent leurs requêtes avec la nouvelle clé.
+    window.location.reload();
+  };
+
+  return (
+    <div className="mt-4 space-y-2 rounded-md border border-border bg-surface/50 p-3 text-xs">
+      <p className="flex items-center gap-1.5 font-medium text-foreground/80">
+        <KeyRound className="h-3.5 w-3.5" /> Clé admin
+      </p>
+      <Input
+        type="password"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Coller la clé…"
+        className="h-8 text-xs"
+      />
+      <Button size="sm" onClick={save} disabled={!value.trim()} className="w-full">
+        Enregistrer
+      </Button>
+      <p className={cn("text-[11px]", hasKey ? "text-brand" : "text-muted-foreground")}>
+        {hasKey ? (
+          <>
+            <Check className="mr-1 inline h-3 w-3" />
+            Clé configurée
+          </>
+        ) : (
+          "Requise pour le CRM et le déblocage des audits."
+        )}
+      </p>
     </div>
   );
 }
