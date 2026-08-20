@@ -179,6 +179,16 @@ def get_ai_audit(audit_id: str, db: Session = Depends(get_db)):
     return a.ai_audit
 
 
+@router.get("/{audit_id}/assessment")
+def get_assessment(audit_id: str, db: Session = Depends(get_db)):
+    """Jugement IA (findings, verdict, synthèse) extrait de l'audit IA."""
+    a = db.get(Audit, audit_id)
+    assessment = (a.ai_audit or {}).get("assessment") if a else None
+    if not assessment:
+        raise HTTPException(404, "Jugement IA indisponible pour cet audit")
+    return assessment
+
+
 @router.get("/{audit_id}/report.pdf")
 def get_report(audit_id: str):
     # Le rapport est disponible au format Word (/report.docx) ; l'export PDF n'est pas
@@ -312,6 +322,10 @@ def unlock_audit(audit_id: str, db: Session = Depends(get_db)):
 
     a.status = "done"
     a.paid = True
+    # Le lien privé du client devient valide maintenant et expire dans N jours.
+    a.expires_at = (
+        datetime.now(timezone.utc) + timedelta(days=settings.file_retention_days)
+    ).isoformat()
     a.started_at = r["started_at"]
     a.finished_at = r["finished_at"]
     a.score = r["score"]
@@ -329,3 +343,106 @@ def unlock_audit(audit_id: str, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(a)
     return _to_result(a)
+
+
+# ---------------------------------------------------------------- accès client (lien privé)
+#
+# Endpoints publics protégés par le TOKEN (256 bits) et non par la clé admin :
+# le client ouvre son lien /r/<token> sans compte. Accès accordé uniquement si
+# l'audit est payé, terminé et non expiré. Toute autre situation renvoie une
+# erreur générique pour ne pas révéler l'existence d'un audit.
+
+client_router = APIRouter(prefix="/r", tags=["client"])
+
+
+def _load_paid_by_token(token: str, db: Session) -> Audit:
+    a = db.query(Audit).filter(Audit.token == token).first()
+    if not a or not a.paid or a.status != "done":
+        raise HTTPException(404, "Lien invalide ou audit indisponible")
+    if a.expires_at:
+        try:
+            exp = datetime.fromisoformat(a.expires_at)
+        except ValueError:
+            exp = None
+        if exp is not None:
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > exp:
+                raise HTTPException(410, "Ce lien a expiré")
+    return a
+
+
+@client_router.get("/{token}", response_model=AuditResult, response_model_by_alias=True)
+def client_result(token: str, db: Session = Depends(get_db)):
+    """Résumé de l'audit complet pour le client (score, observations, méta)."""
+    return _to_result(_load_paid_by_token(token, db))
+
+
+@client_router.get("/{token}/score")
+def client_score(token: str, db: Session = Depends(get_db)):
+    """Décomposition du score par domaine."""
+    a = _load_paid_by_token(token, db)
+    if not a.score_detail:
+        raise HTTPException(404, "Détail du score indisponible")
+    return a.score_detail
+
+
+@client_router.get("/{token}/assessment")
+def client_assessment(token: str, db: Session = Depends(get_db)):
+    """Jugement IA (anomalies, verdict, synthèse) pour le client."""
+    a = _load_paid_by_token(token, db)
+    assessment = (a.ai_audit or {}).get("assessment")
+    if not assessment:
+        raise HTTPException(404, "Jugement IA indisponible")
+    return assessment
+
+
+@client_router.get("/{token}/workbook.xlsx")
+def client_workbook(token: str, db: Session = Depends(get_db)):
+    """Classeur d'audit Excel (anonymisé)."""
+    a = _load_paid_by_token(token, db)
+    if not a.profiling or not a.score_detail:
+        raise HTTPException(404, "Livrable indisponible")
+    from ..pipeline.report_xlsx import build_workbook
+
+    data = build_workbook(a.profiling, a.score_detail, a.ai_audit, cleaning=_run_cleaning(a))
+    return _attach(data, f"{a.id}_classeur_audit.xlsx",
+                   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+@client_router.get("/{token}/report.docx")
+def client_report(token: str, db: Session = Depends(get_db)):
+    """Rapport d'audit Word (anonymisé)."""
+    a = _load_paid_by_token(token, db)
+    if not a.profiling or not a.score_detail:
+        raise HTTPException(404, "Livrable indisponible")
+    from ..pipeline.report_docx import build_report
+
+    data = build_report(a.profiling, a.score_detail, a.ai_audit)
+    return _attach(data, f"{a.id}_rapport_audit.docx",
+                   "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+
+@client_router.get("/{token}/base_analyse.csv")
+def client_base_csv(token: str, db: Session = Depends(get_db)):
+    """Base nettoyée et anonymisée (CSV)."""
+    a = _load_paid_by_token(token, db)
+    res = _run_cleaning(a)
+    if not res:
+        raise HTTPException(404, "Fichier source indisponible")
+    from ..pipeline.cleaning import to_csv_bytes
+
+    return _attach(to_csv_bytes(res["base_analyse"]), f"{a.id}_base_analyse.csv", "text/csv")
+
+
+@client_router.get("/{token}/base_analyse.sav")
+def client_base_sav(token: str, db: Session = Depends(get_db)):
+    """Base nettoyée et anonymisée (SPSS .sav)."""
+    a = _load_paid_by_token(token, db)
+    res = _run_cleaning(a)
+    if not res:
+        raise HTTPException(404, "Fichier source indisponible")
+    from ..pipeline.cleaning import to_sav_bytes
+
+    return _attach(to_sav_bytes(res["base_analyse"]), f"{a.id}_base_analyse.sav",
+                   "application/octet-stream")

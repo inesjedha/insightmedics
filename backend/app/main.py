@@ -42,6 +42,7 @@ async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSON
 
 app.include_router(leads.router)
 app.include_router(audits.router)
+app.include_router(audits.client_router)
 
 
 @app.get("/health")
