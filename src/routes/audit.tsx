@@ -112,16 +112,14 @@ function AuditPage() {
 
   return (
     <SiteLayout>
-      <Section className="pb-4">
+      <Section>
         <SectionHeader
           eyebrow="Audit · aperçu gratuit"
           title="Votre base radiographiée en quelques minutes."
           description="L'aperçu est gratuit et 100 % calculé par du code — zéro valeur hallucinée : score préliminaire et anomalies structurelles. L'audit complet (verdict d'exploitabilité, anomalies classées, plan d'action et livrables) se débloque pour 50 DT."
         />
-      </Section>
 
-      <Section className="pt-4">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
+        <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
           <div className="space-y-6">
             <AuditUploader file={file} onFile={onFile} disabled={phase === "running"} />
             <ProtocolUploader
