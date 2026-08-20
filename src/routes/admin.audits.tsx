@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { FileBarChart2, Loader2, Lock, Unlock, RefreshCw, AlertTriangle } from "lucide-react";
+import {
+  FileBarChart2,
+  Loader2,
+  Lock,
+  Unlock,
+  RefreshCw,
+  AlertTriangle,
+  Copy,
+  Check,
+} from "lucide-react";
 import { listAudits, unlockAudit, UnauthorizedError } from "@/lib/api/client";
 import type { AuditResult } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
@@ -122,9 +131,12 @@ function AdminAudits() {
                   <td className="px-4 py-3 font-mono tabular-nums">{a.score}/100</td>
                   <td className="px-4 py-3 text-right">
                     {a.status === "done" ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-brand">
-                        <Unlock className="h-3.5 w-3.5" /> débloqué
-                      </span>
+                      <div className="inline-flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 text-xs text-brand">
+                          <Unlock className="h-3.5 w-3.5" /> débloqué
+                        </span>
+                        {a.token && <CopyLinkButton token={a.token} />}
+                      </div>
                     ) : (
                       <Button
                         size="sm"
@@ -151,5 +163,39 @@ function AdminAudits() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function CopyLinkButton({ token }: { token: string }) {
+  const [copied, setCopied] = useState(false);
+  const url =
+    typeof window !== "undefined" ? `${window.location.origin}/r/${token}` : `/r/${token}`;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      window.prompt("Copiez le lien client :", url);
+    }
+  };
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={copy}
+      title="Copier le lien privé à envoyer au client"
+      className="h-7 gap-1 px-2 text-xs"
+    >
+      {copied ? (
+        <>
+          <Check className="h-3.5 w-3.5 text-brand" /> Copié
+        </>
+      ) : (
+        <>
+          <Copy className="h-3.5 w-3.5" /> Lien client
+        </>
+      )}
+    </Button>
   );
 }

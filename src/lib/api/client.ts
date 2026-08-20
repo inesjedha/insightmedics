@@ -163,6 +163,59 @@ export async function unlockAudit(id: string): Promise<AuditResult> {
   return (await res.json()) as AuditResult;
 }
 
+// --- ACCÈS CLIENT (lien privé /r/:token, sans compte) ---
+//
+// Le client ouvre son lien après paiement. Ces requêtes visent toujours le vrai
+// backend (pas de mode mock) : la page n'a de sens qu'avec l'API branchée.
+
+export class LinkError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = "LinkError";
+  }
+}
+
+function apiBase(): string {
+  return import.meta.env.VITE_API_BASE_URL ?? "";
+}
+
+export async function getClientResult(token: string): Promise<AuditResult> {
+  const res = await fetch(`${apiBase()}/r/${encodeURIComponent(token)}`);
+  if (res.status === 404) throw new LinkError(404, "Lien invalide ou audit indisponible");
+  if (res.status === 410) throw new LinkError(410, "Ce lien a expiré");
+  if (!res.ok) throw new LinkError(res.status, "Erreur de chargement");
+  return (await res.json()) as AuditResult;
+}
+
+export async function getClientDetail(
+  token: string,
+): Promise<{ scoreDetail: ScoreDetail | null; assessment: AiAssessment | null }> {
+  const base = apiBase();
+  const t = encodeURIComponent(token);
+  const safe = async <T>(url: string): Promise<T | null> => {
+    try {
+      const r = await fetch(url);
+      return r.ok ? ((await r.json()) as T) : null;
+    } catch {
+      return null;
+    }
+  };
+  const [scoreDetail, assessment] = await Promise.all([
+    safe<ScoreDetail>(`${base}/r/${t}/score`),
+    safe<AiAssessment>(`${base}/r/${t}/assessment`),
+  ]);
+  return { scoreDetail, assessment };
+}
+
+export type ClientDeliverable =
+  "workbook.xlsx" | "report.docx" | "base_analyse.csv" | "base_analyse.sav";
+
+export function clientDownloadUrl(token: string, kind: ClientDeliverable): string {
+  return `${apiBase()}/r/${encodeURIComponent(token)}/${kind}`;
+}
+
 // --- AUDIT (mock simule un run Python côté backend) ---
 
 export interface RunAuditOptions {
