@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
   Upload,
@@ -64,6 +64,14 @@ function AuditPage() {
   const [result, setResult] = useState<AuditResult | null>(null);
   const [detail, setDetail] = useState<AuditDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Une fois l'aperçu prêt, on amène l'utilisateur aux résultats (sinon ils passent inaperçus).
+  useEffect(() => {
+    if (phase === "done") {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [phase]);
 
   const onFile = (f: File | null) => {
     setFile(f);
@@ -156,6 +164,7 @@ function AuditPage() {
 
       {phase === "done" && result && (
         <Section className="pt-0">
+          <div ref={resultsRef} className="scroll-mt-24" />
           {(result.isPreview ?? true) && !result.paid && <PreviewNotice />}
           {detail?.assessment?.exploitability_verdict && detail.scoreDetail && (
             <VerdictBanner
@@ -369,6 +378,14 @@ const reportSchema = z.object({
   name: z.string().trim().max(100).optional().or(z.literal("")),
 });
 
+const FULL_AUDIT_INCLUDES = [
+  "Le verdict clair : votre base est-elle exploitable pour publier ?",
+  "Chaque anomalie classée, expliquée, avec une correction proposée",
+  "Un plan d'action priorisé, étape par étape",
+  "Le classeur Excel d'audit (10 onglets) + le rapport Word complet",
+  "Votre base nettoyée et anonymisée (.sav + .csv), prête à analyser",
+];
+
 function PreviewNotice() {
   return (
     <div className="mt-2 rounded-2xl border border-brand/30 bg-brand/5 p-6 sm:p-7">
@@ -378,15 +395,24 @@ function PreviewNotice() {
           Aperçu gratuit
         </p>
       </div>
-      <p className="mt-2 font-display text-lg font-bold tracking-tight">
-        Voici ce que le code détecte, sans IA.
+      <p className="mt-2 font-display text-xl font-bold tracking-tight">
+        Voici un premier diagnostic — gratuit et automatique.
       </p>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-foreground/85">
-        Ci-dessous : votre <strong>score préliminaire</strong> et les{" "}
-        <strong>anomalies structurelles</strong> repérées automatiquement. L'
-        <strong>audit complet</strong> ajoute le verdict d'exploitabilité, les anomalies classées et
-        expliquées, le plan d'action, et vos livrables — classeur Excel, rapport Word, base nettoyée
-        et anonymisée — pour <strong>50&nbsp;DT</strong>.
+        Ci-dessous : le <strong>score préliminaire</strong> et les anomalies structurelles détectées
+        par le code. C'est un aperçu — l'<strong>audit complet (50&nbsp;DT)</strong> va beaucoup
+        plus loin et vous livre :
+      </p>
+      <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+        {FULL_AUDIT_INCLUDES.map((item) => (
+          <li key={item} className="flex items-start gap-2.5 text-sm text-foreground/90">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 text-sm font-medium text-brand">
+        Débloquez-le via le formulaire en bas de page ↓
       </p>
     </div>
   );
@@ -457,9 +483,9 @@ function AuditReportForm({ result }: { result: AuditResult }) {
         <div>
           <h3 className="font-display text-lg font-bold">Débloquer l'audit complet — 50 DT</h3>
           <p className="text-sm text-muted-foreground">
-            Verdict d'exploitabilité, anomalies classées et expliquées, plan d'action, et vos
-            livrables (Excel, Word, base nettoyée). Laissez vos coordonnées : on vous envoie les
-            instructions de paiement, puis on débloque votre audit.
+            Laissez vos coordonnées : nous vous contactons sous 48h ouvrées (téléphone ou email)
+            pour finaliser le paiement, puis nous lançons votre audit complet et vous recevez le
+            lien privé vers vos résultats et vos livrables.
           </p>
         </div>
       </div>
@@ -468,11 +494,11 @@ function AuditReportForm({ result }: { result: AuditResult }) {
         <div className="mt-6 flex items-start gap-3 rounded-lg border border-brand/30 bg-brand/5 p-4 text-sm text-foreground">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
           <div>
-            <p className="font-semibold">Demande enregistrée.</p>
+            <p className="font-semibold">Demande enregistrée. Merci !</p>
             <p className="mt-1 text-muted-foreground">
-              Nous vous envoyons les instructions de paiement (50 DT) par email et SMS. Dès
-              réception, votre audit complet est lancé et vous recevez le lien privé vers vos
-              résultats et livrables. Pensez à vérifier vos spams.
+              Nous vous contactons sous 48h ouvrées (par téléphone ou email) pour finaliser le
+              paiement de 50 DT. Dès réception, votre audit complet est lancé et vous recevez le
+              lien privé vers vos résultats et vos livrables.
             </p>
           </div>
         </div>
