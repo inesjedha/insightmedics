@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     # Modèle utilisé ("" = défaut du fournisseur).
     llm_model: str = ""
+    # Clé d'accès admin (CRM, déblocage d'audits). Vide = endpoints admin verrouillés.
+    admin_api_key: str = ""
 
     @property
     def resolved_provider(self) -> str:

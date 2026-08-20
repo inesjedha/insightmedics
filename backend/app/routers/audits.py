@@ -13,11 +13,12 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from ..auth import require_admin
 from ..config import settings
 from ..db import get_db
 from ..models import Audit, utcnow_iso
 from ..pipeline.ingest import IngestError
-from ..pipeline.runner import run_preview
+from ..pipeline.runner import run_audit, run_preview
 from ..schemas import AuditEvent, AuditResult
 
 logger = logging.getLogger(__name__)
@@ -148,9 +149,9 @@ def get_events(audit_id: str, db: Session = Depends(get_db)):
     return a.events or []
 
 
-@router.get("/{audit_id}/profiling")
+@router.get("/{audit_id}/profiling", dependencies=[Depends(require_admin)])
 def get_profiling(audit_id: str, db: Session = Depends(get_db)):
-    """Profiling complet (interne/admin — pas utilisé par le front public)."""
+    """Profiling complet (admin uniquement : peut contenir des valeurs identifiantes)."""
     a = db.get(Audit, audit_id)
     if not a or not a.profiling:
         raise HTTPException(404, "Audit introuvable")
@@ -261,3 +262,70 @@ def get_base_sav(audit_id: str, db: Session = Depends(get_db)):
 
     return _attach(to_sav_bytes(res["base_analyse"]),
                    f"{audit_id}_base_analyse.sav", "application/octet-stream")
+
+
+# ---------------------------------------------------------------- admin (déblocage)
+
+def _protocol_text_for(a: Audit) -> str | None:
+    """Ré-extrait le texte du protocole depuis le fichier stocké, s'il existe."""
+    if not a.stored_path:
+        return None
+    from ..pipeline.docs_extract import extract_text
+
+    for p in Path(a.stored_path).parent.glob("protocol.*"):
+        try:
+            return extract_text(p)
+        except ValueError:
+            return None
+    return None
+
+
+@router.get("", response_model=list[AuditResult], response_model_by_alias=True,
+            dependencies=[Depends(require_admin)])
+def list_audits(db: Session = Depends(get_db)):
+    """Liste des audits (admin), du plus récent au plus ancien."""
+    rows = db.query(Audit).order_by(Audit.started_at.desc()).all()
+    return [_to_result(a) for a in rows]
+
+
+@router.post("/{audit_id}/unlock", response_model=AuditResult, response_model_by_alias=True,
+             dependencies=[Depends(require_admin)])
+def unlock_audit(audit_id: str, db: Session = Depends(get_db)):
+    """Débloque un audit après paiement (admin) : lance l'audit IA complet + livrables."""
+    a = db.get(Audit, audit_id)
+    if not a:
+        raise HTTPException(404, "Audit introuvable")
+    if a.status == "done" and a.paid:
+        return _to_result(a)  # déjà débloqué : idempotent
+    if not a.stored_path or not Path(a.stored_path).exists():
+        raise HTTPException(410, "Fichier source expiré ou introuvable")
+
+    a.status = "processing"
+    db.commit()
+    try:
+        r = run_audit(a.stored_path, a.file_name, _protocol_text_for(a))
+    except Exception as exc:
+        logger.exception("Échec du déblocage %s", audit_id)
+        a.status, a.error, a.finished_at = "failed", str(exc), utcnow_iso()
+        db.commit()
+        raise HTTPException(500, "Erreur interne pendant l'audit complet") from exc
+
+    a.status = "done"
+    a.paid = True
+    a.started_at = r["started_at"]
+    a.finished_at = r["finished_at"]
+    a.score = r["score"]
+    a.row_count = r["row_count"]
+    a.column_count = r["column_count"]
+    a.missing_pct = r["missing_pct"]
+    a.duplicates_pct = r["duplicates_pct"]
+    a.issues = r["issues"]
+    a.needs_human_review = _needs_human_review(
+        r["score"], r["missing_pct"], r["duplicates_pct"], r["critical_issues"])
+    a.profiling = r["profiling"]
+    a.score_detail = r["score_detail"]
+    a.ai_audit = r["ai_audit"]
+    a.events = r["events"]
+    db.commit()
+    db.refresh(a)
+    return _to_result(a)
