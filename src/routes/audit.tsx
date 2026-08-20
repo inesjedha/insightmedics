@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   Cpu,
   Sparkles,
-  Phone,
+  User,
   Mail,
   Loader2,
   Download,
@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -33,6 +32,7 @@ import {
   AuditScoreCard,
   HumanAlert,
 } from "@/components/audit/ResultCards";
+import { Field, IconInput, PhoneField } from "@/components/contact/FormControls";
 
 export const Route = createFileRoute("/audit")({
   head: () => ({
@@ -611,37 +611,39 @@ function AuditReportForm({ result, id }: { result: AuditResult; id?: string }) {
             defaultValue=""
           />
 
-          <div className="space-y-1.5 sm:col-span-2">
-            <div className="flex items-baseline justify-between gap-3">
-              <Label htmlFor="phone">
-                <Phone className="mr-1.5 inline h-3.5 w-3.5 text-brand" />
-                Téléphone
-              </Label>
-              <span className="text-xs text-brand">Prioritaire</span>
-            </div>
-            <Input
-              id="phone"
-              name="phone"
-              type="tel"
-              required
-              placeholder="+216 ..."
-              maxLength={25}
-            />
-            {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
-          </div>
+          <Field id="name" label="Nom complet">
+            <IconInput icon={<User className="h-4 w-4" />}>
+              <Input
+                id="name"
+                name="name"
+                autoComplete="name"
+                maxLength={100}
+                placeholder="Ibn Sina"
+                className="h-11 pl-10"
+              />
+            </IconInput>
+          </Field>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="email">
-              <Mail className="mr-1.5 inline h-3.5 w-3.5 text-brand" />
-              Email
-            </Label>
-            <Input id="email" name="email" type="email" required maxLength={255} />
-            {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-          </div>
+          <PhoneField required hint="Prioritaire pour vous recontacter" />
 
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Nom (optionnel)</Label>
-            <Input id="name" name="name" maxLength={100} />
+          {errors.phone && <p className="text-xs text-destructive sm:col-span-2">{errors.phone}</p>}
+
+          <div className="sm:col-span-2">
+            <Field id="email" label="Email" required>
+              <IconInput icon={<Mail className="h-4 w-4" />}>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  maxLength={255}
+                  placeholder="prenom@exemple.com"
+                  className="h-11 pl-10"
+                />
+              </IconInput>
+            </Field>
+            {errors.email && <p className="mt-1.5 text-xs text-destructive">{errors.email}</p>}
           </div>
 
           <div className="sm:col-span-2">

@@ -1,7 +1,16 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { CheckCircle2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export type ServiceOffer = {
@@ -11,6 +20,88 @@ export type ServiceOffer = {
   tier: string;
   featured?: boolean;
 };
+
+// Indicatifs proposés (Tunisie en tête). Partagé par le formulaire de contact et le paywall.
+export const COUNTRY_CODES = [
+  { code: "+216", flag: "🇹🇳", name: "Tunisie" },
+  { code: "+213", flag: "🇩🇿", name: "Algérie" },
+  { code: "+212", flag: "🇲🇦", name: "Maroc" },
+  { code: "+221", flag: "🇸🇳", name: "Sénégal" },
+  { code: "+225", flag: "🇨🇮", name: "Côte d'Ivoire" },
+  { code: "+237", flag: "🇨🇲", name: "Cameroun" },
+  { code: "+223", flag: "🇲🇱", name: "Mali" },
+  { code: "+226", flag: "🇧🇫", name: "Burkina Faso" },
+  { code: "+224", flag: "🇬🇳", name: "Guinée" },
+  { code: "+227", flag: "🇳🇪", name: "Niger" },
+] as const;
+
+/**
+ * Champ téléphone autonome : sélecteur d'indicatif (drapeaux) + numéro local.
+ * Émet la valeur complète « +216 12345678 » via un input caché `name`, pour être
+ * lu par un formulaire non contrôlé (FormData). Réutilisable partout.
+ */
+export function PhoneField({
+  id = "phone",
+  name = "phone",
+  required,
+  hint,
+}: {
+  id?: string;
+  name?: string;
+  required?: boolean;
+  hint?: string;
+}) {
+  const [dial, setDial] = useState<string>("+216");
+  const [digits, setDigits] = useState("");
+  const full = digits ? `${dial} ${digits}` : "";
+  return (
+    <Field id={id} label="Téléphone" required={required} hint={hint}>
+      <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
+        <Select value={dial} onValueChange={setDial}>
+          <SelectTrigger
+            aria-label="Indicatif pays"
+            className="h-11 w-auto min-w-[5.25rem] shrink-0 gap-1.5 whitespace-nowrap rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0"
+          >
+            <SelectValue aria-label={dial}>
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
+                <span aria-hidden className="text-base leading-none">
+                  {COUNTRY_CODES.find((c) => c.code === dial)?.flag}
+                </span>
+                {dial}
+              </span>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {COUNTRY_CODES.map((c) => (
+              <SelectItem key={c.code} value={c.code}>
+                <span className="flex items-center gap-2">
+                  <span aria-hidden className="text-base leading-none">
+                    {c.flag}
+                  </span>
+                  <span className="font-medium">{c.code}</span>
+                  <span className="text-xs text-muted-foreground">{c.name}</span>
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          id={id}
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          required={required}
+          maxLength={12}
+          placeholder="Numéro local"
+          value={digits}
+          onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 12))}
+          className="h-11 w-full min-w-0 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+        />
+      </div>
+      <input type="hidden" name={name} value={full} />
+    </Field>
+  );
+}
 
 export function SuccessState({ onReset }: { onReset: () => void }) {
   const steps = [
