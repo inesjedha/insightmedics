@@ -1,8 +1,13 @@
-"""Orchestrateur du pipeline d'audit : ingestion → profiling → audit IA → score.
+"""Orchestrateur du pipeline d'audit.
 
-`run_audit` enchaîne les étapes et retourne un dict complet (résumé, profiling, score,
-audit IA, journal d'événements). Le détail de l'audit IA (M4 règles + M5 jugement) est
-isolé dans `_run_ai_audit` pour garder l'orchestrateur lisible.
+Deux points d'entrée :
+- `run_preview` : audit gratuit et rapide, 100 % déterministe (ingestion + profiling +
+  anomalies structurelles + score préliminaire). **Aucun appel IA** — c'est ce qu'on montre
+  avant paiement.
+- `run_audit` : audit complet (ajoute le jugement IA : règles, verdict, rédaction), déclenché
+  seulement après déblocage/paiement.
+
+Les deux partagent l'ingestion, le profiling et l'assemblage du résultat.
 """
 
 from __future__ import annotations
@@ -29,12 +34,32 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _make_logger(events: list[dict]) -> LogFn:
+    def log(level: str, message: str) -> None:
+        events.append({"ts": _now(), "level": level, "message": message})
+
+    return log
+
+
+def _ingest_and_profile(path: str | Path, original_name: str, log: LogFn,
+                        with_protocol: bool = False) -> tuple[pd.DataFrame, dict, dict]:
+    """Étapes déterministes communes : ingestion + profiling."""
+    log("info", f"Fichier reçu : {original_name}"
+                + (" + protocole de recherche" if with_protocol else ""))
+    df, meta = ingest(path, original_name)
+    log("info", f"Parsing OK — {len(df)} lignes × {len(df.columns)} colonnes "
+                f"(format {meta['format']})")
+    log("info", "Profilage des variables, manquants, doublons, dates…")
+    profiling = profile(df, meta)
+    return df, meta, profiling
+
+
 def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: str | None,
                   scoring_inputs: dict[str, Any], log: LogFn) -> dict[str, Any] | None:
     """Audit IA — M4 (dictionnaire + règles exécutées) puis M5 (jugement + verdict).
 
-    Alimente `scoring_inputs` en place et retourne l'audit IA, ou None si l'IA n'a pas
-    pu produire l'étape M4 (clé API absente, etc.). Si M4 réussit mais pas M5, on retourne
+    Alimente `scoring_inputs` en place et retourne l'audit IA, ou None si l'IA n'a pas pu
+    produire l'étape M4 (clé API absente, etc.). Si M4 réussit mais pas M5, on retourne
     l'audit partiel (sans « assessment »).
     """
     log("info", "Audit IA : compréhension des variables et génération des "
@@ -101,34 +126,11 @@ def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: st
     return ai_audit
 
 
-def run_audit(path: str | Path, original_name: str,
-              protocol_text: str | None = None) -> dict[str, Any]:
-    """Exécute l'audit complet et retourne un dict (résumé + profiling + score + events)."""
-    events: list[dict] = []
-
-    def log(level: str, message: str) -> None:
-        events.append({"ts": _now(), "level": level, "message": message})
-
-    started_at = _now()
-    log("info", f"Fichier reçu : {original_name}"
-                + (" + protocole de recherche" if protocol_text else ""))
-
-    df, meta = ingest(path, original_name)
-    log("info", f"Parsing OK — {len(df)} lignes × {len(df.columns)} colonnes "
-                f"(format {meta['format']})")
-
-    log("info", "Profilage des variables, manquants, doublons, dates…")
-    profiling = profile(df, meta)
-
-    scoring_inputs: dict[str, Any] = {}
-    ai_audit = _run_ai_audit(profiling, df, protocol_text, scoring_inputs, log)
-
-    # Backstop déterministe : sans protocole, le critère de jugement principal ne peut pas
-    # être figé opérationnellement (variable/temps/contraste/méthode non préspécifiés) → 49.
-    if not protocol_text:
-        scoring_inputs["primary_endpoint_operationally_defined"] = False
-
-    log("info", "Calcul du score de qualité /100 (grille officielle en 8 domaines)…")
+def _score_and_assemble(profiling: dict[str, Any], scoring_inputs: dict[str, Any] | None,
+                        ai_audit: dict[str, Any] | None, events: list[dict], started_at: str,
+                        log: LogFn, *, preview: bool) -> dict[str, Any]:
+    """Calcule le score, agrège les anomalies lisibles, et assemble le dict de résultat."""
+    log("info", "Calcul du score de qualité /100 (grille en 8 domaines)…")
     issues, notes = detect_issues(profiling)  # anomalies lisibles pour le front
     score_detail = compute_score(profiling, scoring_inputs or None)
     score = score_detail["score_final"]
@@ -144,8 +146,9 @@ def run_audit(path: str | Path, original_name: str,
             issues.append({"level": "critical" if w["severity"] in ("critical", "major") else "warn",
                            "label": f"Règle violée ({w['n_violations']}×) : {w['description']}"})
     n_crit = sum(1 for i in issues if i["level"] == "critical")
+    kind = "Aperçu" if preview else "Audit"
     log("success" if n_crit == 0 else "warn",
-        f"Audit terminé — score {score}/100 ({score_detail['niveau_qualite']}), "
+        f"{kind} terminé — score {score}/100 ({score_detail['niveau_qualite']}), "
         f"{n_crit} anomalie(s) critique(s), confiance {score_detail['confiance']['niveau']}")
 
     m = profiling["missing_summary"]
@@ -153,6 +156,7 @@ def run_audit(path: str | Path, original_name: str,
     return {
         "started_at": started_at,
         "finished_at": _now(),
+        "preview": preview,
         "score": score,
         "row_count": s["n_rows"],
         "column_count": s["n_cols"],
@@ -166,3 +170,33 @@ def run_audit(path: str | Path, original_name: str,
         "events": events,
         "internal_notes": notes,
     }
+
+
+def run_preview(path: str | Path, original_name: str) -> dict[str, Any]:
+    """Aperçu gratuit, 100 % déterministe (aucun appel IA). Score préliminaire."""
+    events: list[dict] = []
+    log = _make_logger(events)
+    started_at = _now()
+    _df, _meta, profiling = _ingest_and_profile(path, original_name, log)
+    return _score_and_assemble(profiling, None, None, events, started_at, log, preview=True)
+
+
+def run_audit(path: str | Path, original_name: str,
+              protocol_text: str | None = None) -> dict[str, Any]:
+    """Audit complet (avec jugement IA) et assemblage du résultat."""
+    events: list[dict] = []
+    log = _make_logger(events)
+    started_at = _now()
+    df, _meta, profiling = _ingest_and_profile(path, original_name, log,
+                                               with_protocol=bool(protocol_text))
+
+    scoring_inputs: dict[str, Any] = {}
+    ai_audit = _run_ai_audit(profiling, df, protocol_text, scoring_inputs, log)
+
+    # Backstop déterministe : sans protocole, le critère de jugement principal ne peut pas
+    # être figé opérationnellement (variable/temps/contraste/méthode non préspécifiés) → 49.
+    if not protocol_text:
+        scoring_inputs["primary_endpoint_operationally_defined"] = False
+
+    return _score_and_assemble(profiling, scoring_inputs, ai_audit, events, started_at, log,
+                               preview=False)

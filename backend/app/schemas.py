@@ -64,6 +64,11 @@ class AuditResult(CamelModel):
     duplicates_pct: float
     issues: list[AuditIssue]
     needs_human_review: bool
+    # Parcours preview → paiement : statut, accès privé, déblocage
+    status: str = "preview"  # preview | processing | done | failed
+    is_preview: bool = True
+    paid: bool = False
+    token: str | None = None
 
 
 class AuditEvent(CamelModel):

@@ -7,6 +7,7 @@ minutes lorsque l'IA (LLM-1/LLM-2) est active. Passage en traitement asynchrone
 
 import logging
 import secrets
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
@@ -16,7 +17,7 @@ from ..config import settings
 from ..db import get_db
 from ..models import Audit, utcnow_iso
 from ..pipeline.ingest import IngestError
-from ..pipeline.runner import run_audit
+from ..pipeline.runner import run_preview
 from ..schemas import AuditEvent, AuditResult
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,8 @@ def _to_result(a: Audit) -> AuditResult:
         score=a.score or 0, row_count=a.row_count or 0, column_count=a.column_count or 0,
         missing_pct=a.missing_pct or 0, duplicates_pct=a.duplicates_pct or 0,
         issues=a.issues or [], needs_human_review=bool(a.needs_human_review),
+        status=a.status, is_preview=a.status != "done",
+        paid=bool(a.paid), token=a.token,
     )
 
 
@@ -58,6 +61,7 @@ def upload_and_audit(file: UploadFile, protocol: UploadFile | None = None,
                                  "Formats acceptés : .sav, .xlsx, .xls, .csv")
 
     audit_id = f"audit_{secrets.token_hex(8)}"
+    token = secrets.token_urlsafe(32)  # lien privé (256 bits, non devinable)
     dest_dir = settings.storage_dir / audit_id
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / f"original{ext}"
@@ -70,8 +74,8 @@ def upload_and_audit(file: UploadFile, protocol: UploadFile | None = None,
                 raise HTTPException(413, "Fichier trop volumineux (max 50 MB)")
             out.write(chunk)
 
-    # Protocole optionnel : extrait en texte pour l'audit IA
-    protocol_text = None
+    # Protocole optionnel : sauvegardé pour l'audit complet (déblocage payant), et validé
+    # dès maintenant pour signaler tôt un fichier illisible.
     if protocol and protocol.filename:
         from ..pipeline.docs_extract import extract_text
 
@@ -79,29 +83,34 @@ def upload_and_audit(file: UploadFile, protocol: UploadFile | None = None,
         with open(pdest, "wb") as out:
             out.write(protocol.file.read())
         try:
-            protocol_text = extract_text(pdest)
+            extract_text(pdest)
         except ValueError as exc:
             raise HTTPException(415, str(exc)) from exc
 
-    audit = Audit(id=audit_id, file_name=file.filename or dest.name,
-                  file_size=size, stored_path=str(dest), started_at=utcnow_iso())
+    expires_at = (
+        datetime.now(timezone.utc) + timedelta(days=settings.file_retention_days)
+    ).isoformat()
+    audit = Audit(id=audit_id, file_name=file.filename or dest.name, file_size=size,
+                  stored_path=str(dest), started_at=utcnow_iso(), token=token,
+                  status="preview", paid=False, expires_at=expires_at)
     db.add(audit)
     db.commit()
 
+    # Aperçu gratuit : 100 % déterministe, aucun appel IA (l'IA ne tourne qu'après paiement).
     try:
-        r = run_audit(dest, file.filename or dest.name, protocol_text)
+        r = run_preview(dest, file.filename or dest.name)
     except IngestError as exc:
         audit.status, audit.error, audit.finished_at = "failed", str(exc), utcnow_iso()
         db.commit()
         raise HTTPException(422, str(exc)) from exc
     except Exception as exc:
-        logger.exception("Échec de l'audit %s", audit_id)
+        logger.exception("Échec de l'aperçu %s", audit_id)
         audit.status, audit.error, audit.finished_at = "failed", str(exc), utcnow_iso()
         db.commit()
         # On ne divulgue pas le détail interne au client ; il est tracé côté serveur.
-        raise HTTPException(500, "Erreur interne pendant l'audit") from exc
+        raise HTTPException(500, "Erreur interne pendant l'aperçu") from exc
 
-    audit.status = "done"
+    audit.status = "preview"
     audit.started_at = r["started_at"]
     audit.finished_at = r["finished_at"]
     audit.score = r["score"]
@@ -115,7 +124,7 @@ def upload_and_audit(file: UploadFile, protocol: UploadFile | None = None,
     )
     audit.profiling = r["profiling"]
     audit.score_detail = r["score_detail"]
-    audit.ai_audit = r["ai_audit"]
+    audit.ai_audit = r["ai_audit"]  # None en aperçu ; renseigné après l'audit complet
     audit.events = r["events"]
     db.commit()
     db.refresh(audit)

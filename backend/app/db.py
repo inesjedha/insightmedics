@@ -25,7 +25,9 @@ def apply_light_migrations() -> None:
 
     from sqlalchemy import text
 
-    wanted = {"audits": {"score_detail": "JSON", "ai_audit": "JSON"}}
+    wanted = {"audits": {"score_detail": "JSON", "ai_audit": "JSON",
+                         "token": "VARCHAR", "email": "VARCHAR",
+                         "paid": "BOOLEAN", "expires_at": "VARCHAR"}}
     with engine.begin() as conn:
         for table, columns in wanted.items():
             for col, coltype in columns.items():

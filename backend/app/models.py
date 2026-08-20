@@ -43,8 +43,15 @@ class Audit(Base):
     stored_path: Mapped[str] = mapped_column(String)
     started_at: Mapped[str] = mapped_column(String, default=utcnow_iso)
     finished_at: Mapped[str | None] = mapped_column(String, nullable=True)
-    status: Mapped[str] = mapped_column(String, default="running")  # running|done|failed
+    # preview = aperçu gratuit calculé ; processing = audit IA en cours ; done ; failed
+    status: Mapped[str] = mapped_column(String, default="preview")
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Accès privé + paywall (parcours preview → paiement manuel → audit complet)
+    token: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    email: Mapped[str | None] = mapped_column(String, nullable=True)
+    paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    expires_at: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # Résumé pour le front (AuditResult)
     score: Mapped[float | None] = mapped_column(Float, nullable=True)

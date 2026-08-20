@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.pipeline.ingest import IngestError, ingest
-from app.pipeline.runner import run_audit
+from app.pipeline.runner import run_audit, run_preview
 
 
 @pytest.fixture()
@@ -49,6 +49,32 @@ def test_run_audit_detecte_les_defauts(dirty_csv: Path):
     assert any(c["column"] == "tel_patient" for c in p["pii_candidates"])
     assert 0 <= r["score"] <= 100
     assert any(i["level"] == "critical" for i in r["issues"])
+
+
+def test_run_preview_deterministe_sans_ia(dirty_csv: Path):
+    """L'aperçu produit score + anomalies SANS aucun audit IA (ai_audit=None)."""
+    r = run_preview(dirty_csv, "dirty.csv")
+    assert r["preview"] is True
+    assert r["ai_audit"] is None            # aucun appel IA dans l'aperçu
+    assert 0 <= r["score"] <= 100
+    assert r["issues"]                       # anomalies déterministes détectées
+    assert r["row_count"] == 6
+    # Aucune étape IA dans le journal
+    messages = " ".join(e["message"] for e in r["events"])
+    assert "Audit IA" not in messages
+
+
+def test_api_upload_renvoie_un_apercu(dirty_csv: Path):
+    """POST /audit/upload renvoie un aperçu : statut preview, non payé, jeton privé."""
+    client = TestClient(app)
+    with open(dirty_csv, "rb") as f:
+        resp = client.post("/audit/upload", files={"file": ("dirty.csv", f, "text/csv")})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "preview"
+    assert body["isPreview"] is True
+    assert body["paid"] is False
+    assert body["token"] and len(body["token"]) >= 32   # lien privé fort
 
 
 def test_ingest_refuse_les_formats_inconnus(tmp_path: Path):
