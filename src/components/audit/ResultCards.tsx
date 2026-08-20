@@ -236,9 +236,11 @@ export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
 export function AuditScoreCard({
   result,
   scoreDetail,
+  preview = false,
 }: {
   result: AuditResult;
   scoreDetail: ScoreDetail | null;
+  preview?: boolean;
 }) {
   const scoreColor =
     result.score >= 80 ? "text-brand" : result.score >= 60 ? "text-amber-600" : "text-destructive";
@@ -248,16 +250,22 @@ export function AuditScoreCard({
       <div className="grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Score de qualité
+            {preview ? "Score préliminaire" : "Score de qualité"}
           </p>
           <p className={cn("font-display text-6xl font-extrabold tracking-tight", scoreColor)}>
             {result.score}
             <span className="text-2xl text-muted-foreground">/100</span>
           </p>
-          {scoreDetail && (
-            <p className="mt-1 text-sm font-medium text-foreground/80">
-              {scoreDetail.niveau_qualite}
+          {preview ? (
+            <p className="mt-1 text-sm font-medium text-muted-foreground">
+              Indicatif · l'audit complet affine ce score
             </p>
+          ) : (
+            scoreDetail && (
+              <p className="mt-1 text-sm font-medium text-foreground/80">
+                {scoreDetail.niveau_qualite}
+              </p>
+            )
           )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

@@ -37,17 +37,17 @@ import {
 export const Route = createFileRoute("/audit")({
   head: () => ({
     meta: [
-      { title: "Audit IA gratuit — Insight Medics" },
+      { title: "Audit — aperçu gratuit · Insight Medics" },
       {
         name: "description",
         content:
-          "Téléversez votre base de données. Audit qualité en quelques minutes, score /100, rapport PDF. Tous formats acceptés.",
+          "Téléversez votre base : aperçu gratuit (score préliminaire + anomalies structurelles). Audit complet et livrables à 50 DT. Tous formats acceptés.",
       },
-      { property: "og:title", content: "Audit IA gratuit — Insight Medics" },
+      { property: "og:title", content: "Audit — aperçu gratuit · Insight Medics" },
       {
         property: "og:description",
         content:
-          "Votre base radiographiée en quelques minutes. Score /100, rapport PDF par email & SMS.",
+          "Votre base radiographiée en quelques minutes. Aperçu gratuit ; audit complet et livrables à 50 DT.",
       },
     ],
   }),
@@ -72,6 +72,10 @@ function AuditPage() {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [phase]);
+
+  const isPreview = !!result && (result.isPreview ?? true) && !result.paid;
+  const nIssues = result?.issues.length ?? 0;
+  const nCrit = result?.issues.filter((i) => i.level === "critical").length ?? 0;
 
   const onFile = (f: File | null) => {
     setFile(f);
@@ -164,24 +168,32 @@ function AuditPage() {
 
       {phase === "done" && result && (
         <Section className="pt-0">
-          <div ref={resultsRef} className="scroll-mt-24" />
-          {(result.isPreview ?? true) && !result.paid && <PreviewNotice />}
-          {detail?.assessment?.exploitability_verdict && detail.scoreDetail && (
-            <VerdictBanner
-              verdict={detail.assessment.exploitability_verdict}
-              scoreDetail={detail.scoreDetail}
+          {/* Rythme vertical unique : un seul écart entre tous les blocs. */}
+          <div ref={resultsRef} className="scroll-mt-24 space-y-6">
+            <ResultsSummary result={result} nIssues={nIssues} nCrit={nCrit} />
+            {isPreview && <PreviewNotice nIssues={nIssues} />}
+            {detail?.assessment?.exploitability_verdict && detail.scoreDetail && (
+              <VerdictBanner
+                verdict={detail.assessment.exploitability_verdict}
+                scoreDetail={detail.scoreDetail}
+              />
+            )}
+            <AuditScoreCard
+              result={result}
+              scoreDetail={detail?.scoreDetail ?? null}
+              preview={isPreview}
             />
-          )}
-          <AuditScoreCard result={result} scoreDetail={detail?.scoreDetail ?? null} />
-          {detail?.assessment?.executive_summary_fr && (
-            <ExecutiveSummaryCard assessment={detail.assessment} />
-          )}
-          {detail?.assessment?.findings?.length ? (
-            <FindingsCard findings={detail.assessment.findings} />
-          ) : null}
-          {detail?.scoreDetail && <DomainsCard scoreDetail={detail.scoreDetail} />}
-          {result.needsHumanReview && <HumanAlert />}
-          <AuditReportForm result={result} />
+            {detail?.assessment?.executive_summary_fr && (
+              <ExecutiveSummaryCard assessment={detail.assessment} />
+            )}
+            {detail?.assessment?.findings?.length ? (
+              <FindingsCard findings={detail.assessment.findings} />
+            ) : null}
+            {detail?.scoreDetail && <DomainsCard scoreDetail={detail.scoreDetail} />}
+            {result.needsHumanReview && <HumanAlert />}
+            {isPreview && <DeliverablesPreview />}
+            <AuditReportForm result={result} id="debloquer" />
+          </div>
         </Section>
       )}
     </SiteLayout>
@@ -386,9 +398,13 @@ const FULL_AUDIT_INCLUDES = [
   "Votre base nettoyée et anonymisée (.sav + .csv), prête à analyser",
 ];
 
-function PreviewNotice() {
+function scrollToUnlock() {
+  document.getElementById("debloquer")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function PreviewNotice({ nIssues }: { nIssues: number }) {
   return (
-    <div className="mt-2 rounded-2xl border border-brand/30 bg-brand/5 p-6 sm:p-7">
+    <div className="rounded-2xl border border-brand/30 bg-brand/5 p-6 sm:p-7">
       <div className="flex flex-wrap items-center gap-3">
         <Sparkles className="h-5 w-5 text-brand" />
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -399,9 +415,18 @@ function PreviewNotice() {
         Voici un premier diagnostic — gratuit et automatique.
       </p>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-foreground/85">
-        Ci-dessous : le <strong>score préliminaire</strong> et les anomalies structurelles détectées
-        par le code. C'est un aperçu — l'<strong>audit complet (50&nbsp;DT)</strong> va beaucoup
-        plus loin et vous livre :
+        {nIssues > 0 ? (
+          <>
+            Nous avons repéré <strong>{nIssues} point(s) d'attention</strong> sur votre base.
+            L'audit complet vous dit exactement <strong>comment les corriger</strong> et vous livre
+            :
+          </>
+        ) : (
+          <>
+            Bonne base à première vue. L'<strong>audit complet (50 DT)</strong> confirme et va
+            beaucoup plus loin — il vous livre :
+          </>
+        )}
       </p>
       <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
         {FULL_AUDIT_INCLUDES.map((item) => (
@@ -411,14 +436,71 @@ function PreviewNotice() {
           </li>
         ))}
       </ul>
-      <p className="mt-4 text-sm font-medium text-brand">
-        Débloquez-le via le formulaire en bas de page ↓
-      </p>
+      <Button
+        onClick={scrollToUnlock}
+        className="mt-5 bg-brand text-brand-foreground hover:bg-brand/90"
+      >
+        Débloquer l'audit complet — 50 DT
+      </Button>
     </div>
   );
 }
 
-function AuditReportForm({ result }: { result: AuditResult }) {
+function ResultsSummary({
+  result,
+  nIssues,
+  nCrit,
+}: {
+  result: AuditResult;
+  nIssues: number;
+  nCrit: number;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-surface/60 px-5 py-3.5 text-sm">
+      <span className="font-medium text-foreground">
+        Base de {result.rowCount.toLocaleString("fr-FR")} lignes × {result.columnCount} variables
+      </span>
+      <span className="text-muted-foreground">
+        {" — "}
+        {nIssues === 0
+          ? "aucun point d'attention majeur détecté."
+          : `${nIssues} point(s) d'attention${nCrit ? `, dont ${nCrit} critique(s)` : ""}.`}
+      </span>
+    </div>
+  );
+}
+
+function DeliverablesPreview() {
+  const items = [
+    { label: "Classeur Excel", sub: "10 onglets d'audit", accent: "bg-emerald-500" },
+    { label: "Rapport Word", sub: "11 sections rédigées", accent: "bg-blue-500" },
+    { label: "Base nettoyée", sub: ".sav + .csv anonymisés", accent: "bg-brand" },
+  ];
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <h3 className="font-display text-lg font-bold">Ce que vous recevez après paiement</h3>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Trois livrables prêts à l'emploi, en plus de l'audit complet à l'écran.
+      </p>
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+        {items.map((it) => (
+          <div key={it.label} className="rounded-xl border border-border bg-surface/50 p-4">
+            <div className="flex flex-col gap-1.5" aria-hidden>
+              <div className={cn("h-2 w-10 rounded-full", it.accent)} />
+              <div className="h-1.5 w-full rounded bg-border" />
+              <div className="h-1.5 w-11/12 rounded bg-border" />
+              <div className="h-1.5 w-4/5 rounded bg-border" />
+            </div>
+            <p className="mt-3 text-sm font-semibold text-foreground">{it.label}</p>
+            <p className="text-xs text-muted-foreground">{it.sub}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AuditReportForm({ result, id }: { result: AuditResult; id?: string }) {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [consent, setConsent] = useState(false);
@@ -475,7 +557,10 @@ function AuditReportForm({ result }: { result: AuditResult }) {
   };
 
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+    <div
+      id={id}
+      className="mt-6 scroll-mt-24 rounded-2xl border border-brand/30 bg-card p-6 shadow-sm sm:p-8"
+    >
       <div className="flex items-center gap-3">
         <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
           <Download className="h-5 w-5" />
@@ -488,6 +573,19 @@ function AuditReportForm({ result }: { result: AuditResult }) {
             lien privé vers vos résultats et vos livrables.
           </p>
         </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
+        {[
+          "Validé par un expert humain",
+          "Données anonymisées",
+          "Vous ne payez qu'après nous avoir parlé",
+        ].map((t) => (
+          <span key={t} className="inline-flex items-center gap-1.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-brand" />
+            {t}
+          </span>
+        ))}
       </div>
 
       {sent ? (
