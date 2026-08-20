@@ -102,9 +102,9 @@ function AuditPage() {
     <SiteLayout>
       <Section className="pb-4">
         <SectionHeader
-          eyebrow="Audit IA · gratuit"
+          eyebrow="Audit · aperçu gratuit"
           title="Votre base radiographiée en quelques minutes."
-          description="Tous les chiffres affichés sont calculés par exécution de code — zéro valeur hallucinée. La touche humaine intervient si une alerte critique est détectée."
+          description="L'aperçu est gratuit et 100 % calculé par du code — zéro valeur hallucinée : score préliminaire et anomalies structurelles. L'audit complet (verdict d'exploitabilité, anomalies classées, plan d'action et livrables) se débloque pour 50 DT."
         />
       </Section>
 
@@ -127,12 +127,12 @@ function AuditPage() {
                 {phase === "running" ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Audit en cours…
+                    Analyse en cours…
                   </>
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Lancer l'audit
+                    Lancer l'aperçu gratuit
                   </>
                 )}
               </Button>
@@ -156,6 +156,7 @@ function AuditPage() {
 
       {phase === "done" && result && (
         <Section className="pt-0">
+          {(result.isPreview ?? true) && !result.paid && <PreviewNotice />}
           {detail?.assessment?.exploitability_verdict && detail.scoreDetail && (
             <VerdictBanner
               verdict={detail.assessment.exploitability_verdict}
@@ -348,7 +349,7 @@ function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: Phase })
         {phase === "running" && (
           <li className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            L'analyse IA peut prendre 1 à 2 minutes (deux passages d'intelligence artificielle)…
+            Analyse structurelle de votre base — quelques secondes…
           </li>
         )}
       </ul>
@@ -367,6 +368,29 @@ const reportSchema = z.object({
   email: z.string().trim().email("Email invalide").max(255),
   name: z.string().trim().max(100).optional().or(z.literal("")),
 });
+
+function PreviewNotice() {
+  return (
+    <div className="mt-2 rounded-2xl border border-brand/30 bg-brand/5 p-6 sm:p-7">
+      <div className="flex flex-wrap items-center gap-3">
+        <Sparkles className="h-5 w-5 text-brand" />
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Aperçu gratuit
+        </p>
+      </div>
+      <p className="mt-2 font-display text-lg font-bold tracking-tight">
+        Voici ce que le code détecte, sans IA.
+      </p>
+      <p className="mt-2 max-w-3xl text-sm leading-relaxed text-foreground/85">
+        Ci-dessous : votre <strong>score préliminaire</strong> et les{" "}
+        <strong>anomalies structurelles</strong> repérées automatiquement. L'
+        <strong>audit complet</strong> ajoute le verdict d'exploitabilité, les anomalies classées et
+        expliquées, le plan d'action, et vos livrables — classeur Excel, rapport Word, base nettoyée
+        et anonymisée — pour <strong>50&nbsp;DT</strong>.
+      </p>
+    </div>
+  );
+}
 
 function AuditReportForm({ result }: { result: AuditResult }) {
   const [sent, setSent] = useState(false);
@@ -431,9 +455,11 @@ function AuditReportForm({ result }: { result: AuditResult }) {
           <Download className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="font-display text-lg font-bold">Recevoir le rapport PDF complet</h3>
+          <h3 className="font-display text-lg font-bold">Débloquer l'audit complet — 50 DT</h3>
           <p className="text-sm text-muted-foreground">
-            Nous vous envoyons le rapport par SMS et email. Le numéro est prioritaire.
+            Verdict d'exploitabilité, anomalies classées et expliquées, plan d'action, et vos
+            livrables (Excel, Word, base nettoyée). Laissez vos coordonnées : on vous envoie les
+            instructions de paiement, puis on débloque votre audit.
           </p>
         </div>
       </div>
@@ -442,9 +468,11 @@ function AuditReportForm({ result }: { result: AuditResult }) {
         <div className="mt-6 flex items-start gap-3 rounded-lg border border-brand/30 bg-brand/5 p-4 text-sm text-foreground">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
           <div>
-            <p className="font-semibold">Rapport en route.</p>
+            <p className="font-semibold">Demande enregistrée.</p>
             <p className="mt-1 text-muted-foreground">
-              Vous allez recevoir le PDF par SMS et email. Pensez à vérifier vos spams.
+              Nous vous envoyons les instructions de paiement (50 DT) par email et SMS. Dès
+              réception, votre audit complet est lancé et vous recevez le lien privé vers vos
+              résultats et livrables. Pensez à vérifier vos spams.
             </p>
           </div>
         </div>
@@ -530,7 +558,7 @@ function AuditReportForm({ result }: { result: AuditResult }) {
               disabled={sending}
               className="bg-brand text-brand-foreground hover:bg-brand/90"
             >
-              {sending ? "Envoi…" : "Recevoir mon rapport"}
+              {sending ? "Envoi…" : "Demander l'audit complet (50 DT)"}
             </Button>
           </div>
         </form>

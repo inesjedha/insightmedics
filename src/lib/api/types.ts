@@ -47,6 +47,11 @@ export interface AuditResult {
   duplicatesPct: number;
   issues: AuditIssue[];
   needsHumanReview: boolean;
+  // Parcours aperçu → paiement (renseignés par le backend réel ; absents en mode mock)
+  status?: "preview" | "processing" | "done" | "failed";
+  isPreview?: boolean;
+  paid?: boolean;
+  token?: string | null;
 }
 
 export interface AuditEvent {
