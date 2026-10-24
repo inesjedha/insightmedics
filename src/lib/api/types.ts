@@ -124,8 +124,14 @@ export interface AiAssessment {
   pii_assessment: { column: string; risk: string; recommendation_fr: string }[];
 }
 
-export interface AuditDetail {
+/** Détail public de l'aperçu gratuit. */
+export interface PreviewDetail {
   events: AuditEvent[];
+  scoreDetail: ScoreDetail | null;
+}
+
+/** Détail de l'audit complet, servi au client par son lien privé. */
+export interface ClientDetail {
   scoreDetail: ScoreDetail | null;
   assessment: AiAssessment | null;
 }

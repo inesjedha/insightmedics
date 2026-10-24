@@ -81,11 +81,13 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return (await res.json()) as T;
 }
 
-/** Variante pour les ressources facultatives : `null` si absente (404) ou en erreur. */
+/** Variante pour les ressources facultatives : `null` si absente (404). Toute autre
+ * erreur (500, réseau…) est propagée, pour ne pas confondre panne et absence. */
 export async function requestOrNull<T>(path: string): Promise<T | null> {
   try {
     return await request<T>(path);
-  } catch {
-    return null;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
   }
 }

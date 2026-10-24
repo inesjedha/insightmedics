@@ -18,8 +18,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --reload-dir app --port 8000
 ```
 
-Côté front, dans `.env` : `VITE_USE_MOCK_API=false` et
-`VITE_API_BASE_URL=http://localhost:8000`.
+Côté front, dans `.env` : `VITE_API_BASE_URL=http://localhost:8000`.
 
 ## Qualité du code (lint, typage, tests)
 
@@ -60,13 +59,12 @@ Documentation interactive générée par FastAPI : `http://localhost:8000/docs`.
 | Accès  | Méthode | Route                         | Description                                                    |
 | ------ | ------- | ----------------------------- | -------------------------------------------------------------- |
 | public | POST    | `/audit/upload`               | Upload multipart (`file`, `protocol` optionnel) → aperçu       |
-| public | GET     | `/audit/:id`                  | Résumé de l'audit                                              |
+| public | GET     | `/audit/:id`                  | Résumé de l'aperçu (sans le jeton du lien privé)               |
 | public | GET     | `/audit/:id/events`           | Journal des étapes                                             |
 | public | GET     | `/audit/:id/score`            | Décomposition du score (8 domaines, plafonds, confiance)       |
-| public | GET     | `/audit/:id/assessment`       | Jugement IA (après déblocage)                                  |
 | admin  | GET     | `/audit`                      | Liste des audits                                               |
 | admin  | POST    | `/audit/:id/unlock`           | Après paiement : lance l'audit IA complet (plusieurs minutes)  |
-| admin  | GET     | `/audit/:id/profiling`, `/ai` | Profiling complet, audit IA brut                               |
+| admin  | GET     | `/audit/:id/profiling`, `/ai`, `/assessment` | Profiling, audit IA brut, jugement IA           |
 | admin  | GET     | `/audit/:id/:livrable`        | `workbook.xlsx`, `report.docx`, `base_analyse.csv`, `.sav`     |
 | jeton  | GET     | `/r/:token[/score\|/assessment\|/:livrable]` | Espace client : audit payé, non expiré         |
 | public | POST    | `/leads`                      | Création de lead (201) ; id, statut, priorité fixés serveur    |

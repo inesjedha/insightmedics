@@ -4,12 +4,13 @@
 import { apiUrl, request, requestOrNull } from "./http";
 import type {
   AiAssessment,
-  AuditDetail,
   AuditEvent,
   AuditResult,
   Lead,
   LeadInput,
+  ClientDetail,
   LeadUpdate,
+  PreviewDetail,
   ScoreDetail,
 } from "./types";
 
@@ -48,15 +49,14 @@ export function uploadAudit(file: File, protocol?: File | null): Promise<AuditRe
   return request<AuditResult>("/audit/upload", { method: "POST", body: form });
 }
 
-/** Détail facultatif d'un audit : chaque partie vaut null si indisponible. */
-export async function getAuditDetail(id: string): Promise<AuditDetail> {
+/** Journal et score détaillé de l'aperçu (le jugement IA, payant, n'est servi que par /r/:token). */
+export async function getPreviewDetail(id: string): Promise<PreviewDetail> {
   const base = `/audit/${encodeURIComponent(id)}`;
-  const [events, scoreDetail, assessment] = await Promise.all([
+  const [events, scoreDetail] = await Promise.all([
     requestOrNull<AuditEvent[]>(`${base}/events`),
     requestOrNull<ScoreDetail>(`${base}/score`),
-    requestOrNull<AiAssessment>(`${base}/assessment`),
   ]);
-  return { events: events ?? [], scoreDetail, assessment };
+  return { events: events ?? [], scoreDetail };
 }
 
 // --- Audit : administration ---
@@ -80,9 +80,7 @@ export function getClientResult(token: string): Promise<AuditResult> {
   return request<AuditResult>(`/r/${encodeURIComponent(token)}`);
 }
 
-export async function getClientDetail(
-  token: string,
-): Promise<Pick<AuditDetail, "scoreDetail" | "assessment">> {
+export async function getClientDetail(token: string): Promise<ClientDetail> {
   const base = `/r/${encodeURIComponent(token)}`;
   const [scoreDetail, assessment] = await Promise.all([
     requestOrNull<ScoreDetail>(`${base}/score`),

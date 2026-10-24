@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import secrets
+import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
@@ -21,7 +22,7 @@ from ..config import settings
 from ..models import Audit, AuditStatus, utcnow_iso
 from ..pipeline.cleaning import clean, to_csv_bytes, to_sav_bytes
 from ..pipeline.docs_extract import extract_text
-from ..pipeline.ingest import ingest
+from ..pipeline.ingest import IngestError, ingest
 from ..pipeline.report_docx import build_report
 from ..pipeline.report_xlsx import build_workbook
 from ..pipeline.runner import run_audit, run_preview
@@ -158,6 +159,11 @@ def _mark_failed(db: Session, audit: Audit, exc: Exception) -> None:
     db.commit()
 
 
+def discard_upload(audit_id: str) -> None:
+    """Supprime les fichiers d'un upload rejeté avant la création de l'audit."""
+    shutil.rmtree(_audit_dir(audit_id), ignore_errors=True)
+
+
 def new_audit_id() -> str:
     return f"audit_{secrets.token_hex(8)}"
 
@@ -176,6 +182,9 @@ def create_preview(db: Session, audit_id: str, data_path: Path, file_name: str,
     db.commit()
     try:
         result = run_preview(data_path, file_name)
+    except IngestError as exc:  # fichier illisible : erreur de l'utilisateur, pas un bug
+        _mark_failed(db, audit, exc)
+        raise
     except Exception as exc:
         logger.exception("Échec de l'aperçu %s", audit_id)
         _mark_failed(db, audit, exc)
@@ -251,8 +260,17 @@ class Deliverable:
     media_type: str
 
 
-_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+# Pour chaque livrable : (suffixe du nom de fichier téléchargé, type MIME).
+_DELIVERABLE_FILES: dict[DeliverableKind, tuple[str, str]] = {
+    DeliverableKind.WORKBOOK: (
+        "classeur_audit.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    DeliverableKind.REPORT: (
+        "rapport_audit.docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    DeliverableKind.BASE_CSV: ("base_analyse.csv", "text/csv"),
+    DeliverableKind.BASE_SAV: ("base_analyse.sav", "application/octet-stream"),
+}
 
 
 def _cleaning(audit: Audit) -> dict[str, Any] | None:
@@ -264,25 +282,24 @@ def _cleaning(audit: Audit) -> dict[str, Any] | None:
     return clean(df, audit.profiling or {}, audit.ai_audit, approved_op_ids=set())
 
 
+def _deliverable_content(audit: Audit, kind: DeliverableKind) -> bytes:
+    assert audit.profiling is not None and audit.score_detail is not None
+    if kind is DeliverableKind.REPORT:
+        return build_report(audit.profiling, audit.score_detail, audit.ai_audit)
+    cleaning = _cleaning(audit)
+    if kind is DeliverableKind.WORKBOOK:  # sans fichier source : classeur sans les bases
+        return build_workbook(audit.profiling, audit.score_detail, audit.ai_audit,
+                              cleaning=cleaning)
+    if cleaning is None:
+        raise DeliverableUnavailableError("Fichier source indisponible pour le nettoyage")
+    if kind is DeliverableKind.BASE_CSV:
+        return to_csv_bytes(cleaning["base_analyse"])
+    return to_sav_bytes(cleaning["base_analyse"])
+
+
 def build_deliverable(audit: Audit, kind: DeliverableKind) -> Deliverable:
     """Fabrique un livrable à la volée. Lève `DeliverableUnavailableError` si impossible."""
     if not audit.profiling or not audit.score_detail:
         raise DeliverableUnavailableError("Audit introuvable ou incomplet")
-    filename = f"{audit.id}_{kind.value}"
-
-    if kind is DeliverableKind.REPORT:
-        content = build_report(audit.profiling, audit.score_detail, audit.ai_audit)
-        return Deliverable(content, f"{audit.id}_rapport_audit.docx", _DOCX)
-
-    cleaning = _cleaning(audit)
-    if kind is DeliverableKind.WORKBOOK:
-        content = build_workbook(audit.profiling, audit.score_detail, audit.ai_audit,
-                                 cleaning=cleaning)
-        return Deliverable(content, f"{audit.id}_classeur_audit.xlsx", _XLSX)
-
-    if cleaning is None:
-        raise DeliverableUnavailableError("Fichier source indisponible pour le nettoyage")
-    if kind is DeliverableKind.BASE_CSV:
-        return Deliverable(to_csv_bytes(cleaning["base_analyse"]), filename, "text/csv")
-    return Deliverable(to_sav_bytes(cleaning["base_analyse"]), filename,
-                       "application/octet-stream")
+    suffix, media_type = _DELIVERABLE_FILES[kind]
+    return Deliverable(_deliverable_content(audit, kind), f"{audit.id}_{suffix}", media_type)

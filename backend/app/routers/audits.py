@@ -17,6 +17,7 @@ from ..pipeline.ingest import IngestError
 from ..schemas import AuditEvent, AuditResult
 from ..services import audits as service
 from ..services.audits import DeliverableKind
+from .downloads import deliverable_response
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
@@ -28,16 +29,6 @@ def _get_or_404(db: Session, audit_id: str) -> Audit:
     return audit
 
 
-def deliverable_response(audit: Audit, kind: DeliverableKind) -> Response:
-    """Réponse de téléchargement d'un livrable (partagée avec le router client)."""
-    try:
-        d = service.build_deliverable(audit, kind)
-    except service.DeliverableUnavailableError as exc:
-        raise HTTPException(404, str(exc)) from exc
-    return Response(content=d.content, media_type=d.media_type,
-                    headers={"Content-Disposition": f'attachment; filename="{d.filename}"'})
-
-
 # ---------------------------------------------------------------- admin
 
 @router.get("", response_model=list[AuditResult], response_model_by_alias=True,
@@ -45,7 +36,7 @@ def deliverable_response(audit: Audit, kind: DeliverableKind) -> Response:
 def list_audits(db: Session = Depends(get_db)) -> list[AuditResult]:
     """Tous les audits, du plus récent au plus ancien."""
     rows = db.query(Audit).order_by(Audit.started_at.desc()).all()
-    return [AuditResult.from_audit(a) for a in rows]
+    return [AuditResult.from_audit(a, include_token=True) for a in rows]
 
 
 @router.post("/{audit_id}/unlock", response_model=AuditResult, response_model_by_alias=True,
@@ -60,7 +51,7 @@ def unlock_audit(audit_id: str, db: Session = Depends(get_db)) -> AuditResult:
     except Exception as exc:
         # Détail tracé côté serveur par le service, jamais renvoyé au client.
         raise HTTPException(500, "Erreur interne pendant l'audit complet") from exc
-    return AuditResult.from_audit(audit)
+    return AuditResult.from_audit(audit, include_token=True)
 
 
 @router.get("/{audit_id}/profiling", dependencies=[Depends(require_admin)])
@@ -89,8 +80,10 @@ def upload_and_preview(file: UploadFile, protocol: UploadFile | None = None,
         if protocol and protocol.filename:
             service.save_protocol(audit_id, protocol.file, protocol.filename)
     except service.UnsupportedFormatError as exc:
+        service.discard_upload(audit_id)
         raise HTTPException(415, str(exc)) from exc
     except service.FileTooLargeError as exc:
+        service.discard_upload(audit_id)
         raise HTTPException(413, str(exc)) from exc
 
     try:
@@ -125,9 +118,9 @@ def get_score_detail(audit_id: str, db: Session = Depends(get_db)) -> dict[str, 
     return audit.score_detail
 
 
-@router.get("/{audit_id}/assessment")
+@router.get("/{audit_id}/assessment", dependencies=[Depends(require_admin)])
 def get_assessment(audit_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
-    """Jugement IA (anomalies, verdict, synthèse) ; absent tant que l'audit n'est pas débloqué."""
+    """Jugement IA (contenu payant) ; le client y accède par /r/{token}/assessment."""
     audit = db.get(Audit, audit_id)
     assessment = (audit.ai_audit or {}).get("assessment") if audit else None
     if not assessment:

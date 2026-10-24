@@ -15,7 +15,7 @@ from ..models import Audit
 from ..schemas import AuditResult
 from ..services import audits as service
 from ..services.audits import DeliverableKind
-from .audits import deliverable_response
+from .downloads import deliverable_response
 
 router = APIRouter(prefix="/r", tags=["client"])
 
@@ -33,7 +33,7 @@ def paid_audit(token: str, db: Session = Depends(get_db)) -> Audit:
 @router.get("/{token}", response_model=AuditResult, response_model_by_alias=True)
 def client_result(audit: Audit = Depends(paid_audit)) -> AuditResult:
     """Résumé de l'audit complet (score, observations, méta)."""
-    return AuditResult.from_audit(audit)
+    return AuditResult.from_audit(audit, include_token=True)
 
 
 @router.get("/{token}/score")

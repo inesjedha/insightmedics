@@ -97,7 +97,11 @@ class AuditResult(CamelModel):
     token: str | None = None
 
     @classmethod
-    def from_audit(cls, a: Audit) -> AuditResult:
+    def from_audit(cls, a: Audit, *, include_token: bool = False) -> AuditResult:
+        """`include_token` : uniquement pour l'admin et le client déjà authentifié par son
+        lien. Le jeton ne doit jamais sortir d'une route publique accessible par id."""
+        from .models import AuditStatus
+
         return cls(
             id=a.id, file_name=a.file_name, file_size=a.file_size,
             started_at=a.started_at, finished_at=a.finished_at,
@@ -106,7 +110,8 @@ class AuditResult(CamelModel):
             issues=[AuditIssue(**i) for i in a.issues or []],
             needs_human_review=bool(a.needs_human_review),
             status=a.status,  # type: ignore[arg-type]  # colonne String, valeurs AuditStatus
-            is_preview=a.status != "done", paid=bool(a.paid), token=a.token,
+            is_preview=a.status != AuditStatus.DONE, paid=bool(a.paid),
+            token=a.token if include_token else None,
         )
 
 

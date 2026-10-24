@@ -65,7 +65,7 @@ def test_run_preview_deterministe_sans_ia(dirty_csv: Path):
 
 
 def test_api_upload_renvoie_un_apercu(dirty_csv: Path):
-    """POST /audit/upload renvoie un aperçu : statut preview, non payé, jeton privé."""
+    """POST /audit/upload renvoie un aperçu : statut preview, non payé, sans jeton privé."""
     client = TestClient(app)
     with open(dirty_csv, "rb") as f:
         resp = client.post("/audit/upload", files={"file": ("dirty.csv", f, "text/csv")})
@@ -74,7 +74,7 @@ def test_api_upload_renvoie_un_apercu(dirty_csv: Path):
     assert body["status"] == "preview"
     assert body["isPreview"] is True
     assert body["paid"] is False
-    assert body["token"] and len(body["token"]) >= 32   # lien privé fort
+    assert body["token"] is None   # le jeton du lien privé ne sort jamais d'une route publique
 
 
 def test_ingest_refuse_les_formats_inconnus(tmp_path: Path):
@@ -194,9 +194,27 @@ def test_api_livrable_inconnu(dirty_csv: Path, admin_headers):
 
 
 def test_livrables_par_identifiant_reserves_a_l_admin(dirty_csv: Path, admin_headers):
-    """L'id d'audit est connu dès l'aperçu gratuit : il ne doit pas ouvrir les livrables
-    payants (base nettoyée, classeur). Le client passe par son lien privé /r/{token}."""
+    """L'id d'audit est connu dès l'aperçu gratuit : il ne doit ouvrir ni les livrables
+    payants ni le jeton du lien privé. Le client passe par son lien /r/{token}."""
     client = TestClient(app)
     audit_id = _upload(client, dirty_csv)
-    for kind in ("workbook.xlsx", "report.docx", "base_analyse.csv", "base_analyse.sav", "ai"):
+    assert client.get(f"/audit/{audit_id}").json()["token"] is None
+    listed = client.get("/audit", headers=admin_headers).json()
+    assert next(a for a in listed if a["id"] == audit_id)["token"]  # visible pour l'admin
+    for kind in ("workbook.xlsx", "report.docx", "base_analyse.csv", "base_analyse.sav", "ai",
+                 "assessment"):
         assert client.get(f"/audit/{audit_id}/{kind}").status_code == 401, kind
+
+
+def test_api_protocole_illisible_ne_laisse_aucun_fichier(dirty_csv: Path):
+    from app.config import settings
+
+    before = set(settings.storage_dir.iterdir()) if settings.storage_dir.exists() else set()
+    client = TestClient(app)
+    with open(dirty_csv, "rb") as f:
+        resp = client.post("/audit/upload", files={
+            "file": ("dirty.csv", f, "text/csv"),
+            "protocol": ("protocole.odt", io.BytesIO(b"x"), "application/octet-stream"),
+        })
+    assert resp.status_code == 415
+    assert set(settings.storage_dir.iterdir()) == before
