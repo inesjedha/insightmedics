@@ -62,8 +62,16 @@ function MentionsPage() {
 
           <LegalBlock title="Hébergement">
             <p>
-              Les coordonnées complètes de l'hébergeur seront précisées lors de la mise en
-              production sur un domaine définitif.
+              Le site et ses données sont hébergés par Railway Corporation (
+              <a
+                href="https://railway.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand hover:underline"
+              >
+                railway.com
+              </a>
+              ), sur des serveurs situés dans l'Union européenne.
             </p>
           </LegalBlock>
 

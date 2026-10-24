@@ -131,5 +131,19 @@ stockage temporaires et désactive l'IA (aucun appel payant pendant `pytest`).
 
 ## Déploiement Railway
 
-Service Python (version lue dans `.python-version`), root directory `backend`, start command :
-`uvicorn app.main:app --host 0.0.0.0 --port $PORT` + addon Postgres + volume `/storage`.
+Deux services dans un même projet Railway, tous deux branchés sur le repo GitHub
+(déploiement automatique à chaque fusion dans `main`), région Europe :
+
+| Service  | Root directory | Fichier de config       | Domaine                   |
+| -------- | -------------- | ----------------------- | ------------------------- |
+| backend  | `/backend`     | `/backend/railway.json` | `api.insightmedics.tn`    |
+| front    | `/`            | `/railway.json`         | `www.insightmedics.tn`    |
+
+- Backend : + base Postgres (variable `DATABASE_URL` référencée depuis le service
+  Postgres) + volume monté sur `/storage` (`STORAGE_DIR=/storage`). Variables :
+  `ADMIN_API_KEY`, `OPENAI_API_KEY`, `LLM_PROVIDER=openai`, `LLM_MODEL`,
+  `CORS_ORIGINS=https://www.insightmedics.tn`. `drainingSeconds: 900` laisse 15 min à un
+  audit IA en cours pour se terminer lors d'un redéploiement.
+- Front : `VITE_API_BASE_URL=https://api.insightmedics.tn` (lue au build).
+- Chaque fichier `railway.json` déclare la commande de démarrage, le healthcheck et les
+  chemins surveillés (un changement du front ne redéploie pas le backend, et inversement).
