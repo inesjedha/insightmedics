@@ -49,6 +49,9 @@ async def _maintenance_loop(interval_minutes: float) -> None:
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Démarrage du serveur : schéma de la base, puis maintenance périodique."""
     init_db()
+    if not settings.ai_enabled:
+        logger.warning("ANTHROPIC_API_KEY absente : les audits complets seront produits "
+                       "sans IA. À configurer avant tout déblocage payant.")
     task = None
     if settings.maintenance_interval_minutes > 0:
         task = asyncio.create_task(_maintenance_loop(settings.maintenance_interval_minutes))

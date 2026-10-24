@@ -15,7 +15,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from .llm_client import call_and_validate
+from .llm_client import call_and_validate, client_content
 
 PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "llm2_system.md"
 
@@ -127,8 +127,9 @@ def build_user_message(profiling: dict, ai_audit: dict) -> str:
         "violations_regles": ai_audit.get("violations"),
         "variables_derivees": ai_audit.get("derived_variables", []),
     }
+    # Les noms et libellés de variables viennent du fichier du client : encadrés.
     return ("## FAITS D'AUDIT (calculés par programme, fiables)\n"
-            + json.dumps(payload, ensure_ascii=False, default=str)[:120000])
+            + client_content(json.dumps(payload, ensure_ascii=False, default=str)[:120000]))
 
 
 # ---------------------------------------------------------------- appel

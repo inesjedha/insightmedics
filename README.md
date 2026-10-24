@@ -13,6 +13,7 @@ en option payante. Marché : recherche médicale en Tunisie.
 
 Principe clé du pipeline : **les calculs sont déterministes (Python), l'IA n'intervient
 que pour l'interprétation et la rédaction, le score est calculé par code.**
+IA : Claude Opus 5.5 (API Anthropic) — voir [`docs/ia-claude.md`](docs/ia-claude.md).
 
 ## Démarrage
 

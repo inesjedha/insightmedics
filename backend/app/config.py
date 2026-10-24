@@ -1,6 +1,7 @@
 """Configuration du backend Insight Medics."""
 
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings
 
@@ -20,12 +21,18 @@ class Settings(BaseSettings):
     maintenance_interval_minutes: float = 10
     # Durée maximale d'un audit IA avant de le considérer interrompu (verrou à bail).
     unlock_lease_minutes: float = 60
-    # Fournisseur IA : "anthropic" ou "openai" ("" = auto selon la clé disponible).
-    llm_provider: str = ""
+    # IA : Claude (API Anthropic). Sans clé, l'audit IA est sauté (dev, tests).
     anthropic_api_key: str = ""
-    openai_api_key: str = ""
-    # Modèle utilisé ("" = défaut du fournisseur).
-    llm_model: str = ""
+    llm_model: str = "claude-opus-5-5"
+    # Profondeur de raisonnement : low | medium | high | xhigh | max (seul réglage de la
+    # réflexion sur Opus 5.5, toujours active). Plus haut = plus fin, plus lent, plus cher.
+    llm_effort: Literal["low", "medium", "high", "xhigh", "max"] = "xhigh"
+    # Plafond de sortie par appel : couvre la réflexion ET la réponse JSON. La doc conseille
+    # au moins 64k aux niveaux xhigh/max, sinon la réponse risque d'être tronquée.
+    llm_max_tokens: int = 64000
+    # Délai max d'un appel (secondes) ; le SDK retente seul les erreurs passagères.
+    llm_timeout_seconds: float = 1200
+    llm_max_retries: int = 4
     # Clé d'accès admin (CRM, déblocage d'audits). Vide = endpoints admin verrouillés.
     admin_api_key: str = ""
 
@@ -47,21 +54,8 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     @property
-    def resolved_provider(self) -> str:
-        if self.llm_provider:
-            return self.llm_provider
-        if self.anthropic_api_key:
-            return "anthropic"
-        if self.openai_api_key:
-            return "openai"
-        return ""
-
-    @property
-    def resolved_model(self) -> str:
-        if self.llm_model:
-            return self.llm_model
-        return {"anthropic": "claude-sonnet-5", "openai": "gpt-4o"}.get(
-            self.resolved_provider, "")
+    def ai_enabled(self) -> bool:
+        return bool(self.anthropic_api_key)
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

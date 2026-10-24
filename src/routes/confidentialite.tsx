@@ -135,6 +135,13 @@ function PrivacyPage() {
               des fins commerciales.
             </p>
             <p>
+              Nos sous-traitants techniques : l'hébergeur du site (Railway, serveurs dans l'Union
+              européenne) et, pour l'audit complet uniquement, le service d'intelligence
+              artificielle Claude (Anthropic). Claude ne reçoit jamais votre base complète : un
+              extrait d'au plus 50 lignes, dont les colonnes potentiellement identifiantes sont
+              masquées, et des statistiques calculées par notre code.
+            </p>
+            <p>
               Les bases de données patients que vous nous confiez doivent être
               <strong> anonymisées</strong> par vos soins avant transmission (suppression des noms,
               prénoms, numéros de dossier, dates de naissance précises et tout identifiant direct).

@@ -74,10 +74,10 @@ def main() -> None:
         sys.exit(1)
 
     from app.config import settings
-    print(f"Fournisseur IA : {settings.resolved_provider or 'AUCUN'} / "
-          f"{settings.resolved_model or '—'}")
-    if not settings.resolved_provider:
-        print("⚠️  Aucune clé API configurée dans .env — l'audit IA sera sauté "
+    if settings.ai_enabled:
+        print(f"IA : {settings.llm_model} (effort {settings.llm_effort})")
+    else:
+        print("⚠️  ANTHROPIC_API_KEY absente de .env — l'audit IA sera sauté "
               "(domaines 5/6/8 en 'inévaluable').")
     print()
 

@@ -15,7 +15,7 @@ from typing import Any, Literal
 import pandas as pd
 from pydantic import BaseModel
 
-from .llm_client import call_and_validate
+from .llm_client import call_and_validate, client_content
 
 PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "llm1_system.md"
 ALLOWED_OPS = {"gte", "lte", "gt", "lt", "eq", "neq", "not_null", "in_set",
@@ -132,13 +132,13 @@ def build_user_message(profiling: dict, df: pd.DataFrame,
     parts = [
         "## VARIABLES (nom, label SPSS, labels de valeurs, type ; stats_observees "
         "DÉCRIVENT les données, ce ne sont PAS des bornes)",
-        json.dumps(cols_summary, ensure_ascii=False),
+        client_content(json.dumps(cols_summary, ensure_ascii=False)),
         f"\n## STRUCTURE\n{json.dumps(profiling['structure'], ensure_ascii=False, default=str)}",
         f"\n## ÉCHANTILLON ({n} lignes, colonnes identifiantes masquées)",
-        sample.to_csv(index=False)[:30000],
+        client_content(sample.to_csv(index=False)[:30000]),
     ]
     if protocol_text:
-        parts.append(f"\n## PROTOCOLE DE RECHERCHE\n{protocol_text[:20000]}")
+        parts.append(f"\n## PROTOCOLE DE RECHERCHE\n{client_content(protocol_text[:20000])}")
     else:
         parts.append("\n## PROTOCOLE : non fourni (study à null, confidence=low)")
     return "\n".join(parts)
