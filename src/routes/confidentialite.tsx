@@ -112,11 +112,12 @@ function PrivacyPage() {
                 relation contractuelle et de ses obligations comptables.
               </li>
               <li>
-                <strong>Fichiers d'audit téléversés</strong> : nous nous engageons à les supprimer
-                dans des délais courts une fois l'audit traité. La purge automatisée et son délai
-                exact dépendent du backend qui sera connecté à la mise en production — d'ici là,
-                aucun fichier n'est stocké sur des serveurs tiers par cette interface de
-                démonstration.
+                {/* Délai = FILE_RETENTION_DAYS du backend (purge automatique). */}
+                <strong>Fichiers d'audit téléversés</strong> : votre base et votre protocole sont
+                supprimés automatiquement 30 jours après l'aperçu gratuit, ou 30 jours après la
+                livraison de l'audit complet (votre lien privé expire à la même date). Seul un
+                résumé non identifiant (nom du fichier, score) est conservé pour le suivi de votre
+                demande.
               </li>
               <li>
                 <strong>Livrables clients</strong> : conservés jusqu'à 24 mois après la livraison,
