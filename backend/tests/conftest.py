@@ -28,3 +28,13 @@ from app.db import init_db  # noqa: E402
 def _database() -> None:
     """Crée le schéma une fois (le `TestClient` n'exécute le lifespan que dans un `with`)."""
     init_db()
+
+
+@pytest.fixture()
+def admin_headers():
+    """Active une clé admin le temps du test et renvoie l'en-tête correspondant."""
+    from app.config import settings
+
+    old, settings.admin_api_key = settings.admin_api_key, "cle-admin-de-test"
+    yield {"X-Admin-Key": settings.admin_api_key}
+    settings.admin_api_key = old

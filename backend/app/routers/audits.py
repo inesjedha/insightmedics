@@ -1,4 +1,5 @@
-"""Endpoints /audit : upload public (aperçu gratuit), lecture, livrables, administration.
+"""Endpoints /audit : upload et aperçu publics ; audit IA, livrables et déblocage réservés
+à l'admin (les clients passent par leur lien privé, voir routers/client.py).
 
 La logique métier vit dans `app/services/audits.py` ; ce module ne fait que la
 traduction HTTP (validation d'entrée, codes d'erreur, sérialisation).
@@ -134,7 +135,7 @@ def get_assessment(audit_id: str, db: Session = Depends(get_db)) -> dict[str, An
     return assessment
 
 
-@router.get("/{audit_id}/ai")
+@router.get("/{audit_id}/ai", dependencies=[Depends(require_admin)])
 def get_ai_audit(audit_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Audit IA brut : étude reconstruite, dictionnaire, règles et violations."""
     audit = _get_or_404(db, audit_id)
@@ -144,8 +145,9 @@ def get_ai_audit(audit_id: str, db: Session = Depends(get_db)) -> dict[str, Any]
 
 
 # Route générique déclarée en dernier : les routes fixes (/score, /events…) passent avant.
-@router.get("/{audit_id}/{kind}")
+@router.get("/{audit_id}/{kind}", dependencies=[Depends(require_admin)])
 def download_deliverable(audit_id: str, kind: DeliverableKind,
                          db: Session = Depends(get_db)) -> Response:
-    """Livrables : classeur Excel, rapport Word, base nettoyée (CSV / SPSS)."""
+    """Livrables (admin). Les clients téléchargent via leur lien privé /r/{token}, qui
+    vérifie le paiement : l'identifiant d'audit, connu dès l'aperçu, ne suffit pas."""
     return deliverable_response(_get_or_404(db, audit_id), kind)
