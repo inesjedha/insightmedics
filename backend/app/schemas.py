@@ -100,6 +100,7 @@ class AuditResult(CamelModel):
     # Vue admin uniquement
     error: str | None = None
     purged: bool = False
+    expires_at: str | None = None
 
     @classmethod
     def from_audit(cls, a: Audit, *, view: AuditView) -> AuditResult:
@@ -121,6 +122,7 @@ class AuditResult(CamelModel):
             token=a.token if view in ("client", "admin") else None,
             error=a.error if view == "admin" else None,
             purged=bool(a.purged_at) if view == "admin" else False,
+            expires_at=a.expires_at if view == "admin" else None,
         )
 
 

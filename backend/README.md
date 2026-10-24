@@ -26,7 +26,8 @@ Côté front, dans `.env` : `VITE_API_BASE_URL=http://localhost:8000`.
 pip install -r requirements-dev.txt
 ruff check app scripts tests      # lint + tri d'imports
 mypy                              # typage statique (config dans pyproject.toml)
-pytest                            # tests (base temporaire, IA désactivée)
+pytest                            # tests (SQLite temporaire, IA désactivée)
+TEST_DATABASE_URL=postgresql://… pytest   # mêmes tests sur un Postgres jetable (comme la CI)
 ```
 
 Ces trois commandes sont exécutées par la CI (`.github/workflows/ci.yml`) à chaque push.
@@ -74,17 +75,25 @@ Documentation interactive générée par FastAPI : `http://localhost:8000/docs`.
 ## Tâches de fond
 
 - **Déblocage** : `POST /audit/:id/unlock` répond tout de suite (202, statut `processing`)
-  et l'audit IA tourne après la réponse (`BackgroundTasks` FastAPI). Un seul audit IA à la
-  fois (sémaphore) pour garder coût et mémoire prévisibles. Un échec passe l'audit en
-  `failed` avec son message, visible dans l'admin, et le déblocage peut être relancé. Un
-  audit interrompu par un redémarrage est remis en aperçu au démarrage suivant.
-  Limite assumée : la tâche vit dans le processus web. Si le volume grandit (plusieurs
-  audits simultanés, plusieurs serveurs), passer à une vraie file (ex. Redis + worker).
-- **Purge (rétention)** : au démarrage puis toutes les `PURGE_INTERVAL_HOURS` heures, les
-  audits expirés (`FILE_RETENTION_DAYS` jours après l'aperçu ou après la livraison) perdent
-  leurs fichiers et leur détail identifiant (profiling, audit IA) ; le résumé reste.
-  Manuellement : `python -m scripts.purge_expired`.
+  et l'audit IA tourne après la réponse (`BackgroundTasks` FastAPI), un seul à la fois par
+  serveur. Code : `app/services/unlock_jobs.py`.
+  - **Jamais deux exécutions payantes**, même avec deux instances côte à côte pendant un
+    déploiement : verrou à bail en base. La réservation (`claim`) est un `UPDATE … WHERE
+    statut libre` atomique qui inscrit un `job_id` ; seule la tâche qui détient ce
+    `job_id` peut écrire le résultat.
+  - **Jamais bloqué à vie** : un bail plus vieux que `UNLOCK_LEASE_MINUTES` (serveur
+    arrêté en plein audit) est libéré par la maintenance ; l'audit revient en aperçu et
+    peut être relancé. Un échec (IA, base) passe l'audit en `failed` avec son message.
+  - Limite assumée : la tâche vit dans le processus web. Si le volume grandit (plusieurs
+    audits simultanés), passer à une vraie file (ex. Redis + worker dédié).
+- **Maintenance** (au démarrage puis toutes les `MAINTENANCE_INTERVAL_MINUTES`) : libère
+  les baux expirés et purge les audits expirés (`FILE_RETENTION_DAYS` jours après l'aperçu
+  ou la livraison) : fichiers supprimés, profiling et audit IA (identifiants de lignes)
+  effacés, résumé conservé. Idempotente, sans danger sur plusieurs instances. Manuellement :
+  `python -m scripts.purge_expired`.
 
+Les mises à jour concurrentes utilisent `db.execute_update` (UPDATE conditionnel qui
+renvoie le nombre de lignes modifiées) : 0 ligne = l'état a changé ailleurs entre-temps.
 
 ## Pipeline
 
@@ -113,7 +122,7 @@ L'orchestrateur `app/pipeline/runner.py` enchaîne les étapes :
 ## Config (variables d'environnement)
 
 Voir `.env.example` (commenté) : `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`,
-`FILE_RETENTION_DAYS`, `PURGE_INTERVAL_HOURS`, `LLM_PROVIDER`, `LLM_MODEL`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+`FILE_RETENTION_DAYS`, `MAINTENANCE_INTERVAL_MINUTES`, `UNLOCK_LEASE_MINUTES`, `LLM_PROVIDER`, `LLM_MODEL`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
 `ADMIN_API_KEY`. Les secrets ne sont jamais versionnés (`.env` est gitignoré).
 
 Les tests n'utilisent jamais ces valeurs : `tests/conftest.py` impose une base et un

@@ -1,0 +1,145 @@
+"""Exécution de l'audit IA complet (payant) en tâche de fond, sans double exécution.
+
+Le problème : un audit IA dure 5 à 10 minutes et coûte de l'argent. Il ne doit jamais
+tourner deux fois, y compris pendant un déploiement Railway où l'ancienne et la nouvelle
+instance du serveur tournent côte à côte quelques instants.
+
+La solution : un verrou à bail (« lease ») stocké sur la ligne de l'audit.
+1. `claim` : en UNE requête atomique, passe l'audit en `processing` et y inscrit un
+   identifiant de tâche unique (`job_id`) — seulement s'il n'est pas déjà pris.
+   Deux demandes simultanées, même sur deux serveurs, ne peuvent pas réussir toutes
+   les deux.
+2. `run` : seule la tâche qui détient ce `job_id` peut écrire le résultat (écriture
+   conditionnée au `job_id`, atomique elle aussi). Une tâche dépossédée ne fait rien.
+3. `release_stale_claims` : un bail plus vieux que `UNLOCK_LEASE_MINUTES` (serveur
+   arrêté en plein audit) est libéré, l'audit revient en aperçu et peut être relancé.
+   Appelé par la maintenance périodique du serveur.
+"""
+
+from __future__ import annotations
+
+import logging
+import secrets
+import threading
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
+
+from sqlalchemy import or_, update
+from sqlalchemy.orm import Session
+
+from ..config import settings
+from ..db import SessionLocal, execute_update
+from ..models import Audit, AuditStatus, utcnow_iso
+from ..pipeline.runner import run_audit
+from .audits import (
+    SourceFileMissingError,
+    UnlockNotAllowedError,
+    link_expiry,
+    protocol_text,
+    result_values,
+)
+
+logger = logging.getLogger(__name__)
+
+# Un seul audit IA à la fois par serveur : coût, quotas d'API et mémoire prévisibles.
+_AI_AUDIT_SLOT = threading.Semaphore(1)
+
+
+def claim(db: Session, audit: Audit) -> str | None:
+    """Réserve l'audit pour un audit IA. Retourne le `job_id` à passer à `run`, ou None
+    si l'audit est déjà terminé ou déjà en cours (aucune nouvelle exécution)."""
+    if audit.status in (AuditStatus.DONE, AuditStatus.PROCESSING):
+        return None
+    if audit.purged_at or not Path(audit.stored_path).exists():
+        raise SourceFileMissingError("Fichier source expiré ou introuvable")
+    if not audit.profiling:
+        raise UnlockNotAllowedError("L'aperçu de cet audit a échoué : rien à débloquer.")
+
+    job_id = secrets.token_hex(8)
+    claimed = execute_update(db, (
+        update(Audit)
+        .where(Audit.id == audit.id,
+               Audit.status.in_([AuditStatus.PREVIEW, AuditStatus.FAILED]),
+               Audit.purged_at.is_(None))
+        .values(status=AuditStatus.PROCESSING, job_id=job_id,
+                job_started_at=utcnow_iso(), error=None)))
+    db.commit()
+    db.refresh(audit)
+    return job_id if claimed == 1 else None
+
+
+def _owned(audit_id: str, job_id: str) -> Any:
+    """Condition SQL : l'audit est toujours en cours ET réservé par cette tâche."""
+    return ((Audit.id == audit_id) & (Audit.job_id == job_id)
+            & (Audit.status == AuditStatus.PROCESSING))
+
+
+def run(audit_id: str, job_id: str) -> None:
+    """Tâche de fond : exécute l'audit IA et enregistre le résultat. Ne lève jamais.
+
+    Aucune session n'est ouverte pendant l'appel IA (plusieurs minutes) : on lit ce qu'il
+    faut, on referme, puis on rouvre une session courte pour écrire le résultat.
+    """
+    with _AI_AUDIT_SLOT:
+        try:
+            with SessionLocal() as db:
+                # Bail renouvelé une fois le créneau obtenu (l'attente ne compte pas).
+                still_ours = execute_update(db, (
+                    update(Audit).where(_owned(audit_id, job_id))
+                    .values(job_started_at=utcnow_iso())))
+                db.commit()
+                if not still_ours:
+                    logger.warning("Audit %s : tâche %s dépossédée, abandon", audit_id, job_id)
+                    return
+                audit = db.get(Audit, audit_id)
+                assert audit is not None
+                path, name, protocol = audit.stored_path, audit.file_name, protocol_text(audit)
+
+            result = run_audit(path, name, protocol)
+
+            with SessionLocal() as db:
+                written = execute_update(db, (
+                    update(Audit).where(_owned(audit_id, job_id))
+                    .values(**result_values(result), status=AuditStatus.DONE, paid=True,
+                            error=None, job_id=None,
+                            # Le lien client expire N jours après la livraison.
+                            expires_at=link_expiry())))
+                db.commit()
+            if not written:
+                logger.warning("Audit %s : résultat de la tâche %s ignoré (dépossédée)",
+                               audit_id, job_id)
+        except Exception as exc:
+            logger.exception("Échec de l'audit complet %s", audit_id)
+            _mark_failed(audit_id, job_id, exc)
+
+
+def _mark_failed(audit_id: str, job_id: str, exc: Exception) -> None:
+    """Enregistre l'échec (session neuve : l'ancienne peut être cassée). Best effort."""
+    try:
+        with SessionLocal() as db:
+            execute_update(db, (
+                update(Audit).where(_owned(audit_id, job_id))
+                .values(status=AuditStatus.FAILED, error=str(exc)[:500],
+                        finished_at=utcnow_iso(), job_id=None)))
+            db.commit()
+    except Exception:
+        # Base injoignable : le bail expirera et `release_stale_claims` libérera l'audit.
+        logger.exception("Impossible d'enregistrer l'échec de l'audit %s", audit_id)
+
+
+def release_stale_claims(db: Session, now: datetime | None = None) -> int:
+    """Libère les audits `processing` dont le bail a expiré (serveur arrêté en plein
+    audit). Ils reviennent en aperçu, avec un message, et peuvent être relancés."""
+    cutoff = ((now or datetime.now(UTC))
+              - timedelta(minutes=settings.unlock_lease_minutes)).isoformat()
+    released = execute_update(db, (
+        update(Audit)
+        .where(Audit.status == AuditStatus.PROCESSING,
+               or_(Audit.job_started_at.is_(None), Audit.job_started_at < cutoff))
+        .values(status=AuditStatus.PREVIEW, job_id=None,
+                error="Audit IA interrompu (serveur redémarré) : relancer le déblocage.")))
+    db.commit()
+    if released:
+        logger.warning("%d audit(s) interrompu(s) remis en aperçu", released)
+    return released

@@ -16,6 +16,7 @@ from ..models import Audit, AuditStatus
 from ..pipeline.ingest import IngestError
 from ..schemas import AuditEvent, AuditResult
 from ..services import audits as service
+from ..services import unlock_jobs
 from ..services.audits import DeliverableKind
 from .downloads import deliverable_response
 
@@ -51,10 +52,13 @@ def unlock_audit(audit_id: str, background: BackgroundTasks, response: Response,
     """
     audit = _get_or_404(db, audit_id)
     try:
-        if service.start_unlock(db, audit):
-            background.add_task(service.complete_unlock, audit.id)
+        job_id = unlock_jobs.claim(db, audit)
     except service.SourceFileMissingError as exc:
         raise HTTPException(410, str(exc)) from exc
+    except service.UnlockNotAllowedError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    if job_id is not None:
+        background.add_task(unlock_jobs.run, audit.id, job_id)
     if audit.status == AuditStatus.DONE:
         response.status_code = 200
     return AuditResult.from_audit(audit, view="admin")

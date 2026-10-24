@@ -115,9 +115,10 @@ function PrivacyPage() {
                 {/* Délai = FILE_RETENTION_DAYS du backend (purge automatique). */}
                 <strong>Fichiers d'audit téléversés</strong> : votre base et votre protocole sont
                 supprimés automatiquement 30 jours après l'aperçu gratuit, ou 30 jours après la
-                livraison de l'audit complet (votre lien privé expire à la même date). Seul un
-                résumé non identifiant (nom du fichier, score) est conservé pour le suivi de votre
-                demande.
+                livraison de l'audit complet (votre lien privé expire à la même date). Nous ne
+                conservons ensuite qu'un résumé sans aucune donnée de patient (nom du fichier, score
+                et statistiques globales) pour le suivi de votre demande ; vos coordonnées suivent
+                la règle des données de contact ci-dessus.
               </li>
               <li>
                 <strong>Livrables de l'audit</strong> (rapport, classeur, base nettoyée) :

@@ -10,7 +10,6 @@ from __future__ import annotations
 import logging
 import secrets
 import shutil
-import threading
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
@@ -20,14 +19,13 @@ from typing import Any, BinaryIO
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..db import SessionLocal
 from ..models import Audit, AuditStatus, utcnow_iso
 from ..pipeline.cleaning import clean, to_csv_bytes, to_sav_bytes
 from ..pipeline.docs_extract import extract_text
 from ..pipeline.ingest import IngestError, ingest
 from ..pipeline.report_docx import build_report
 from ..pipeline.report_xlsx import build_workbook
-from ..pipeline.runner import run_audit, run_preview
+from ..pipeline.runner import run_preview
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +56,10 @@ class SourceFileMissingError(AuditError):
     """Le fichier source a expiré ou a disparu du stockage."""
 
 
+class UnlockNotAllowedError(AuditError):
+    """Audit qui ne peut pas être débloqué (aperçu jamais calculé)."""
+
+
 class DeliverableUnavailableError(AuditError):
     pass
 
@@ -81,7 +83,7 @@ def data_path(audit_id: str, ext: str) -> Path:
     return _audit_dir(audit_id) / f"original{ext}"
 
 
-def _link_expiry() -> str:
+def link_expiry() -> str:
     return (datetime.now(UTC) + timedelta(days=settings.file_retention_days)).isoformat()
 
 
@@ -122,7 +124,7 @@ def save_protocol(audit_id: str, src: BinaryIO, file_name: str) -> Path:
     return dest
 
 
-def _protocol_text(audit: Audit) -> str | None:
+def protocol_text(audit: Audit) -> str | None:
     """Ré-extrait le texte du protocole stocké à côté du fichier source, s'il existe."""
     for path in Path(audit.stored_path).parent.glob("protocol.*"):
         try:
@@ -147,13 +149,18 @@ _RESULT_FIELDS = ("started_at", "finished_at", "score", "row_count", "column_cou
                   "ai_audit", "events")
 
 
-def _apply_result(audit: Audit, result: dict[str, Any]) -> None:
-    """Recopie le résultat du pipeline (`runner`) sur l'audit."""
-    for field in _RESULT_FIELDS:
-        setattr(audit, field, result[field])
-    audit.needs_human_review = needs_human_review(
+def result_values(result: dict[str, Any]) -> dict[str, Any]:
+    """Colonnes de l'audit à mettre à jour à partir du résultat du pipeline (`runner`)."""
+    values = {field: result[field] for field in _RESULT_FIELDS}
+    values["needs_human_review"] = needs_human_review(
         result["score"], result["missing_pct"], result["duplicates_pct"],
         result["critical_issues"])
+    return values
+
+
+def _apply_result(audit: Audit, result: dict[str, Any]) -> None:
+    for field, value in result_values(result).items():
+        setattr(audit, field, value)
 
 
 def _mark_failed(db: Session, audit: Audit, exc: Exception) -> None:
@@ -179,7 +186,7 @@ def create_preview(db: Session, audit_id: str, data_path: Path, file_name: str,
     audit = Audit(id=audit_id, file_name=file_name, file_size=file_size,
                   stored_path=str(data_path), started_at=utcnow_iso(),
                   token=secrets.token_urlsafe(32),  # lien privé : 256 bits, non devinable
-                  status=AuditStatus.PREVIEW, paid=False, expires_at=_link_expiry())
+                  status=AuditStatus.PREVIEW, paid=False, expires_at=link_expiry())
     db.add(audit)
     db.commit()
     try:
@@ -195,66 +202,6 @@ def create_preview(db: Session, audit_id: str, data_path: Path, file_name: str,
     db.commit()
     db.refresh(audit)
     return audit
-
-
-def start_unlock(db: Session, audit: Audit) -> bool:
-    """Après paiement : passe l'audit en `processing`. Retourne True si l'audit IA doit
-    être lancé (par `complete_unlock`, en tâche de fond), False s'il est déjà terminé ou
-    déjà en cours — un double clic ne déclenche donc jamais deux audits IA payants.
-    """
-    if audit.status in (AuditStatus.DONE, AuditStatus.PROCESSING):
-        return False
-    if audit.purged_at or not Path(audit.stored_path).exists():
-        raise SourceFileMissingError("Fichier source expiré ou introuvable")
-    audit.status = AuditStatus.PROCESSING
-    audit.error = None
-    db.commit()
-    return True
-
-
-# Un seul audit IA à la fois : coût et quotas de l'API restent prévisibles, et la mémoire
-# du serveur n'est pas saturée par plusieurs grosses bases en parallèle.
-_AI_AUDIT_SLOT = threading.Semaphore(1)
-
-
-def complete_unlock(audit_id: str) -> None:
-    """Tâche de fond : exécute l'audit IA complet et ouvre le lien privé du client.
-
-    Ouvre sa propre session (celle de la requête HTTP est déjà fermée). Ne lève jamais :
-    un échec est enregistré sur l'audit (`failed` + message), visible dans l'admin, et
-    le déblocage peut être relancé.
-    """
-    with _AI_AUDIT_SLOT, SessionLocal() as db:
-        audit = db.get(Audit, audit_id)
-        if audit is None or audit.status != AuditStatus.PROCESSING:
-            return
-        try:
-            result = run_audit(audit.stored_path, audit.file_name, _protocol_text(audit))
-        except Exception as exc:
-            logger.exception("Échec de l'audit complet %s", audit_id)
-            _mark_failed(db, audit, exc)
-            return
-        _finish_unlock(db, audit, result)
-
-
-def _finish_unlock(db: Session, audit: Audit, result: dict[str, Any]) -> None:
-    _apply_result(audit, result)
-    audit.status = AuditStatus.DONE
-    audit.paid = True
-    audit.expires_at = _link_expiry()  # le lien client expire N jours après le déblocage
-    db.commit()
-
-
-def recover_interrupted(db: Session) -> int:
-    """Au démarrage : un audit resté `processing` a été interrompu (redémarrage ou
-    déploiement pendant l'audit IA). On le remet en aperçu pour qu'il soit relancé."""
-    stuck = db.query(Audit).filter(Audit.status == AuditStatus.PROCESSING).all()
-    for audit in stuck:
-        audit.status = AuditStatus.PREVIEW
-        audit.error = "Audit IA interrompu par un redémarrage du serveur : relancer le déblocage."
-        logger.warning("Audit %s interrompu, remis en aperçu", audit.id)
-    db.commit()
-    return len(stuck)
 
 
 def find_paid_by_token(db: Session, token: str) -> Audit:

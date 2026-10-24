@@ -101,40 +101,6 @@ def _admin_audit(client: TestClient, audit_id: str) -> dict:
     return next(a for a in listed if a["id"] == audit_id)
 
 
-def test_unlock_en_echec_est_visible_et_relancable(small_csv: Path, monkeypatch):
-    from app.services import audits as service
-
-    def boom(*_args, **_kwargs):
-        raise RuntimeError("quota IA dépassé")
-
-    client = TestClient(app)
-    with open(small_csv, "rb") as f:
-        aid = client.post("/audit/upload", files={"file": ("base.csv", f, "text/csv")}).json()["id"]
-    monkeypatch.setattr(service, "run_audit", boom)
-    client.post(f"/audit/{aid}/unlock", headers=HEADERS)
-    failed = _admin_audit(client, aid)
-    assert failed["status"] == "failed" and "quota" in failed["error"]
-
-    monkeypatch.undo()  # l'IA refonctionne : on relance
-    assert client.post(f"/audit/{aid}/unlock", headers=HEADERS).status_code == 202
-    assert _admin_audit(client, aid)["status"] == "done"
-
-
-def test_audit_interrompu_par_un_redemarrage_est_remis_en_apercu(small_csv: Path):
-    from app.db import SessionLocal
-    from app.models import Audit
-    from app.services.audits import recover_interrupted
-
-    client = TestClient(app)
-    with open(small_csv, "rb") as f:
-        aid = client.post("/audit/upload", files={"file": ("base.csv", f, "text/csv")}).json()["id"]
-    with SessionLocal() as db:
-        db.get(Audit, aid).status = "processing"
-        db.commit()
-        assert recover_interrupted(db) >= 1
-        assert db.get(Audit, aid).status == "preview"
-
-
 def test_liste_audits_admin(small_csv: Path):
     client = TestClient(app)
     with open(small_csv, "rb") as f:

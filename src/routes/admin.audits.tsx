@@ -30,11 +30,13 @@ function AdminAudits() {
   const [loading, setLoading] = useState(true);
   const [needKey, setNeedKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       setAudits(await listAudits());
       setNeedKey(false);
+      setError(null);
     } catch (e) {
       if (e instanceof UnauthorizedError) setNeedKey(true);
       else setError(e instanceof Error ? e.message : "Erreur de chargement");
@@ -52,16 +54,20 @@ function AdminAudits() {
     load();
   }, [load]);
 
-  // Tant qu'un audit est en cours côté serveur, on rafraîchit la liste en silence.
+  // Tant qu'un audit est en cours côté serveur, on rafraîchit la liste en silence
+  // (arrêt dès qu'une erreur s'affiche, pour ne pas insister indéfiniment).
   const anyProcessing = audits.some((a) => a.status === "processing");
+  const pollingBlocked = needKey || error !== null;
   useEffect(() => {
-    if (!anyProcessing) return;
+    if (!anyProcessing || pollingBlocked) return;
     const timer = window.setInterval(refresh, POLL_MS);
     return () => window.clearInterval(timer);
-  }, [anyProcessing, refresh]);
+  }, [anyProcessing, pollingBlocked, refresh]);
 
   const onUnlock = async (id: string) => {
+    if (pendingId) return; // double clic : une seule demande
     if (!window.confirm("Paiement reçu ? Lancer l'audit IA complet (consomme la clé IA) ?")) return;
+    setPendingId(id);
     setError(null);
     try {
       // Réponse immédiate (statut « processing ») : le suivi se fait par rafraîchissement.
@@ -69,6 +75,8 @@ function AdminAudits() {
       setAudits((prev) => prev.map((a) => (a.id === id ? updated : a)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Échec du déblocage");
+    } finally {
+      setPendingId(null);
     }
   };
 
@@ -130,10 +138,16 @@ function AdminAudits() {
                   <td className="px-4 py-3">
                     <StatusBadge audit={a} />
                     {a.error && <p className="mt-1 max-w-xs text-xs text-destructive">{a.error}</p>}
+                    {a.expiresAt && !a.purged && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {a.status === "done" ? "Lien client" : "Données"} conservées jusqu'au{" "}
+                        {new Date(a.expiresAt).toLocaleDateString("fr-FR")}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-3 font-mono tabular-nums">{a.score}/100</td>
                   <td className="px-4 py-3 text-right">
-                    <AuditAction audit={a} onUnlock={onUnlock} />
+                    <AuditAction audit={a} pending={pendingId === a.id} onUnlock={onUnlock} />
                   </td>
                 </tr>
               ))}
@@ -177,7 +191,15 @@ function StatusBadge({ audit }: { audit: AuditResult }) {
   }
 }
 
-function AuditAction({ audit, onUnlock }: { audit: AuditResult; onUnlock: (id: string) => void }) {
+function AuditAction({
+  audit,
+  pending,
+  onUnlock,
+}: {
+  audit: AuditResult;
+  pending: boolean;
+  onUnlock: (id: string) => void;
+}) {
   if (audit.status === "done") {
     return (
       <div className="inline-flex items-center gap-2">
@@ -188,7 +210,8 @@ function AuditAction({ audit, onUnlock }: { audit: AuditResult; onUnlock: (id: s
       </div>
     );
   }
-  if (audit.purged) return null;
+  // Rien à débloquer : données purgées, ou aperçu jamais calculé (fichier illisible).
+  if (audit.purged || audit.rowCount === 0) return null;
   if (audit.status === "processing") {
     return <span className="text-xs text-muted-foreground">quelques minutes…</span>;
   }
@@ -197,9 +220,14 @@ function AuditAction({ audit, onUnlock }: { audit: AuditResult; onUnlock: (id: s
     <Button
       size="sm"
       onClick={() => onUnlock(audit.id)}
+      disabled={pending}
       className="bg-brand text-brand-foreground hover:bg-brand/90"
     >
-      {retry ? (
+      {pending ? (
+        <>
+          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Envoi…
+        </>
+      ) : retry ? (
         <>
           <RotateCcw className="mr-2 h-3.5 w-3.5" /> Relancer
         </>

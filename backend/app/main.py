@@ -16,8 +16,8 @@ from fastapi.responses import JSONResponse
 from .config import settings
 from .db import SessionLocal, init_db
 from .routers import audits, client, leads
-from .services.audits import recover_interrupted
 from .services.retention import purge_expired
+from .services.unlock_jobs import release_stale_claims
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,36 +26,37 @@ logging.basicConfig(
 logger = logging.getLogger("insightmedics")
 
 
-def _purge_once() -> None:
+def _maintenance_once() -> None:
+    """Libère les audits IA interrompus puis purge les audits expirés. Idempotent : sans
+    danger si plusieurs instances du serveur la lancent en même temps."""
     with SessionLocal() as db:
+        release_stale_claims(db)
         purge_expired(db)
 
 
-async def _purge_periodically(interval_hours: float) -> None:
-    """Purge au démarrage puis toutes les `interval_hours` heures, sans jamais s'arrêter
-    sur une erreur (elle est journalisée, la boucle continue)."""
+async def _maintenance_loop(interval_minutes: float) -> None:
+    """Au démarrage puis toutes les `interval_minutes` minutes ; une erreur est
+    journalisée et n'arrête jamais la boucle."""
     while True:
         try:
-            await asyncio.to_thread(_purge_once)
+            await asyncio.to_thread(_maintenance_once)
         except Exception:
-            logger.exception("Échec de la purge automatique")
-        await asyncio.sleep(interval_hours * 3600)
+            logger.exception("Échec de la maintenance périodique")
+        await asyncio.sleep(interval_minutes * 60)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Démarrage du serveur : schéma, reprise des audits interrompus, purge planifiée."""
+    """Démarrage du serveur : schéma de la base, puis maintenance périodique."""
     init_db()
-    with SessionLocal() as db:
-        recover_interrupted(db)
-    purge_task = None
-    if settings.purge_interval_hours > 0:
-        purge_task = asyncio.create_task(_purge_periodically(settings.purge_interval_hours))
+    task = None
+    if settings.maintenance_interval_minutes > 0:
+        task = asyncio.create_task(_maintenance_loop(settings.maintenance_interval_minutes))
     yield
-    if purge_task is not None:
-        purge_task.cancel()
+    if task is not None:
+        task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
-            await purge_task
+            await task
 
 
 app = FastAPI(title="Insight Medics API", version="0.2.0", lifespan=lifespan)

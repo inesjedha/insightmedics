@@ -65,6 +65,8 @@ export interface AuditResult {
   error: string | null;
   /** Données purgées après la durée de conservation. */
   purged: boolean;
+  /** Date de purge prévue (ISO) : expiration du lien client, ou de l'aperçu. */
+  expiresAt: string | null;
 }
 
 export interface AuditEvent {

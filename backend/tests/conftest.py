@@ -12,7 +12,9 @@ from pathlib import Path
 
 _TMP = Path(tempfile.mkdtemp(prefix="insightmedics-tests-"))
 
-os.environ["DATABASE_URL"] = f"sqlite:///{_TMP / 'test.db'}"
+# SQLite temporaire par défaut ; TEST_DATABASE_URL permet de viser une base Postgres
+# jetable (comme en CI), pour tester le même moteur qu'en production.
+os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", f"sqlite:///{_TMP / 'test.db'}")
 os.environ["STORAGE_DIR"] = str(_TMP / "storage")
 os.environ["LLM_PROVIDER"] = ""
 os.environ["ANTHROPIC_API_KEY"] = ""
