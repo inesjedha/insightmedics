@@ -30,6 +30,19 @@ class Settings(BaseSettings):
     admin_api_key: str = ""
 
     @property
+    def sqlalchemy_url(self) -> str:
+        """URL de connexion avec le pilote Postgres explicite (psycopg 3).
+
+        Railway fournit `postgresql://…` (parfois `postgres://…`) : sans pilote explicite,
+        SQLAlchemy choisit le sien, et ce choix a changé entre deux versions mineures
+        (psycopg2 → psycopg). On le fixe pour ne plus en dépendre.
+        """
+        for prefix in ("postgresql://", "postgres://"):
+            if self.database_url.startswith(prefix):
+                return "postgresql+psycopg://" + self.database_url[len(prefix):]
+        return self.database_url
+
+    @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 

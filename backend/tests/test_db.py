@@ -19,3 +19,11 @@ def test_init_db_ajoute_plusieurs_colonnes_manquantes(tmp_path, monkeypatch):
     columns = {c["name"] for c in inspect(engine).get_columns("audits")}
     assert set(db_module._ADDED_COLUMNS["audits"]) <= columns
     db_module.init_db()  # idempotent
+
+
+def test_url_postgres_avec_pilote_explicite(monkeypatch):
+    from app.config import Settings
+
+    for url in ("postgresql://u:p@h:5432/db", "postgres://u:p@h:5432/db"):
+        assert Settings(database_url=url).sqlalchemy_url == "postgresql+psycopg://u:p@h:5432/db"
+    assert Settings(database_url="sqlite:///x.db").sqlalchemy_url == "sqlite:///x.db"
