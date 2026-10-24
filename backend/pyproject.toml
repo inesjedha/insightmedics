@@ -50,6 +50,12 @@ check_untyped_defs = true
 # Périmètre : le code applicatif. Tests et scripts restent souples pour l'instant.
 files = ["app"]
 
+[tool.pytest.ini_options]
+# `pythonpath` rend le paquet `app` importable sans PYTHONPATH manuel.
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+
 [[tool.mypy.overrides]]
 module = ["pandas.*", "pyreadstat.*", "openpyxl.*", "docx.*", "matplotlib.*"]
 ignore_missing_imports = true
