@@ -5,7 +5,7 @@ charset-normalizer==3.5.2
 fastapi==0.158.2
 matplotlib==3.11.2
 numpy==2.5.4
-openai==2.46.0
+openai==3.36.0
 openpyxl==3.1.5
 pandas==3.0.6
 psycopg[binary]==3.3.6
