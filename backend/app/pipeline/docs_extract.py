@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import docx
+import fitz  # pymupdf
+
 
 def extract_text(path: str | Path) -> str:
     path = Path(path)
     ext = path.suffix.lower()
     if ext == ".docx":
-        import docx
-
         d = docx.Document(str(path))
         parts = [p.text for p in d.paragraphs if p.text.strip()]
         for table in d.tables:
@@ -18,8 +19,6 @@ def extract_text(path: str | Path) -> str:
                 parts.append(" | ".join(c.text.strip() for c in row.cells))
         return "\n".join(parts)
     if ext == ".pdf":
-        import fitz  # pymupdf
-
         with fitz.open(str(path)) as doc:
             return "\n".join(page.get_text() for page in doc)
     if ext in (".txt", ".md"):

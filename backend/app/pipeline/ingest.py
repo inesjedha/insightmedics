@@ -11,6 +11,9 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import pyreadstat
+from charset_normalizer import from_path
+from openpyxl import load_workbook
 
 
 class IngestError(Exception):
@@ -26,8 +29,6 @@ def _sha256(path: Path) -> str:
 
 
 def _read_sav(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
-    import pyreadstat
-
     df, meta = pyreadstat.read_sav(str(path))
     file_meta: dict[str, Any] = {
         "spss_column_labels": dict(zip(meta.column_names, meta.column_labels, strict=True)),
@@ -55,8 +56,6 @@ def _read_excel(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
     hidden = []
     if path.suffix.lower() == ".xlsx":
         try:
-            from openpyxl import load_workbook
-
             wb = load_workbook(path, read_only=True)
             hidden = [ws.title for ws in wb.worksheets if ws.sheet_state != "visible"]
         except Exception:  # noqa: BLE001 — détection des feuilles cachées best-effort
@@ -72,8 +71,6 @@ def _read_excel(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
 
 
 def _read_csv(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
-    from charset_normalizer import from_path
-
     guess = from_path(path).best()
     encoding = guess.encoding if guess else "utf-8"
     sample = path.read_text(encoding=encoding, errors="replace")[:8192]

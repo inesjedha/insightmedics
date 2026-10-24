@@ -131,7 +131,7 @@ def _score_and_assemble(profiling: dict[str, Any], scoring_inputs: dict[str, Any
                         log: LogFn, *, preview: bool) -> dict[str, Any]:
     """Calcule le score, agrège les anomalies lisibles, et assemble le dict de résultat."""
     log("info", "Calcul du score de qualité /100 (grille en 8 domaines)…")
-    issues, notes = detect_issues(profiling)  # anomalies lisibles pour le front
+    issues = detect_issues(profiling)  # anomalies lisibles pour le front
     score_detail = compute_score(profiling, scoring_inputs or None)
     score = score_detail["score_final"]
     if score_detail["plafonds_appliques"]:
@@ -168,7 +168,6 @@ def _score_and_assemble(profiling: dict[str, Any], scoring_inputs: dict[str, Any
         "score_detail": score_detail,
         "ai_audit": ai_audit,
         "events": events,
-        "internal_notes": notes,
     }
 
 
