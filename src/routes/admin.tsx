@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LayoutDashboard, Users, FileBarChart2, KeyRound, Check } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
 import { Button } from "@/components/ui/button";
@@ -71,8 +71,15 @@ function AdminLayout() {
 }
 
 function AdminKeyBox() {
-  const [value, setValue] = useState(getAdminKey());
-  const hasKey = getAdminKey().length > 0;
+  // La clé vit dans le navigateur : on la lit après le rendu serveur (qui ne la connaît
+  // pas), sinon le HTML serveur et le premier rendu client divergent (erreur d'hydratation).
+  const [value, setValue] = useState("");
+  const [hasKey, setHasKey] = useState(false);
+  useEffect(() => {
+    const stored = getAdminKey();
+    setValue(stored);
+    setHasKey(stored.length > 0);
+  }, []);
 
   const save = () => {
     setAdminKey(value);
