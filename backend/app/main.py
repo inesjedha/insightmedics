@@ -6,6 +6,7 @@ Démarrage local :  uvicorn app.main:app --reload --port 8000
 import asyncio
 import contextlib
 import logging
+import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
@@ -20,6 +21,8 @@ from .services.retention import purge_expired
 from .services.unlock_jobs import release_stale_claims
 
 logging.basicConfig(
+    # Sortie standard : les hébergeurs (Railway) classent la sortie d'erreur en « error ».
+    stream=sys.stdout,
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s — %(message)s",
 )
