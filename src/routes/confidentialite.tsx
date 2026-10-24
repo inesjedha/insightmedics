@@ -120,8 +120,9 @@ function PrivacyPage() {
                 demande.
               </li>
               <li>
-                <strong>Livrables clients</strong> : conservés jusqu'à 24 mois après la livraison,
-                pour permettre les révisions et réutilisations à votre demande.
+                <strong>Livrables de l'audit</strong> (rapport, classeur, base nettoyée) :
+                téléchargeables via votre lien privé pendant 30 jours après la livraison, puis
+                supprimés avec vos fichiers. Pensez à les enregistrer de votre côté.
               </li>
             </ul>
           </LegalBlock>
