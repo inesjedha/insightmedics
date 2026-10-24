@@ -1,21 +1,18 @@
 # Routes
 
-TanStack Start uses **file-based routing**. Every `.tsx` file in this directory
-is a route. Do **not** create `src/pages/`, `src/routes/_app/index.tsx`, or
-`app/layout.tsx` — those are Next.js / Remix conventions. The only root layout
-is `src/routes/__root.tsx`.
+Routage par fichiers (TanStack Router) : chaque fichier de ce dossier est une page.
+`__root.tsx` est la coquille commune (balises `<head>`, pages 404 et erreur).
+`src/routeTree.gen.ts` est régénéré automatiquement par `bun run dev` : ne pas l'éditer.
 
-## Conventions
+| Fichier                                                   | URL                                       | Rôle                                            |
+| --------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------- |
+| `index.tsx`                                               | `/`                                       | Accueil                                         |
+| `services.tsx`, `methode.tsx`, `tarifs.tsx`               | `/services`, `/methode`, `/tarifs`        | Pages vitrine                                   |
+| `contact.tsx`                                             | `/contact`                                | Formulaire de contact → lead                    |
+| `audit.tsx`                                               | `/audit`                                  | Upload, aperçu gratuit, demande de déblocage    |
+| `r.$token.tsx`                                            | `/r/:token`                               | Espace client privé (audit complet + livrables) |
+| `admin.tsx`                                               | `/admin/*`                                | Mise en page admin + saisie de la clé           |
+| `admin.index.tsx`, `admin.leads*.tsx`, `admin.audits.tsx` | `/admin`, `/admin/leads`, `/admin/audits` | CRM et déblocage des audits                     |
+| `mentions-legales.tsx`, `cgv.tsx`, `confidentialite.tsx`  | pages légales                             |                                                 |
 
-| File                     | URL                                                     |
-| ------------------------ | ------------------------------------------------------- |
-| `index.tsx`              | `/`                                                     |
-| `about.tsx`              | `/about`                                                |
-| `users/index.tsx`        | `/users`                                                |
-| `users/$id.tsx`          | `/users/:id` (dynamic — bare `$`, no curly braces)      |
-| `posts/{-$category}.tsx` | `/posts/:category?` (optional segment)                  |
-| `files/$.tsx`            | `/files/*` (splat — read via `_splat` param, never `*`) |
-| `_layout.tsx`            | layout route (renders children via `<Outlet />`)        |
-| `__root.tsx`             | app shell — wraps every page; preserve `<Outlet />`     |
-
-`routeTree.gen.ts` is auto-generated. Don't edit it by hand.
+Convention de nommage : `.` dans le nom = `/` dans l'URL, `$x` = paramètre dynamique.
