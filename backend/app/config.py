@@ -30,7 +30,8 @@ class Settings(BaseSettings):
     # Plafond de sortie par appel : couvre la réflexion ET la réponse JSON. La doc conseille
     # au moins 64k aux niveaux xhigh/max, sinon la réponse risque d'être tronquée.
     llm_max_tokens: int = 64000
-    # Délai max d'un appel (secondes) ; le SDK retente seul les erreurs passagères.
+    # Délai d'inactivité max entre deux lectures du flux (secondes) ; nombre de relances
+    # automatiques du SDK pour les erreurs passagères avant le début de la réponse.
     llm_timeout_seconds: float = 1200
     llm_max_retries: int = 4
     # Clé d'accès admin (CRM, déblocage d'audits). Vide = endpoints admin verrouillés.

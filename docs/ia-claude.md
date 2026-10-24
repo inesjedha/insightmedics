@@ -13,8 +13,8 @@ jamais par l'IA. Code : `backend/app/pipeline/llm_client.py`.
 | `LLM_MODEL`           | `claude-opus-5-5` | Modèle. Identifiant fixe, sans suffixe de date.                       |
 | `LLM_EFFORT`          | `xhigh`           | Profondeur de raisonnement : `low`, `medium`, `high`, `xhigh`, `max`. |
 | `LLM_MAX_TOKENS`      | `64000`           | Plafond de sortie par appel (réflexion + réponse).                    |
-| `LLM_TIMEOUT_SECONDS` | `1200`            | Délai max d'un appel.                                                 |
-| `LLM_MAX_RETRIES`     | `4`               | Relances automatiques du SDK (réseau, 429, 5xx).                      |
+| `LLM_TIMEOUT_SECONDS` | `1200`            | Inactivité max entre deux lectures du flux (pas une durée totale).    |
+| `LLM_MAX_RETRIES`     | `4`               | Relances du SDK avant le début de la réponse (réseau, 429, 5xx).      |
 
 ## Règles appliquées (et pourquoi)
 
@@ -24,20 +24,27 @@ jamais par l'IA. Code : `backend/app/pipeline/llm_client.py`.
 2. **`max_tokens` généreux.** Il couvre la réflexion _et_ le JSON. Trop bas, la réponse est
    tronquée au milieu de l'objet : la doc recommande au moins 64k aux niveaux `xhigh`/`max`.
    Une réponse tronquée (`stop_reason: max_tokens`) est une erreur explicite.
-3. **Streaming.** Obligatoire dans le SDK au-delà d'environ 21k jetons de sortie, et plus
-   robuste pour des appels de plusieurs minutes.
+3. **Streaming et erreurs passagères.** Le streaming est obligatoire dans le SDK au-delà
+   d'environ 21k jetons de sortie. Le SDK retente seul les erreurs qui surviennent avant
+   le début de la réponse ; une coupure ou une surcharge _pendant_ le flux est retentée
+   par notre code (3 essais, attente croissante). Les erreurs définitives (requête
+   invalide, clé refusée) ne sont jamais retentées.
 4. **Lire les blocs par type.** Une réponse commence par des blocs `thinking` (texte omis
    par défaut) : on ne lit que les blocs `text`, jamais `content[0]`.
-5. **Refus gérés.** `stop_reason: refusal` (avec `stop_details.category`) est remonté tel
-   quel, sans relance inutile. Un audit payé sans jugement IA passe en `failed` (relançable)
-   plutôt que d'être livré incomplet.
-6. **Prompt système en cache** (`cache_control: ephemeral`, 5 min). Il est identique à
-   chaque appel : les relances et audits rapprochés le relisent à 5 % du prix.
-   Ne jamais y insérer de contenu variable (cela casserait le cache).
-7. **Contenu client encadré.** Tout ce qui vient des fichiers du client (libellés,
-   échantillon, protocole) est placé dans `<contenu_client id="…">` avec un identifiant
-   aléatoire, et les prompts précisent que c'est de la donnée, jamais une instruction
-   (protection contre l'injection de consignes).
+5. **Refus gérés.** `stop_reason: refusal` (avec `stop_details.category`) est remonté tel quel, sans relance inutile (la doc indique qu'un refus se répète sur le même modèle).
+   Un audit payé sans jugement IA passe en `failed` (relançable) plutôt que d'être livré
+   incomplet. À surveiller : les garde-fous « biologie » d'Opus 5.5 visent les armes
+   biologiques, pas la recherche clinique courante, mais il faut le vérifier sur nos bases
+   réelles ; en cas de refus récurrents, activer le repli serveur (_fallback_) d'Anthropic.
+6. **Prompt système en cache 1 h** (`cache_control: ephemeral, ttl 1h`). Il est identique
+   à chaque appel : relances et audits suivants le relisent à 5 % du prix (un appel
+   `xhigh` dépasse souvent les 5 min du cache par défaut). Ne jamais y insérer de contenu
+   variable : cela casserait le cache.
+7. **Contenu client encadré.** Pour LLM-1, ce qui vient directement des fichiers du
+   client (libellés, échantillon, protocole) est placé dans `<contenu_client id="…">` avec
+   un identifiant aléatoire, et le prompt précise que c'est de la donnée, jamais une
+   instruction (protection contre l'injection de consignes). LLM-2 ne reçoit que des faits
+   calculés par le code, présentés comme fiables : pas d'encadrement.
 8. **Pas de raisonnement demandé dans la réponse.** Demander la réflexion « étape par
    étape » dans le texte peut provoquer un refus (`reasoning_extraction`). Les prompts ne
    demandent que de courtes justifications (`rationale_fr`).
@@ -64,6 +71,13 @@ pas les résultats. Changer de niveau = changer `LLM_EFFORT`, sans toucher au co
 Coût indicatif Opus 5.5 : 4 $ / million de jetons en entrée, 20 $ / million en sortie
 (réflexion comprise), lecture du cache à 0,20 $. Chaque appel journalise ses jetons
 (entrée, cache, sortie) pour suivre le coût réel par audit.
+
+## Durée et redéploiements
+
+En `xhigh`, un audit complet (deux appels, plus d'éventuelles relances) peut dépasser les
+15 min que Railway laisse à l'ancienne instance lors d'un redéploiement. Un audit coupé
+ainsi est libéré par le verrou à bail (60 min) puis relancé depuis l'admin : éviter de
+déployer pendant un audit en cours.
 
 ## Changer de modèle
 

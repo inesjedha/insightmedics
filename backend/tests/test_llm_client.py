@@ -99,7 +99,7 @@ def test_requete_conforme_a_opus_5_5(fake_claude):
     assert req["model"] == settings.llm_model == "claude-opus-5-5"
     assert req["output_config"] == {"effort": settings.llm_effort}
     assert req["max_tokens"] >= 64000                      # réflexion + réponse
-    assert req["system"][0]["cache_control"] == {"type": "ephemeral"}
+    assert req["system"][0]["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
     for refused in ("temperature", "top_p", "top_k", "thinking"):
         assert refused not in req                          # erreur 400 sur Opus 5.5
 
@@ -133,3 +133,65 @@ def test_sans_cle_ia_aucun_appel(monkeypatch):
 def test_contenu_client_encadre_par_un_identifiant_aleatoire():
     a, b = llm_client.client_content("x"), llm_client.client_content("x")
     assert a != b and a.startswith("<contenu_client id=") and "x" in a
+
+
+# ---------------------------------------------------------------- erreurs passagères
+
+import anthropic  # noqa: E402
+import httpx2  # noqa: E402
+
+_REQUEST = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
+
+
+class _FlakyClient(_FakeClient):
+    """Lève les exceptions fournies (dans l'ordre) avant de rejouer une réponse."""
+
+    def __init__(self, errors, *responses):
+        super().__init__(*responses)
+        self.errors = list(errors)
+
+    def stream(self, **kwargs):
+        self.requests.append(kwargs)
+        if self.errors:
+            raise self.errors.pop(0)
+        return _Stream(self.responses.pop(0))
+
+
+def _status_error(status: int, error_type: str) -> anthropic.APIStatusError:
+    response = httpx2.Response(status, request=_REQUEST)
+    return anthropic.APIStatusError("erreur", response=response,
+                                    body={"type": "error", "error": {"type": error_type}})
+
+
+@pytest.fixture()
+def flaky_claude(monkeypatch):
+    monkeypatch.setattr(llm_client, "TRANSIENT_BACKOFF_SECONDS", 0)
+
+    def install(errors, *responses):
+        client = _FlakyClient(errors, *responses)
+        monkeypatch.setattr(settings, "anthropic_api_key", "sk-ant-test")
+        monkeypatch.setattr(llm_client, "_client", lambda: client)
+        return client
+    return install
+
+
+def test_coupure_pendant_le_streaming_retentee(flaky_claude):
+    client = flaky_claude([anthropic.APIConnectionError(request=_REQUEST),
+                           _status_error(200, "overloaded_error")],  # surcharge en plein flux
+                          _message('{"verdict": "ok"}'))
+    out, _ = llm_client.call_and_validate("s", "q", _Answer)
+    assert out is not None and len(client.requests) == 3
+
+
+def test_erreur_definitive_non_retentee(flaky_claude):
+    client = flaky_claude([_status_error(400, "invalid_request_error")], _message("{}"))
+    with pytest.raises(anthropic.APIStatusError):
+        llm_client.call_and_validate("s", "q", _Answer)
+    assert len(client.requests) == 1   # requête invalide : relancer coûterait sans servir
+
+
+def test_trop_d_erreurs_passageres_remonte_l_erreur(flaky_claude):
+    errors = [anthropic.APIConnectionError(request=_REQUEST)] * llm_client.TRANSIENT_ATTEMPTS
+    flaky_claude(errors, _message("{}"))
+    with pytest.raises(anthropic.APIConnectionError):
+        llm_client.call_and_validate("s", "q", _Answer)

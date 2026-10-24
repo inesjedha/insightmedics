@@ -137,9 +137,10 @@ function PrivacyPage() {
             <p>
               Nos sous-traitants techniques : l'hébergeur du site (Railway, serveurs dans l'Union
               européenne) et, pour l'audit complet uniquement, le service d'intelligence
-              artificielle Claude (Anthropic). Claude ne reçoit jamais votre base complète : un
-              extrait d'au plus 50 lignes, dont les colonnes potentiellement identifiantes sont
-              masquées, et des statistiques calculées par notre code.
+              artificielle Claude (Anthropic, société américaine). Claude ne reçoit jamais votre
+              base complète : les noms et libellés de vos variables, un extrait d'au plus 50 lignes
+              dont les colonnes potentiellement identifiantes sont masquées, des statistiques
+              calculées par notre code et, si vous l'avez fourni, le texte de votre protocole.
             </p>
             <p>
               Les bases de données patients que vous nous confiez doivent être
