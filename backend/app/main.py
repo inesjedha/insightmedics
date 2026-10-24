@@ -6,12 +6,12 @@ Démarrage local :  uvicorn app.main:app --reload --port 8000
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from .config import settings
 from .db import SessionLocal, init_db
@@ -67,6 +67,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def _no_store(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    """Aucune réponse de l'API ne doit être mise en cache (proxy, CDN de l'hébergeur,
+    navigateur) : elles contiennent des données d'audit propres à un client. Protège
+    contre le type d'incident où un cache sert la réponse d'un utilisateur à un autre."""
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.exception_handler(Exception)

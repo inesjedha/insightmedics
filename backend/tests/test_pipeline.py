@@ -218,3 +218,11 @@ def test_api_protocole_illisible_ne_laisse_aucun_fichier(dirty_csv: Path):
         })
     assert resp.status_code == 415
     assert set(settings.storage_dir.iterdir()) == before
+
+
+def test_aucune_reponse_api_n_est_mise_en_cache(dirty_csv: Path):
+    client = TestClient(app)
+    assert client.get("/health").headers["cache-control"] == "no-store"
+    audit_id = _upload(client, dirty_csv)
+    assert client.get(f"/audit/{audit_id}/score").headers["cache-control"] == "no-store"
+    assert client.get("/r/inconnu").headers["cache-control"] == "no-store"  # erreurs aussi
