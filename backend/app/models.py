@@ -1,6 +1,6 @@
 """Modèles ORM — alignés sur src/lib/api/types.ts du front."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Boolean, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -9,7 +9,7 @@ from .db import Base
 
 
 def utcnow_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 class Lead(Base):

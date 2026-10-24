@@ -7,7 +7,7 @@ minutes lorsque l'IA (LLM-1/LLM-2) est active. Passage en traitement asynchrone
 
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
@@ -89,7 +89,7 @@ def upload_and_audit(file: UploadFile, protocol: UploadFile | None = None,
             raise HTTPException(415, str(exc)) from exc
 
     expires_at = (
-        datetime.now(timezone.utc) + timedelta(days=settings.file_retention_days)
+        datetime.now(UTC) + timedelta(days=settings.file_retention_days)
     ).isoformat()
     audit = Audit(id=audit_id, file_name=file.filename or dest.name, file_size=size,
                   stored_path=str(dest), started_at=utcnow_iso(), token=token,
@@ -324,7 +324,7 @@ def unlock_audit(audit_id: str, db: Session = Depends(get_db)):
     a.paid = True
     # Le lien privé du client devient valide maintenant et expire dans N jours.
     a.expires_at = (
-        datetime.now(timezone.utc) + timedelta(days=settings.file_retention_days)
+        datetime.now(UTC) + timedelta(days=settings.file_retention_days)
     ).isoformat()
     a.started_at = r["started_at"]
     a.finished_at = r["finished_at"]
@@ -366,8 +366,8 @@ def _load_paid_by_token(token: str, db: Session) -> Audit:
             exp = None
         if exp is not None:
             if exp.tzinfo is None:
-                exp = exp.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) > exp:
+                exp = exp.replace(tzinfo=UTC)
+            if datetime.now(UTC) > exp:
                 raise HTTPException(410, "Ce lien a expiré")
     return a
 

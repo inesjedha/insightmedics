@@ -28,8 +28,6 @@ ignore = [
     "RUF001", # caractères unicode ambigus : faux positifs sur le français (accents, «»)
     "RUF002",
     "RUF003",
-    "UP047",  # génériques PEP 695 (def f[T]) : syntaxe 3.12 only ; on garde TypeVar (3.10+)
-    "UP017",  # datetime.UTC : 3.11+ ; on garde timezone.utc, portable (3.10+)
 ]
 
 [tool.ruff.lint.per-file-ignores]

@@ -16,7 +16,7 @@ que pour l'interprétation et la rédaction, le score est calculé par code.**
 
 ## Démarrage
 
-**Backend** (Python ≥ 3.10) :
+**Backend** (Python 3.12) :
 
 ```bash
 cd backend && python3.12 -m venv .venv && source .venv/bin/activate

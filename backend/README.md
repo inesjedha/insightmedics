@@ -9,7 +9,7 @@ ce qui le rend reproductible.
 
 ## Démarrage local
 
-**Prérequis : Python 3.10 ou plus** (`python3 --version` ; le projet cible la 3.12 en CI).
+**Prérequis : Python 3.12** (`python3.12 --version`), la version utilisée en CI et en prod.
 
 ```bash
 cd backend

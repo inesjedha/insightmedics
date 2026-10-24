@@ -13,7 +13,7 @@ Les deux partagent l'ingestion, le profiling et l'assemblage du résultat.
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,7 +31,7 @@ LogFn = Callable[[str, str], None]
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _make_logger(events: list[dict]) -> LogFn:
