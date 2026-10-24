@@ -2,8 +2,7 @@
 
 Assemble le rapport narratif à partir des sorties du pipeline. Les sections narratives
 viennent de LLM-2 (synthèse, limites, plan d'analyse) ; les faits chiffrés et le tableau
-de score viennent du code. Une figure en barres des 8 sous-scores est intégrée si
-matplotlib est disponible.
+de score viennent du code. Une figure en barres des 8 sous-scores est intégrée.
 """
 
 from __future__ import annotations
@@ -11,18 +10,17 @@ from __future__ import annotations
 import io
 from datetime import date
 
+import matplotlib
+
+matplotlib.use("Agg")  # rendu sans écran (serveur) ; doit précéder l'import de pyplot
+import matplotlib.pyplot as plt
 from docx import Document
 from docx.document import Document as DocxDocument
-from docx.shared import Pt, RGBColor
+from docx.shared import Inches, Pt, RGBColor
 
 
-def _fig_scores(score: dict) -> io.BytesIO | None:
-    try:
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-    except ImportError:  # matplotlib optionnel : pas de figure si absent
-        return None
+def _fig_scores(score: dict) -> io.BytesIO:
+    """Diagramme en barres des 8 sous-scores (PNG en mémoire)."""
     doms = score["domaines"]
     labels = [f"D{d['domaine']}" for d in doms]
     pct = [(d["obtenu"] / d["max"] * 100) if d["max"] else 0 for d in doms]
@@ -180,13 +178,10 @@ def build_report(profiling: dict, score: dict, ai_audit: dict | None) -> bytes:
     if score["plafonds_appliques"]:
         _p(doc, "Plafond appliqué : "
                 + "; ".join(c["defaut"] for c in score["plafonds_appliques"]) + ".")
-    fig = _fig_scores(score)
-    if fig is not None:
-        from docx.shared import Inches
-        doc.add_picture(fig, width=Inches(6.0))
-        legende = doc.add_paragraph("Figure 1. Sous-scores de qualité rapportés au maximum de "
-                                    "chaque domaine.")
-        legende.runs[0].italic = True
+    doc.add_picture(_fig_scores(score), width=Inches(6.0))
+    legende = doc.add_paragraph("Figure 1. Sous-scores de qualité rapportés au maximum de "
+                                "chaque domaine.")
+    legende.runs[0].italic = True
 
     # 8. Nettoyage appliqué à la copie dérivée
     _h(doc, "8. Nettoyage appliqué à la copie dérivée")

@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     admin_api_key: str = ""
 
     @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
     def resolved_provider(self) -> str:
         if self.llm_provider:
             return self.llm_provider
@@ -44,4 +48,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-settings.storage_dir.mkdir(parents=True, exist_ok=True)

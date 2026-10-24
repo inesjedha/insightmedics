@@ -1,6 +1,7 @@
 """Modèles ORM — alignés sur src/lib/api/types.ts du front."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from enum import StrEnum
 
 from sqlalchemy import JSON, Boolean, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -9,7 +10,16 @@ from .db import Base
 
 
 def utcnow_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
+
+
+class AuditStatus(StrEnum):
+    """Cycle de vie d'un audit : aperçu gratuit → (paiement) → audit IA → terminé."""
+
+    PREVIEW = "preview"        # aperçu gratuit calculé, en attente de paiement
+    PROCESSING = "processing"  # audit IA complet en cours
+    DONE = "done"              # audit complet terminé (après paiement)
+    FAILED = "failed"
 
 
 class Lead(Base):
@@ -43,8 +53,7 @@ class Audit(Base):
     stored_path: Mapped[str] = mapped_column(String)
     started_at: Mapped[str] = mapped_column(String, default=utcnow_iso)
     finished_at: Mapped[str | None] = mapped_column(String, nullable=True)
-    # preview = aperçu gratuit calculé ; processing = audit IA en cours ; done ; failed
-    status: Mapped[str] = mapped_column(String, default="preview")
+    status: Mapped[str] = mapped_column(String, default=AuditStatus.PREVIEW)  # AuditStatus
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Accès privé + paywall (parcours preview → paiement manuel → audit complet)

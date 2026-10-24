@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["src/router.tsx", "src/start.ts", "src/routes/**/*.tsx", "vite.config.ts"],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["src/components/ui/**"],
+  "ignoreDependencies": [
+    "tailwindcss",
+    "tw-animate-css",
+    "@fontsource/inter",
+    "@fontsource/manrope"
+  ],
+  "vite": false,
+  "vitest": false
+}

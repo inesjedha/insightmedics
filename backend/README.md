@@ -9,7 +9,7 @@ ce qui le rend reproductible.
 
 ## Démarrage local
 
-**Prérequis : Python 3.10 ou plus** (`python3 --version` ; le projet cible la 3.12 en CI).
+**Prérequis : Python 3.12** (`python3.12 --version`), la version utilisée en CI et en prod.
 
 ```bash
 cd backend
@@ -18,8 +18,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --reload-dir app --port 8000
 ```
 
-Côté front, dans `.env` : `VITE_USE_MOCK_API=false` et
-`VITE_API_BASE_URL=http://localhost:8000`.
+Côté front, dans `.env` : `VITE_API_BASE_URL=http://localhost:8000`.
 
 ## Qualité du code (lint, typage, tests)
 
@@ -27,30 +26,53 @@ Côté front, dans `.env` : `VITE_USE_MOCK_API=false` et
 pip install -r requirements-dev.txt
 ruff check app scripts tests      # lint + tri d'imports
 mypy                              # typage statique (config dans pyproject.toml)
-pytest -q                         # tests
+pytest                            # tests (base temporaire, IA désactivée)
 ```
 
 Ces trois commandes sont exécutées par la CI (`.github/workflows/ci.yml`) à chaque push.
 
+## Organisation du code
+
+```
+app/
+  main.py        création de l'app, CORS, démarrage (lifespan → init_db)
+  config.py      paramètres (variables d'environnement / .env)
+  db.py          moteur SQLAlchemy, sessions, création du schéma
+  models.py      tables (Audit, Lead) et AuditStatus
+  schemas.py     contrats JSON de l'API (camelCase, miroir de src/lib/api/types.ts)
+  auth.py        clé admin (en-tête X-Admin-Key)
+  routers/       couche HTTP uniquement : validation, codes d'erreur, sérialisation
+  services/      logique métier, sans HTTP (audits : stockage, aperçu, déblocage,
+                 lien privé, livrables ; leads : création)
+  pipeline/      moteur d'audit (ingest → profile → IA → règles → score → livrables)
+  prompts/       prompts système versionnés des deux appels IA
+```
+
+Règle de dépendance : `routers → services → pipeline`, jamais l'inverse. Les services
+lèvent des erreurs métier (`FileTooLargeError`, `LinkExpiredError`…) que les routers
+traduisent en codes HTTP.
+
 ## Endpoints
 
-| Méthode        | Route                          | Description                                              |
-| -------------- | ------------------------------ | -------------------------------------------------------- |
-| POST           | `/audit/upload`                | Upload multipart (`file`, `protocol` optionnel) → audit → `AuditResult` |
-| GET            | `/audit/:id`                   | Résumé de l'audit                                        |
-| GET            | `/audit/:id/events`            | Journal des étapes                                       |
-| GET            | `/audit/:id/profiling`         | Profiling complet (interne/admin)                        |
-| GET            | `/audit/:id/score`             | Décomposition du score (8 domaines, plafonds, confiance) |
-| GET            | `/audit/:id/ai`                | Audit IA (étude, dictionnaire, règles, violations)       |
-| GET            | `/audit/:id/workbook.xlsx`     | Classeur d'audit (10 onglets)                            |
-| GET            | `/audit/:id/report.docx`       | Rapport d'audit Word (11 sections)                       |
-| GET            | `/audit/:id/base_analyse.csv`  | Base nettoyée et anonymisée (CSV)                        |
-| GET            | `/audit/:id/base_analyse.sav`  | Base nettoyée et anonymisée (SPSS)                       |
-| POST/GET/PATCH | `/leads`, `/leads/:id`         | CRM leads                                                |
-| GET            | `/health`                      | Healthcheck                                              |
+Documentation interactive générée par FastAPI : `http://localhost:8000/docs`.
 
-> L'upload est **synchrone** et peut prendre plusieurs minutes lorsque l'audit IA est actif.
-> Le passage en traitement asynchrone (file d'attente + polling) reste une amélioration à venir.
+| Accès  | Méthode | Route                         | Description                                                    |
+| ------ | ------- | ----------------------------- | -------------------------------------------------------------- |
+| public | POST    | `/audit/upload`               | Upload multipart (`file`, `protocol` optionnel) → aperçu       |
+| public | GET     | `/audit/:id`                  | Résumé de l'aperçu (sans le jeton du lien privé)               |
+| public | GET     | `/audit/:id/events`           | Journal des étapes                                             |
+| public | GET     | `/audit/:id/score`            | Décomposition du score (8 domaines, plafonds, confiance)       |
+| admin  | GET     | `/audit`                      | Liste des audits                                               |
+| admin  | POST    | `/audit/:id/unlock`           | Après paiement : lance l'audit IA complet (plusieurs minutes)  |
+| admin  | GET     | `/audit/:id/profiling`, `/ai`, `/assessment` | Profiling, audit IA brut, jugement IA           |
+| admin  | GET     | `/audit/:id/:livrable`        | `workbook.xlsx`, `report.docx`, `base_analyse.csv`, `.sav`     |
+| jeton  | GET     | `/r/:token[/score\|/assessment\|/:livrable]` | Espace client : audit payé, non expiré         |
+| public | POST    | `/leads`                      | Création de lead (201) ; id, statut, priorité fixés serveur    |
+| admin  | GET/PATCH | `/leads`, `/leads/:id`      | CRM                                                            |
+| public | GET     | `/health`                     | Healthcheck                                                    |
+
+> Le déblocage est **synchrone** : la requête dure le temps de l'audit IA. Le passage en
+> tâche de fond (file d'attente + polling) reste à faire avant la mise en production.
 
 ## Pipeline
 
@@ -78,12 +100,14 @@ L'orchestrateur `app/pipeline/runner.py` enchaîne les étapes :
 
 ## Config (variables d'environnement)
 
-`DATABASE_URL` (Postgres en prod, SQLite par défaut), `STORAGE_DIR`, `CORS_ORIGINS`,
-`FILE_RETENTION_DAYS`, `LLM_PROVIDER` (`anthropic`|`openai`|vide=auto), `LLM_MODEL`,
-`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`. Les clés API ne sont jamais versionnées (`.env`
-est gitignoré).
+Voir `.env.example` (commenté) : `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`,
+`FILE_RETENTION_DAYS`, `LLM_PROVIDER`, `LLM_MODEL`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+`ADMIN_API_KEY`. Les secrets ne sont jamais versionnés (`.env` est gitignoré).
+
+Les tests n'utilisent jamais ces valeurs : `tests/conftest.py` impose une base et un
+stockage temporaires et désactive l'IA (aucun appel payant pendant `pytest`).
 
 ## Déploiement Railway
 
-Service Python, root directory `backend`, start command :
+Service Python (version lue dans `.python-version`), root directory `backend`, start command :
 `uvicorn app.main:app --host 0.0.0.0 --port $PORT` + addon Postgres + volume `/storage`.

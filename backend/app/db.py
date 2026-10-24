@@ -1,12 +1,15 @@
-"""Session SQLAlchemy."""
+"""Accès base de données : moteur SQLAlchemy, sessions, initialisation du schéma."""
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+import contextlib
+from collections.abc import Iterator
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import settings
 
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-engine = create_engine(settings.database_url, connect_args=connect_args)
+_connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+engine = create_engine(settings.database_url, connect_args=_connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
@@ -14,29 +17,36 @@ class Base(DeclarativeBase):
     pass
 
 
-def apply_light_migrations() -> None:
-    """Ajoute les colonnes manquantes sur une base existante (dev/SQLite).
+# Colonnes ajoutées après la création initiale des tables. `create_all` ne modifie jamais
+# une table existante : on les ajoute à la main (sans outil de migration complet).
+# À remplacer par Alembic dès que le schéma évolue plus souvent.
+_ADDED_COLUMNS = {
+    "audits": {
+        "score_detail": "JSON",
+        "ai_audit": "JSON",
+        "token": "VARCHAR",
+        "email": "VARCHAR",
+        "paid": "BOOLEAN",
+        "expires_at": "VARCHAR",
+    },
+}
 
-    create_all ne modifie jamais une table existante ; ce helper couvre les
-    ajouts de colonnes simples sans outil de migration complet (Alembic viendra
-    avec la prod Postgres si besoin).
-    """
-    import contextlib
 
-    from sqlalchemy import text
+def init_db() -> None:
+    """Crée les tables manquantes puis ajoute les colonnes manquantes. Idempotent."""
+    from . import models  # noqa: F401 — enregistre les modèles auprès de Base.metadata
 
-    wanted = {"audits": {"score_detail": "JSON", "ai_audit": "JSON",
-                         "token": "VARCHAR", "email": "VARCHAR",
-                         "paid": "BOOLEAN", "expires_at": "VARCHAR"}}
+    Base.metadata.create_all(bind=engine)
     with engine.begin() as conn:
-        for table, columns in wanted.items():
-            for col, coltype in columns.items():
+        for table, columns in _ADDED_COLUMNS.items():
+            for column, column_type in columns.items():
                 # La colonne existe déjà : l'ALTER échoue, ce qui est attendu.
                 with contextlib.suppress(Exception):
-                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {coltype}"))
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}"))
 
 
-def get_db():
+def get_db() -> Iterator[Session]:
+    """Dépendance FastAPI : une session par requête, toujours refermée."""
     db = SessionLocal()
     try:
         yield db

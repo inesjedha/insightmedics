@@ -12,10 +12,13 @@ la valeur à manquant tout en conservant l'originale (méthode de Hamza).
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+import pyreadstat
 
 from .rules_engine import eval_formula
 
@@ -221,23 +224,13 @@ def to_csv_bytes(df: pd.DataFrame) -> bytes:
 
 
 def to_sav_bytes(df: pd.DataFrame) -> bytes:
-    """Écrit un .sav via pyreadstat (nécessite un fichier temporaire)."""
-    import os
-    import tempfile
-
-    import pyreadstat
-
+    """Écrit un .sav via pyreadstat (qui ne sait écrire que dans un fichier)."""
     # pyreadstat n'aime pas les colonnes object mixtes : normaliser en str/num
     out = df.copy()
     for c in out.columns:
         if out[c].dtype == object:
             out[c] = out[c].astype(str).replace({"nan": "", "None": ""})
-    with tempfile.NamedTemporaryFile(suffix=".sav", delete=False) as tmp:
-        path = tmp.name
-    try:
-        pyreadstat.write_sav(out, path)
-        with open(path, "rb") as f:
-            return f.read()
-    finally:
-        if os.path.exists(path):
-            os.remove(path)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        path = Path(tmp_dir) / "base.sav"
+        pyreadstat.write_sav(out, str(path))
+        return path.read_bytes()

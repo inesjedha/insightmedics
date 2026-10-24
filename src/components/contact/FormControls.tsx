@@ -21,8 +21,8 @@ export type ServiceOffer = {
   featured?: boolean;
 };
 
-// Indicatifs proposés (Tunisie en tête). Partagé par le formulaire de contact et le paywall.
-export const COUNTRY_CODES = [
+// Indicatifs proposés (Tunisie en tête).
+const COUNTRY_CODES = [
   { code: "+216", flag: "🇹🇳", name: "Tunisie" },
   { code: "+213", flag: "🇩🇿", name: "Algérie" },
   { code: "+212", flag: "🇲🇦", name: "Maroc" },
@@ -35,10 +35,84 @@ export const COUNTRY_CODES = [
   { code: "+227", flag: "🇳🇪", name: "Niger" },
 ] as const;
 
+export const DEFAULT_DIAL_CODE = "+216";
+
+/** Ne garde que les chiffres du numéro local (12 max). */
+function toLocalDigits(raw: string): string {
+  return raw.replace(/\D/g, "").slice(0, 12);
+}
+
 /**
- * Champ téléphone autonome : sélecteur d'indicatif (drapeaux) + numéro local.
- * Émet la valeur complète « +216 12345678 » via un input caché `name`, pour être
- * lu par un formulaire non contrôlé (FormData). Réutilisable partout.
+ * Sélecteur d'indicatif (drapeaux) + numéro local, contrôlé par le parent.
+ * `name` est posé sur le champ du numéro (formulaires contrôlés).
+ */
+export function PhoneInputGroup({
+  id,
+  name,
+  required,
+  dialCode,
+  onDialCodeChange,
+  digits,
+  onDigitsChange,
+}: {
+  id: string;
+  name?: string;
+  required?: boolean;
+  dialCode: string;
+  onDialCodeChange: (code: string) => void;
+  digits: string;
+  onDigitsChange: (digits: string) => void;
+}) {
+  return (
+    <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
+      <Select value={dialCode} onValueChange={onDialCodeChange}>
+        <SelectTrigger
+          aria-label="Indicatif pays"
+          className="h-11 w-auto min-w-[5.25rem] shrink-0 gap-1.5 whitespace-nowrap rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none [&>span]:overflow-visible"
+        >
+          <SelectValue aria-label={dialCode}>
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <span aria-hidden className="text-base leading-none">
+                {COUNTRY_CODES.find((c) => c.code === dialCode)?.flag}
+              </span>
+              {dialCode}
+            </span>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {COUNTRY_CODES.map((c) => (
+            <SelectItem key={c.code} value={c.code}>
+              <span className="flex items-center gap-2">
+                <span aria-hidden className="text-base leading-none">
+                  {c.flag}
+                </span>
+                <span className="font-medium">{c.code}</span>
+                <span className="text-xs text-muted-foreground">{c.name}</span>
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Input
+        id={id}
+        name={name}
+        type="tel"
+        inputMode="numeric"
+        autoComplete="tel-national"
+        required={required}
+        maxLength={12}
+        placeholder="Numéro local"
+        value={digits}
+        onChange={(e) => onDigitsChange(toLocalDigits(e.target.value))}
+        className="h-11 w-full min-w-0 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+    </div>
+  );
+}
+
+/**
+ * Champ téléphone autonome pour formulaire non contrôlé (lu via FormData) :
+ * émet la valeur complète « +216 12345678 » dans un input caché `name`.
  */
 export function PhoneField({
   id = "phone",
@@ -51,54 +125,19 @@ export function PhoneField({
   required?: boolean;
   hint?: string;
 }) {
-  const [dial, setDial] = useState<string>("+216");
+  const [dialCode, setDialCode] = useState<string>(DEFAULT_DIAL_CODE);
   const [digits, setDigits] = useState("");
-  const full = digits ? `${dial} ${digits}` : "";
   return (
     <Field id={id} label="Téléphone" required={required} hint={hint}>
-      <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
-        <Select value={dial} onValueChange={setDial}>
-          <SelectTrigger
-            aria-label="Indicatif pays"
-            className="h-11 w-auto min-w-[5.25rem] shrink-0 gap-1.5 whitespace-nowrap rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none [&>span]:overflow-visible"
-          >
-            <SelectValue aria-label={dial}>
-              <span className="flex items-center gap-1.5 whitespace-nowrap">
-                <span aria-hidden className="text-base leading-none">
-                  {COUNTRY_CODES.find((c) => c.code === dial)?.flag}
-                </span>
-                {dial}
-              </span>
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {COUNTRY_CODES.map((c) => (
-              <SelectItem key={c.code} value={c.code}>
-                <span className="flex items-center gap-2">
-                  <span aria-hidden className="text-base leading-none">
-                    {c.flag}
-                  </span>
-                  <span className="font-medium">{c.code}</span>
-                  <span className="text-xs text-muted-foreground">{c.name}</span>
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Input
-          id={id}
-          type="tel"
-          inputMode="numeric"
-          autoComplete="tel-national"
-          required={required}
-          maxLength={12}
-          placeholder="Numéro local"
-          value={digits}
-          onChange={(e) => setDigits(e.target.value.replace(/\D/g, "").slice(0, 12))}
-          className="h-11 w-full min-w-0 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-        />
-      </div>
-      <input type="hidden" name={name} value={full} />
+      <PhoneInputGroup
+        id={id}
+        required={required}
+        dialCode={dialCode}
+        onDialCodeChange={setDialCode}
+        digits={digits}
+        onDigitsChange={setDigits}
+      />
+      <input type="hidden" name={name} value={digits ? `${dialCode} ${digits}` : ""} />
     </Field>
   );
 }

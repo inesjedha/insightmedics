@@ -19,17 +19,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
+import { offerPrice } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
 import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
@@ -44,6 +38,8 @@ import {
   CharCount,
   PillsField,
   OffersField,
+  PhoneInputGroup,
+  DEFAULT_DIAL_CODE,
   type ServiceOffer,
 } from "@/components/contact/FormControls";
 
@@ -66,19 +62,6 @@ export const Route = createFileRoute("/contact")({
 });
 
 const phoneLocalRegex = /^\d{6,12}$/;
-
-const COUNTRY_CODES = [
-  { code: "+216", flag: "🇹🇳", name: "Tunisie" },
-  { code: "+213", flag: "🇩🇿", name: "Algérie" },
-  { code: "+212", flag: "🇲🇦", name: "Maroc" },
-  { code: "+221", flag: "🇸🇳", name: "Sénégal" },
-  { code: "+225", flag: "🇨🇮", name: "Côte d'Ivoire" },
-  { code: "+237", flag: "🇨🇲", name: "Cameroun" },
-  { code: "+223", flag: "🇲🇱", name: "Mali" },
-  { code: "+226", flag: "🇧🇫", name: "Burkina Faso" },
-  { code: "+224", flag: "🇬🇳", name: "Guinée" },
-  { code: "+227", flag: "🇳🇪", name: "Niger" },
-] as const;
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Nom trop court").max(100, "Nom trop long"),
@@ -107,10 +90,22 @@ type ContactValues = z.infer<typeof contactSchema>;
 type FieldName = keyof ContactValues;
 type FieldErrors = Partial<Record<FieldName, string>>;
 
+// Prix lus dans lib/offers.ts (source unique) ; libellés courts propres au formulaire.
 const SERVICE_OFFERS: ServiceOffer[] = [
-  { id: "analyses", name: "Analyses + résultats", price: "500", tier: "Essentiel" },
-  { id: "discussion", name: "Discussion", price: "500", tier: "Expertise" },
-  { id: "imrad", name: "Thèse complète", price: "1 200", tier: "Le plus choisi", featured: true },
+  {
+    id: "analyses",
+    name: "Analyses + résultats",
+    price: offerPrice("analyses"),
+    tier: "Essentiel",
+  },
+  { id: "discussion", name: "Discussion", price: offerPrice("discussion"), tier: "Expertise" },
+  {
+    id: "these",
+    name: "Thèse complète",
+    price: offerPrice("these"),
+    tier: "Le plus choisi",
+    featured: true,
+  },
 ];
 
 const URGENCIES = ["< 2 semaines", "2-4 semaines", "> 1 mois", "Pas de deadline"] as const;
@@ -137,7 +132,7 @@ function ContactPage() {
   const [showErrorBanner, setShowErrorBanner] = useState(false);
   const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
   const [urgency, setUrgency] = useState<string>("2-4 semaines");
-  const [dialCode, setDialCode] = useState<string>("+216");
+  const [dialCode, setDialCode] = useState<string>(DEFAULT_DIAL_CODE);
   const [consent, setConsent] = useState(false);
   const [consentError, setConsentError] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -155,11 +150,6 @@ function ContactPage() {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
-  };
-
-  const setPhone = (raw: string) => {
-    const digits = raw.replace(/\D/g, "").slice(0, 12);
-    setValue("phone", digits);
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -339,49 +329,15 @@ function ContactPage() {
                         required
                         hint="Prioritaire pour vous recontacter"
                       >
-                        <div className="flex items-stretch overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
-                          <Select value={dialCode} onValueChange={setDialCode}>
-                            <SelectTrigger
-                              aria-label="Indicatif pays"
-                              className="h-11 w-auto min-w-[5.25rem] shrink-0 gap-1.5 whitespace-nowrap rounded-none border-0 border-r border-input bg-surface/60 px-3 text-sm font-medium text-foreground/80 shadow-none focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none [&>span]:overflow-visible"
-                            >
-                              <SelectValue aria-label={dialCode}>
-                                <span className="flex items-center gap-1.5 whitespace-nowrap">
-                                  <span aria-hidden className="text-base leading-none">
-                                    {COUNTRY_CODES.find((c) => c.code === dialCode)?.flag}
-                                  </span>
-                                  {dialCode}
-                                </span>
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {COUNTRY_CODES.map((c) => (
-                                <SelectItem key={c.code} value={c.code}>
-                                  <span className="flex items-center gap-2">
-                                    <span aria-hidden className="text-base leading-none">
-                                      {c.flag}
-                                    </span>
-                                    <span className="font-medium">{c.code}</span>
-                                    <span className="text-xs text-muted-foreground">{c.name}</span>
-                                  </span>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            id="phone"
-                            name="phone"
-                            type="tel"
-                            inputMode="numeric"
-                            autoComplete="tel-national"
-                            required
-                            maxLength={12}
-                            placeholder="Numéro local"
-                            value={values.phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            className="h-11 w-full min-w-0 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                          />
-                        </div>
+                        <PhoneInputGroup
+                          id="phone"
+                          name="phone"
+                          required
+                          dialCode={dialCode}
+                          onDialCodeChange={setDialCode}
+                          digits={values.phone}
+                          onDigitsChange={(digits) => setValue("phone", digits)}
+                        />
                       </Field>
                     </div>
                     <Field id="email" label="Email" required>

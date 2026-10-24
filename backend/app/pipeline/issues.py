@@ -14,10 +14,9 @@ from __future__ import annotations
 from typing import Any
 
 
-def detect_issues(p: dict[str, Any]) -> tuple[list[dict], list[str]]:
-    """Retourne (issues pour le front, notes internes) à partir du profiling."""
+def detect_issues(p: dict[str, Any]) -> list[dict]:
+    """Anomalies lisibles (niveau + libellé) déduites du profiling."""
     issues: list[dict] = []
-    notes: list[str] = []
 
     s = p["structure"]
     m = p["missing_summary"]
@@ -89,8 +88,7 @@ def detect_issues(p: dict[str, Any]) -> tuple[list[dict], list[str]]:
         issues.append({"level": "critical",
                        "label": f"Données potentiellement identifiantes détectées : {cols} — "
                                 "anonymisation recommandée avant analyse"})
-        notes.append("PII détectées : colonnes masquées avant tout envoi à l'API IA.")
 
     if not issues:
         issues.append({"level": "info", "label": "Aucune anomalie majeure détectée"})
-    return issues, notes
+    return issues

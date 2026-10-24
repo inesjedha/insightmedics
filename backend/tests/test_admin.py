@@ -4,7 +4,6 @@ Vérifie que le CRM et le déblocage sont protégés par la clé admin, que la c
 lead reste publique, et que le déblocage lance l'audit complet (statut done + payé).
 """
 
-import secrets
 from pathlib import Path
 
 import pandas as pd
@@ -42,9 +41,29 @@ def test_lecture_leads_exige_la_cle_admin():
 
 def test_creation_lead_reste_publique():
     client = TestClient(app)
-    payload = {"id": f"lead_{secrets.token_hex(4)}", "createdAt": "2026-01-01T00:00:00",
-               "email": "thesard@example.com"}
-    assert client.post("/leads", json=payload).status_code == 200  # pas de clé requise
+    r = client.post("/leads", json={"email": "thesard@example.com"})  # pas de clé requise
+    assert r.status_code == 201
+    body = r.json()
+    assert body["id"].startswith("lead_") and body["status"] == "new"
+
+
+def test_creation_lead_ignore_les_champs_reserves_au_serveur():
+    """Un formulaire public ne peut pas fixer statut, priorité ni notes CRM."""
+    client = TestClient(app)
+    r = client.post("/leads", json={"email": "x@example.com", "status": "won",
+                                    "priority": "high", "notes": "VIP"})
+    body = r.json()
+    assert body["status"] == "new" and body["priority"] == "normal" and body["notes"] is None
+
+
+def test_lead_d_audit_herite_score_et_priorite_de_l_audit(small_csv: Path):
+    client = TestClient(app)
+    with open(small_csv, "rb") as f:
+        audit = client.post("/audit/upload", files={"file": ("base.csv", f, "text/csv")}).json()
+    lead = client.post("/leads", json={"email": "x@example.com", "source": "audit",
+                                       "auditId": audit["id"]}).json()
+    assert lead["auditScore"] == audit["score"]
+    assert lead["priority"] == ("high" if audit["needsHumanReview"] else "normal")
 
 
 def test_profiling_est_protege(small_csv: Path):

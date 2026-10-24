@@ -1,19 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { listLeads } from "@/lib/api/client";
-import type { Lead, LeadStatus } from "@/lib/api/types";
+import type { Lead } from "@/lib/api/types";
+import { LEAD_STATUS_LABELS } from "@/lib/leads";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/admin/leads")({
   component: LeadsPage,
 });
-
-const STATUS_LABEL: Record<LeadStatus, string> = {
-  new: "Nouveau",
-  contacted: "Contacté",
-  won: "Client gagné",
-  lost: "Perdu",
-};
 
 function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -92,7 +86,7 @@ function LeadsPage() {
                               : "bg-muted text-foreground hover:bg-muted"
                       }
                     >
-                      {STATUS_LABEL[l.status]}
+                      {LEAD_STATUS_LABELS[l.status]}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">

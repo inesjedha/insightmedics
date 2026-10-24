@@ -1,4 +1,4 @@
-export type Offer = {
+type Offer = {
   id: "analyses" | "discussion" | "these";
   number: string;
   title: string;
@@ -13,6 +13,9 @@ export type Offer = {
   highlight?: boolean;
   badge?: string;
 };
+
+/** Prix de l'audit complet (déblocage après l'aperçu gratuit). */
+export const FULL_AUDIT_PRICE_LABEL = "50 DT";
 
 /**
  * Source unique de vérité pour les trois offres payantes.
@@ -82,3 +85,10 @@ export const OFFERS: Offer[] = [
     badge: "Le plus choisi",
   },
 ];
+
+/** Montant affichable d'une offre, sans la devise (ex. « 1 200 »). */
+export function offerPrice(id: Offer["id"]): string {
+  const offer = OFFERS.find((o) => o.id === id);
+  if (!offer) throw new Error(`Offre inconnue : ${id}`);
+  return offer.priceLabel.replace(/\s*DT$/, "");
+}

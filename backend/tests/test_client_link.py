@@ -1,11 +1,10 @@
 """P4 — accès client via lien privé (/r/{token}) : gating paiement + expiration."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-import pytest
 from fastapi.testclient import TestClient
 
-from app.db import Base, engine, SessionLocal
+from app.db import SessionLocal
 from app.main import app
 from app.models import Audit, utcnow_iso
 
@@ -13,7 +12,6 @@ client = TestClient(app)
 
 
 def _mk(token: str, *, paid: bool, status: str, expires_at: str | None) -> None:
-    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     db.query(Audit).filter(Audit.id == f"audit_{token}").delete()
     db.commit()
@@ -30,7 +28,7 @@ def _mk(token: str, *, paid: bool, status: str, expires_at: str | None) -> None:
 
 def test_lien_valide_paye():
     _mk("tokvalide", paid=True, status="done",
-        expires_at=(datetime.now(timezone.utc) + timedelta(days=10)).isoformat())
+        expires_at=(datetime.now(UTC) + timedelta(days=10)).isoformat())
     r = client.get("/r/tokvalide")
     assert r.status_code == 200
     assert r.json()["paid"] is True
@@ -49,5 +47,5 @@ def test_lien_non_paye_refuse():
 
 def test_lien_expire():
     _mk("tokexpire", paid=True, status="done",
-        expires_at=(datetime.now(timezone.utc) - timedelta(days=1)).isoformat())
+        expires_at=(datetime.now(UTC) - timedelta(days=1)).isoformat())
     assert client.get("/r/tokexpire").status_code == 410

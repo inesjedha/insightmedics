@@ -74,7 +74,7 @@ def extract_json(text: str) -> dict:
     return json.loads(text[start:end + 1])
 
 
-def call_and_validate(system: str, user: str, schema: type[T],
+def call_and_validate[T: BaseModel](system: str, user: str, schema: type[T],
                       post: Callable[[T], tuple[T, list[str]]] | None = None,
                       max_tokens: int = 16000,
                       attempts: int = 3) -> tuple[T | None, list[str]]:
