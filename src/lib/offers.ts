@@ -1,4 +1,4 @@
-export type Offer = {
+type Offer = {
   id: "analyses" | "discussion" | "these";
   number: string;
   title: string;

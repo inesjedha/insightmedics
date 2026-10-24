@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type OfferCardProps = {
+type OfferCardProps = {
   number?: string;
   icon: ReactNode;
   title: string;

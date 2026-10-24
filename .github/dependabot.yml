@@ -1,0 +1,17 @@
+# Mises à jour de dépendances : une PR groupée par écosystème chaque semaine.
+# La CI vérifie chaque PR ; on fusionne après relecture (versions figées sinon).
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /backend
+    schedule: { interval: weekly }
+    groups:
+      python: { patterns: ["*"] }
+  - package-ecosystem: bun
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      front: { patterns: ["*"] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }

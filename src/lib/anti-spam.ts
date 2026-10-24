@@ -12,7 +12,7 @@
  */
 
 export const HONEYPOT_FIELD = "company_url";
-export const MIN_FILL_MS = 2000;
+const MIN_FILL_MS = 2000;
 
 export function isHoneypotTripped(value: string | undefined | null): boolean {
   return Boolean(value && value.trim().length > 0);
