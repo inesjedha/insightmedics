@@ -1,7 +1,7 @@
 # Mises à jour de dépendances, vérifiées par la CI avant fusion (versions figées sinon).
 # Mineures et correctifs : une PR groupée par écosystème et par semaine (sûres en général).
-# Majeures : une PR par paquet, car elles peuvent casser l'API (ex. anthropic 2.x
-# supprime `temperature`) et doivent être évaluées et adaptées une par une.
+# Majeures : une PR par paquet, car elles peuvent casser l'API (ex. un SDK qui
+# supprime un paramètre) et doivent être évaluées et adaptées une par une.
 version: 2
 updates:
   - package-ecosystem: pip

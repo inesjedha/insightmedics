@@ -16,9 +16,7 @@ _TMP = Path(tempfile.mkdtemp(prefix="insightmedics-tests-"))
 # jetable (comme en CI), pour tester le même moteur qu'en production.
 os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", f"sqlite:///{_TMP / 'test.db'}")
 os.environ["STORAGE_DIR"] = str(_TMP / "storage")
-os.environ["LLM_PROVIDER"] = ""
 os.environ["ANTHROPIC_API_KEY"] = ""
-os.environ["OPENAI_API_KEY"] = ""
 os.environ["ADMIN_API_KEY"] = ""
 
 import pytest  # noqa: E402 — après la configuration de l'environnement
@@ -40,3 +38,15 @@ def admin_headers():
     old, settings.admin_api_key = settings.admin_api_key, "cle-admin-de-test"
     yield {"X-Admin-Key": settings.admin_api_key}
     settings.admin_api_key = old
+
+
+@pytest.fixture(autouse=True)
+def _no_real_claude_calls(monkeypatch):
+    """Garde-fou : un test qui atteindrait la vraie API Claude (payante) échoue tout de
+    suite. Les tests du client IA installent leur faux client par-dessus."""
+    from app.pipeline import llm_client
+
+    def forbidden():
+        raise AssertionError("Appel réel à l'API Claude interdit pendant les tests")
+
+    monkeypatch.setattr(llm_client, "_client", forbidden)

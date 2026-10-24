@@ -127,6 +127,8 @@ def build_user_message(profiling: dict, ai_audit: dict) -> str:
         "violations_regles": ai_audit.get("violations"),
         "variables_derivees": ai_audit.get("derived_variables", []),
     }
+    # Faits calculés par le code : pas d'encadrement « contenu client » (le prompt les
+    # présente comme fiables ; l'échantillon et le protocole ne vont qu'à LLM-1).
     return ("## FAITS D'AUDIT (calculés par programme, fiables)\n"
             + json.dumps(payload, ensure_ascii=False, default=str)[:120000])
 

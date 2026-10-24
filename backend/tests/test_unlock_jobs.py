@@ -165,3 +165,15 @@ def test_battement_de_coeur_renouvelle_le_bail_pendant_un_audit_long(audit_id: s
     unlock_jobs.run(audit_id, _claim(audit_id))
     assert seen[1] > seen[0]                       # bail renouvelé en cours de route
     assert _status(audit_id).status == "done"
+
+
+def test_audit_paye_sans_jugement_ia_passe_en_echec(audit_id: str, monkeypatch):
+    """IA configurée mais rien produit (refus, JSON invalide…) : pas d'audit incomplet livré."""
+    from app.pipeline import runner
+
+    monkeypatch.setattr(settings, "anthropic_api_key", "sk-ant-test")
+    # Aucun appel réseau : LLM-1 simule un refus de Claude.
+    monkeypatch.setattr(runner, "run_llm1", lambda *a: (None, ["LLM-1 : Échec : refus"]))
+    unlock_jobs.run(audit_id, _claim(audit_id))
+    audit = _status(audit_id)
+    assert audit.status == "failed" and not audit.paid and "IA" in audit.error

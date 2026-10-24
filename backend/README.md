@@ -106,6 +106,8 @@ L'orchestrateur `app/pipeline/runner.py` enchaîne les étapes :
 - **Profile** (`profile.py`) : structure, identifiants, doublons, types, codes manquants
   suspects (999, -1, « NA »…), stats descriptives, outliers IQR, manquants
   (global/variable/patient/blocs), dates, PII.
+- **IA** : Claude Opus 5.5 via `llm_client.py` — choix techniques et bonnes pratiques
+  dans [`docs/ia-claude.md`](../docs/ia-claude.md).
 - **LLM-1** (`llm1.py`) : reconstruction de l'étude, dictionnaire des variables, règles de
   cohérence DSL, variables dérivées. L'IA propose ; elle ne calcule ni ne modifie rien.
 - **Moteur de règles** (`rules_engine.py`) : interpréteur DSL sûr (AST fermé, jamais `eval`)
@@ -123,7 +125,7 @@ L'orchestrateur `app/pipeline/runner.py` enchaîne les étapes :
 ## Config (variables d'environnement)
 
 Voir `.env.example` (commenté) : `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`,
-`FILE_RETENTION_DAYS`, `MAINTENANCE_INTERVAL_MINUTES`, `UNLOCK_LEASE_MINUTES`, `LLM_PROVIDER`, `LLM_MODEL`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+`FILE_RETENTION_DAYS`, `MAINTENANCE_INTERVAL_MINUTES`, `UNLOCK_LEASE_MINUTES`, `ANTHROPIC_API_KEY`, `LLM_MODEL`, `LLM_EFFORT`, `LLM_MAX_TOKENS`,
 `ADMIN_API_KEY`. Les secrets ne sont jamais versionnés (`.env` est gitignoré).
 
 Les tests n'utilisent jamais ces valeurs : `tests/conftest.py` impose une base et un
@@ -141,7 +143,7 @@ Deux services dans un même projet Railway, tous deux branchés sur le repo GitH
 
 - Backend : + base Postgres (variable `DATABASE_URL` référencée depuis le service
   Postgres) + volume monté sur `/storage` (`STORAGE_DIR=/storage`). Variables :
-  `ADMIN_API_KEY`, `OPENAI_API_KEY`, `LLM_PROVIDER=openai`, `LLM_MODEL`,
+  `ADMIN_API_KEY`, `ANTHROPIC_API_KEY` (modèle et effort : défauts du code),
   `CORS_ORIGINS=https://www.insightmedics.tn`. `drainingSeconds: 900` laisse 15 min à un
   audit IA en cours pour se terminer lors d'un redéploiement.
 - Front : `VITE_API_BASE_URL=https://api.insightmedics.tn` (lue au build).

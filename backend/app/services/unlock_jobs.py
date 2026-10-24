@@ -99,6 +99,7 @@ def run(audit_id: str, job_id: str) -> None:
 
             with _heartbeat(audit_id, job_id):
                 result = run_audit(path, name, protocol)
+            _require_ai_assessment(result)
 
             with SessionLocal() as db:
                 written = execute_update(db, (
@@ -114,6 +115,20 @@ def run(audit_id: str, job_id: str) -> None:
         except Exception as exc:
             logger.exception("Échec de l'audit complet %s", audit_id)
             _mark_failed(audit_id, job_id, exc)
+
+
+def _require_ai_assessment(result: dict[str, Any]) -> None:
+    """Un audit payé doit contenir le jugement IA. Si l'IA est configurée mais n'a rien
+    produit (refus, JSON invalide après relances…), on échoue au lieu de livrer un
+    audit incomplet ; le message vient du journal de l'audit. Sans clé IA (dev, tests),
+    l'audit complet reste déterministe."""
+    if not settings.ai_enabled:
+        return
+    if (result.get("ai_audit") or {}).get("assessment"):
+        return
+    reasons = [e["message"] for e in result.get("events", [])
+               if e["level"] == "warn" and "IA" in e["message"]]
+    raise RuntimeError("Audit IA incomplet : " + ("; ".join(reasons) or "aucun jugement produit"))
 
 
 def _renew_lease(audit_id: str, job_id: str) -> bool:
