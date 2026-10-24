@@ -3,6 +3,8 @@
 Démarrage local :  uvicorn app.main:app --reload --port 8000
 """
 
+import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -12,8 +14,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .config import settings
-from .db import init_db
+from .db import SessionLocal, init_db
 from .routers import audits, client, leads
+from .services.audits import recover_interrupted
+from .services.retention import purge_expired
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,11 +26,36 @@ logging.basicConfig(
 logger = logging.getLogger("insightmedics")
 
 
+def _purge_once() -> None:
+    with SessionLocal() as db:
+        purge_expired(db)
+
+
+async def _purge_periodically(interval_hours: float) -> None:
+    """Purge au démarrage puis toutes les `interval_hours` heures, sans jamais s'arrêter
+    sur une erreur (elle est journalisée, la boucle continue)."""
+    while True:
+        try:
+            await asyncio.to_thread(_purge_once)
+        except Exception:
+            logger.exception("Échec de la purge automatique")
+        await asyncio.sleep(interval_hours * 3600)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Initialisation au démarrage du serveur (et non à l'import du module)."""
+    """Démarrage du serveur : schéma, reprise des audits interrompus, purge planifiée."""
     init_db()
+    with SessionLocal() as db:
+        recover_interrupted(db)
+    purge_task = None
+    if settings.purge_interval_hours > 0:
+        purge_task = asyncio.create_task(_purge_periodically(settings.purge_interval_hours))
     yield
+    if purge_task is not None:
+        purge_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await purge_task
 
 
 app = FastAPI(title="Insight Medics API", version="0.2.0", lifespan=lifespan)

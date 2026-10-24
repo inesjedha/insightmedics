@@ -63,7 +63,7 @@ Documentation interactive générée par FastAPI : `http://localhost:8000/docs`.
 | public | GET     | `/audit/:id/events`           | Journal des étapes                                             |
 | public | GET     | `/audit/:id/score`            | Décomposition du score (8 domaines, plafonds, confiance)       |
 | admin  | GET     | `/audit`                      | Liste des audits                                               |
-| admin  | POST    | `/audit/:id/unlock`           | Après paiement : lance l'audit IA complet (plusieurs minutes)  |
+| admin  | POST    | `/audit/:id/unlock`           | Après paiement : lance l'audit IA en tâche de fond (202)       |
 | admin  | GET     | `/audit/:id/profiling`, `/ai`, `/assessment` | Profiling, audit IA brut, jugement IA           |
 | admin  | GET     | `/audit/:id/:livrable`        | `workbook.xlsx`, `report.docx`, `base_analyse.csv`, `.sav`     |
 | jeton  | GET     | `/r/:token[/score\|/assessment\|/:livrable]` | Espace client : audit payé, non expiré         |
@@ -71,8 +71,20 @@ Documentation interactive générée par FastAPI : `http://localhost:8000/docs`.
 | admin  | GET/PATCH | `/leads`, `/leads/:id`      | CRM                                                            |
 | public | GET     | `/health`                     | Healthcheck                                                    |
 
-> Le déblocage est **synchrone** : la requête dure le temps de l'audit IA. Le passage en
-> tâche de fond (file d'attente + polling) reste à faire avant la mise en production.
+## Tâches de fond
+
+- **Déblocage** : `POST /audit/:id/unlock` répond tout de suite (202, statut `processing`)
+  et l'audit IA tourne après la réponse (`BackgroundTasks` FastAPI). Un seul audit IA à la
+  fois (sémaphore) pour garder coût et mémoire prévisibles. Un échec passe l'audit en
+  `failed` avec son message, visible dans l'admin, et le déblocage peut être relancé. Un
+  audit interrompu par un redémarrage est remis en aperçu au démarrage suivant.
+  Limite assumée : la tâche vit dans le processus web. Si le volume grandit (plusieurs
+  audits simultanés, plusieurs serveurs), passer à une vraie file (ex. Redis + worker).
+- **Purge (rétention)** : au démarrage puis toutes les `PURGE_INTERVAL_HOURS` heures, les
+  audits expirés (`FILE_RETENTION_DAYS` jours après l'aperçu ou après la livraison) perdent
+  leurs fichiers et leur détail identifiant (profiling, audit IA) ; le résumé reste.
+  Manuellement : `python -m scripts.purge_expired`.
+
 
 ## Pipeline
 
@@ -101,7 +113,7 @@ L'orchestrateur `app/pipeline/runner.py` enchaîne les étapes :
 ## Config (variables d'environnement)
 
 Voir `.env.example` (commenté) : `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`,
-`FILE_RETENTION_DAYS`, `LLM_PROVIDER`, `LLM_MODEL`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+`FILE_RETENTION_DAYS`, `PURGE_INTERVAL_HOURS`, `LLM_PROVIDER`, `LLM_MODEL`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
 `ADMIN_API_KEY`. Les secrets ne sont jamais versionnés (`.env` est gitignoré).
 
 Les tests n'utilisent jamais ces valeurs : `tests/conftest.py` impose une base et un

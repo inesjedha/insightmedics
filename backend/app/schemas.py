@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 IssueLevel = Literal["info", "warn", "critical"]
 EventLevel = Literal["info", "warn", "critical", "success"]
 AuditStatusValue = Literal["preview", "processing", "done", "failed"]
+AuditView = Literal["public", "client", "admin"]
 
 
 class CamelModel(BaseModel):
@@ -96,10 +97,16 @@ class AuditResult(CamelModel):
     paid: bool = False
     token: str | None = None
 
+    # Vue admin uniquement
+    error: str | None = None
+    purged: bool = False
+
     @classmethod
-    def from_audit(cls, a: Audit, *, include_token: bool = False) -> AuditResult:
-        """`include_token` : uniquement pour l'admin et le client déjà authentifié par son
-        lien. Le jeton ne doit jamais sortir d'une route publique accessible par id."""
+    def from_audit(cls, a: Audit, *, view: AuditView) -> AuditResult:
+        """`view` décide des champs sensibles exposés :
+        - public : aperçu accessible par id — jamais le jeton du lien privé ;
+        - client : déjà authentifié par son jeton ;
+        - admin : jeton (pour envoyer le lien), erreur et état de purge en plus."""
         from .models import AuditStatus
 
         return cls(
@@ -111,7 +118,9 @@ class AuditResult(CamelModel):
             needs_human_review=bool(a.needs_human_review),
             status=a.status,  # type: ignore[arg-type]  # colonne String, valeurs AuditStatus
             is_preview=a.status != AuditStatus.DONE, paid=bool(a.paid),
-            token=a.token if include_token else None,
+            token=a.token if view in ("client", "admin") else None,
+            error=a.error if view == "admin" else None,
+            purged=bool(a.purged_at) if view == "admin" else False,
         )
 
 

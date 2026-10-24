@@ -61,6 +61,8 @@ class Audit(Base):
     email: Mapped[str | None] = mapped_column(String, nullable=True)
     paid: Mapped[bool] = mapped_column(Boolean, default=False)
     expires_at: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Date de purge : fichiers supprimés et détail (profiling, audit IA) effacé.
+    purged_at: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # Résumé pour le front (AuditResult)
     score: Mapped[float | None] = mapped_column(Float, nullable=True)

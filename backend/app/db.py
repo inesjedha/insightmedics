@@ -28,6 +28,7 @@ _ADDED_COLUMNS = {
         "email": "VARCHAR",
         "paid": "BOOLEAN",
         "expires_at": "VARCHAR",
+        "purged_at": "VARCHAR",
     },
 }
 

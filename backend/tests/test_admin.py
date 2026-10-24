@@ -82,10 +82,57 @@ def test_unlock_lance_l_audit_complet(small_csv: Path):
     assert up["status"] == "preview" and up["paid"] is False
 
     assert client.post(f"/audit/{aid}/unlock").status_code == 401  # protégé
+
+    # Réponse immédiate : l'audit IA part en tâche de fond.
     r = client.post(f"/audit/{aid}/unlock", headers=HEADERS)
-    assert r.status_code == 200
-    body = r.json()
-    assert body["status"] == "done" and body["paid"] is True and body["isPreview"] is False
+    assert r.status_code == 202 and r.json()["status"] == "processing"
+
+    # (TestClient exécute la tâche de fond avant de rendre la main.)
+    done = _admin_audit(client, aid)
+    assert done["status"] == "done" and done["paid"] is True and done["isPreview"] is False
+
+    # Second appel : déjà terminé → 200, aucun nouvel audit IA.
+    again = client.post(f"/audit/{aid}/unlock", headers=HEADERS)
+    assert again.status_code == 200 and again.json()["status"] == "done"
+
+
+def _admin_audit(client: TestClient, audit_id: str) -> dict:
+    listed = client.get("/audit", headers=HEADERS).json()
+    return next(a for a in listed if a["id"] == audit_id)
+
+
+def test_unlock_en_echec_est_visible_et_relancable(small_csv: Path, monkeypatch):
+    from app.services import audits as service
+
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("quota IA dépassé")
+
+    client = TestClient(app)
+    with open(small_csv, "rb") as f:
+        aid = client.post("/audit/upload", files={"file": ("base.csv", f, "text/csv")}).json()["id"]
+    monkeypatch.setattr(service, "run_audit", boom)
+    client.post(f"/audit/{aid}/unlock", headers=HEADERS)
+    failed = _admin_audit(client, aid)
+    assert failed["status"] == "failed" and "quota" in failed["error"]
+
+    monkeypatch.undo()  # l'IA refonctionne : on relance
+    assert client.post(f"/audit/{aid}/unlock", headers=HEADERS).status_code == 202
+    assert _admin_audit(client, aid)["status"] == "done"
+
+
+def test_audit_interrompu_par_un_redemarrage_est_remis_en_apercu(small_csv: Path):
+    from app.db import SessionLocal
+    from app.models import Audit
+    from app.services.audits import recover_interrupted
+
+    client = TestClient(app)
+    with open(small_csv, "rb") as f:
+        aid = client.post("/audit/upload", files={"file": ("base.csv", f, "text/csv")}).json()["id"]
+    with SessionLocal() as db:
+        db.get(Audit, aid).status = "processing"
+        db.commit()
+        assert recover_interrupted(db) >= 1
+        assert db.get(Audit, aid).status == "preview"
 
 
 def test_liste_audits_admin(small_csv: Path):

@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import secrets
 import shutil
+import threading
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
@@ -19,6 +20,7 @@ from typing import Any, BinaryIO
 from sqlalchemy.orm import Session
 
 from ..config import settings
+from ..db import SessionLocal
 from ..models import Audit, AuditStatus, utcnow_iso
 from ..pipeline.cleaning import clean, to_csv_bytes, to_sav_bytes
 from ..pipeline.docs_extract import extract_text
@@ -195,31 +197,64 @@ def create_preview(db: Session, audit_id: str, data_path: Path, file_name: str,
     return audit
 
 
-def unlock(db: Session, audit: Audit) -> Audit:
-    """Après paiement : lance l'audit IA complet et ouvre le lien privé du client.
-
-    Idempotent : un audit déjà débloqué est renvoyé tel quel (pas de second appel IA).
+def start_unlock(db: Session, audit: Audit) -> bool:
+    """Après paiement : passe l'audit en `processing`. Retourne True si l'audit IA doit
+    être lancé (par `complete_unlock`, en tâche de fond), False s'il est déjà terminé ou
+    déjà en cours — un double clic ne déclenche donc jamais deux audits IA payants.
     """
-    if audit.status == AuditStatus.DONE and audit.paid:
-        return audit
-    if not Path(audit.stored_path).exists():
+    if audit.status in (AuditStatus.DONE, AuditStatus.PROCESSING):
+        return False
+    if audit.purged_at or not Path(audit.stored_path).exists():
         raise SourceFileMissingError("Fichier source expiré ou introuvable")
-
     audit.status = AuditStatus.PROCESSING
+    audit.error = None
     db.commit()
-    try:
-        result = run_audit(audit.stored_path, audit.file_name, _protocol_text(audit))
-    except Exception as exc:
-        logger.exception("Échec du déblocage %s", audit.id)
-        _mark_failed(db, audit, exc)
-        raise
+    return True
+
+
+# Un seul audit IA à la fois : coût et quotas de l'API restent prévisibles, et la mémoire
+# du serveur n'est pas saturée par plusieurs grosses bases en parallèle.
+_AI_AUDIT_SLOT = threading.Semaphore(1)
+
+
+def complete_unlock(audit_id: str) -> None:
+    """Tâche de fond : exécute l'audit IA complet et ouvre le lien privé du client.
+
+    Ouvre sa propre session (celle de la requête HTTP est déjà fermée). Ne lève jamais :
+    un échec est enregistré sur l'audit (`failed` + message), visible dans l'admin, et
+    le déblocage peut être relancé.
+    """
+    with _AI_AUDIT_SLOT, SessionLocal() as db:
+        audit = db.get(Audit, audit_id)
+        if audit is None or audit.status != AuditStatus.PROCESSING:
+            return
+        try:
+            result = run_audit(audit.stored_path, audit.file_name, _protocol_text(audit))
+        except Exception as exc:
+            logger.exception("Échec de l'audit complet %s", audit_id)
+            _mark_failed(db, audit, exc)
+            return
+        _finish_unlock(db, audit, result)
+
+
+def _finish_unlock(db: Session, audit: Audit, result: dict[str, Any]) -> None:
     _apply_result(audit, result)
     audit.status = AuditStatus.DONE
     audit.paid = True
     audit.expires_at = _link_expiry()  # le lien client expire N jours après le déblocage
     db.commit()
-    db.refresh(audit)
-    return audit
+
+
+def recover_interrupted(db: Session) -> int:
+    """Au démarrage : un audit resté `processing` a été interrompu (redémarrage ou
+    déploiement pendant l'audit IA). On le remet en aperçu pour qu'il soit relancé."""
+    stuck = db.query(Audit).filter(Audit.status == AuditStatus.PROCESSING).all()
+    for audit in stuck:
+        audit.status = AuditStatus.PREVIEW
+        audit.error = "Audit IA interrompu par un redémarrage du serveur : relancer le déblocage."
+        logger.warning("Audit %s interrompu, remis en aperçu", audit.id)
+    db.commit()
+    return len(stuck)
 
 
 def find_paid_by_token(db: Session, token: str) -> Audit:
