@@ -1,6 +1,6 @@
 # Dépendances d'exécution — versions figées (builds reproductibles en prod).
 # Mettre à jour volontairement (Dependabot ouvre une PR), puis relancer les tests.
-anthropic==0.117.0
+anthropic==2.0.0
 charset-normalizer==3.5.2
 fastapi==0.158.2
 matplotlib==3.11.2
