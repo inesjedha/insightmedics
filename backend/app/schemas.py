@@ -1,7 +1,19 @@
-"""Schémas Pydantic — sérialisation camelCase, identique aux types TS du front."""
+"""Schémas Pydantic — sérialisation camelCase, identique aux types TS du front
+(`src/lib/api/types.ts`)."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
+
+if TYPE_CHECKING:
+    from .models import Audit
+
+IssueLevel = Literal["info", "warn", "critical"]
+EventLevel = Literal["info", "warn", "critical", "success"]
+AuditStatusValue = Literal["preview", "processing", "done", "failed"]
 
 
 class CamelModel(BaseModel):
@@ -47,7 +59,7 @@ class LeadPatch(CamelModel):
 
 
 class AuditIssue(CamelModel):
-    level: str  # info | warn | critical
+    level: IssueLevel
     label: str
 
 
@@ -64,14 +76,27 @@ class AuditResult(CamelModel):
     duplicates_pct: float
     issues: list[AuditIssue]
     needs_human_review: bool
-    # Parcours preview → paiement : statut, accès privé, déblocage
-    status: str = "preview"  # preview | processing | done | failed
+    # Parcours aperçu → paiement : statut, accès privé, déblocage
+    status: AuditStatusValue = "preview"
     is_preview: bool = True
     paid: bool = False
     token: str | None = None
 
+    @classmethod
+    def from_audit(cls, a: Audit) -> AuditResult:
+        return cls(
+            id=a.id, file_name=a.file_name, file_size=a.file_size,
+            started_at=a.started_at, finished_at=a.finished_at,
+            score=a.score or 0, row_count=a.row_count or 0, column_count=a.column_count or 0,
+            missing_pct=a.missing_pct or 0, duplicates_pct=a.duplicates_pct or 0,
+            issues=[AuditIssue(**i) for i in a.issues or []],
+            needs_human_review=bool(a.needs_human_review),
+            status=a.status,  # type: ignore[arg-type]  # colonne String, valeurs AuditStatus
+            is_preview=a.status != "done", paid=bool(a.paid), token=a.token,
+        )
+
 
 class AuditEvent(CamelModel):
     ts: str
-    level: str  # info | warn | critical | success
+    level: EventLevel
     message: str

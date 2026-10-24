@@ -172,3 +172,22 @@ def test_api_rapport_docx(dirty_csv: Path):
     doc = Document(io.BytesIO(resp.content))
     headings = [p.text for p in doc.paragraphs if p.style.name == "Heading 1"]
     assert len(headings) == 11               # 11 sections comme Hamza
+
+
+def test_api_refuse_fichier_trop_volumineux_sans_laisser_de_trace(dirty_csv: Path, monkeypatch):
+    from app.config import settings
+    from app.services import audits as service
+
+    monkeypatch.setattr(service, "MAX_UPLOAD_BYTES", 10)
+    before = set(settings.storage_dir.rglob("original.*"))
+    client = TestClient(app)
+    with open(dirty_csv, "rb") as f:
+        resp = client.post("/audit/upload", files={"file": ("dirty.csv", f, "text/csv")})
+    assert resp.status_code == 413
+    assert set(settings.storage_dir.rglob("original.*")) == before  # aucun fichier partiel
+
+
+def test_api_livrable_inconnu(dirty_csv: Path):
+    client = TestClient(app)
+    audit_id = _upload(client, dirty_csv)
+    assert client.get(f"/audit/{audit_id}/rapport.pdf").status_code == 422

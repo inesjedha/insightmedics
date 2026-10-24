@@ -18,3 +18,13 @@ os.environ["LLM_PROVIDER"] = ""
 os.environ["ANTHROPIC_API_KEY"] = ""
 os.environ["OPENAI_API_KEY"] = ""
 os.environ["ADMIN_API_KEY"] = ""
+
+import pytest  # noqa: E402 — après la configuration de l'environnement
+
+from app.db import init_db  # noqa: E402
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _database() -> None:
+    """Crée le schéma une fois (le `TestClient` n'exécute le lifespan que dans un `with`)."""
+    init_db()

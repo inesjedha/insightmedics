@@ -4,14 +4,16 @@ Démarrage local :  uvicorn app.main:app --reload --port 8000
 """
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .config import settings
-from .db import Base, apply_light_migrations, engine
-from .routers import audits, leads
+from .db import init_db
+from .routers import audits, client, leads
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,14 +21,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger("insightmedics")
 
-Base.metadata.create_all(bind=engine)
-apply_light_migrations()
 
-app = FastAPI(title="Insight Medics API", version="0.2.0")
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Initialisation au démarrage du serveur (et non à l'import du module)."""
+    init_db()
+    yield
+
+
+app = FastAPI(title="Insight Medics API", version="0.2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+    allow_origins=settings.cors_origin_list,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -42,9 +49,9 @@ async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSON
 
 app.include_router(leads.router)
 app.include_router(audits.router)
-app.include_router(audits.client_router)
+app.include_router(client.router)
 
 
-@app.get("/health")
-def health():
+@app.get("/health", tags=["ops"])
+def health() -> dict[str, str]:
     return {"status": "ok"}
