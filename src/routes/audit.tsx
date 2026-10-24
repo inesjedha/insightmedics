@@ -1,38 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
-import {
-  Upload,
-  FileBarChart2,
-  CheckCircle2,
-  AlertTriangle,
-  Cpu,
-  Sparkles,
-  User,
-  Mail,
-  Loader2,
-  Download,
-  FileText,
-} from "lucide-react";
+import { AlertTriangle, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
-import { runAudit, getAuditDetail, createLead, updateLead } from "@/lib/api/client";
-import type { AuditEvent, AuditResult, AuditDetail } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
-import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
+import { AuditLiveLog, type AuditPhase } from "@/components/audit/AuditLiveLog";
 import {
-  VerdictBanner,
+  DeliverablesPreview,
+  PreviewNotice,
+  ResultsSummary,
+} from "@/components/audit/PreviewBlocks";
+import {
+  AuditScoreCard,
+  DomainsCard,
   ExecutiveSummaryCard,
   FindingsCard,
-  DomainsCard,
-  AuditScoreCard,
   HumanAlert,
+  VerdictBanner,
 } from "@/components/audit/ResultCards";
-import { Field, IconInput, PhoneField } from "@/components/contact/FormControls";
+import { UnlockRequestForm } from "@/components/audit/UnlockRequestForm";
+import { AuditUploader, ProtocolUploader } from "@/components/audit/UploadPanels";
+import { getAuditDetail, uploadAudit } from "@/lib/api/client";
+import type { AuditDetail, AuditEvent, AuditResult } from "@/lib/api/types";
+import { FULL_AUDIT_PRICE_LABEL } from "@/lib/offers";
 
 export const Route = createFileRoute("/audit")({
   head: () => ({
@@ -40,24 +30,20 @@ export const Route = createFileRoute("/audit")({
       { title: "Audit — aperçu gratuit · Insight Medics" },
       {
         name: "description",
-        content:
-          "Téléversez votre base : aperçu gratuit (score préliminaire + anomalies structurelles). Audit complet et livrables à 50 DT. Tous formats acceptés.",
+        content: `Téléversez votre base : aperçu gratuit (score préliminaire + anomalies structurelles). Audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}. Formats SPSS, Excel et CSV.`,
       },
       { property: "og:title", content: "Audit — aperçu gratuit · Insight Medics" },
       {
         property: "og:description",
-        content:
-          "Votre base radiographiée en quelques minutes. Aperçu gratuit ; audit complet et livrables à 50 DT.",
+        content: `Votre base radiographiée en quelques minutes. Aperçu gratuit ; audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}.`,
       },
     ],
   }),
   component: AuditPage,
 });
 
-type Phase = "idle" | "running" | "done";
-
 function AuditPage() {
-  const [phase, setPhase] = useState<Phase>("idle");
+  const [phase, setPhase] = useState<AuditPhase>("idle");
   const [file, setFile] = useState<File | null>(null);
   const [protocol, setProtocol] = useState<File | null>(null);
   const [events, setEvents] = useState<AuditEvent[]>([]);
@@ -73,7 +59,7 @@ function AuditPage() {
     }
   }, [phase]);
 
-  const isPreview = !!result && (result.isPreview ?? true) && !result.paid;
+  const isPreview = !!result && result.isPreview && !result.paid;
   const nIssues = result?.issues.length ?? 0;
   const nCrit = result?.issues.filter((i) => i.level === "critical").length ?? 0;
 
@@ -94,15 +80,11 @@ function AuditPage() {
     setDetail(null);
     setError(null);
     try {
-      const r = await runAudit({
-        file,
-        protocol,
-        onEvent: (e) => setEvents((prev) => [...prev, e]),
-      });
+      const r = await uploadAudit(file, protocol);
       setResult(r);
       const d = await getAuditDetail(r.id);
       setDetail(d);
-      if (d.events.length) setEvents(d.events);
+      setEvents(d.events);
       setPhase("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
@@ -116,7 +98,7 @@ function AuditPage() {
         <SectionHeader
           eyebrow="Audit · aperçu gratuit"
           title="Votre base radiographiée en quelques minutes."
-          description="L'aperçu est gratuit et 100 % calculé par du code — zéro valeur hallucinée : score préliminaire et anomalies structurelles. L'audit complet (verdict d'exploitabilité, anomalies classées, plan d'action et livrables) se débloque pour 50 DT."
+          description={`L'aperçu est gratuit et 100 % calculé par du code — zéro valeur hallucinée : score préliminaire et anomalies structurelles. L'audit complet (verdict d'exploitabilité, anomalies classées, plan d'action et livrables) se débloque pour ${FULL_AUDIT_PRICE_LABEL}.`}
         />
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
@@ -190,503 +172,10 @@ function AuditPage() {
             {detail?.scoreDetail && <DomainsCard scoreDetail={detail.scoreDetail} />}
             {result.needsHumanReview && <HumanAlert />}
             {isPreview && <DeliverablesPreview />}
-            <AuditReportForm result={result} id="debloquer" />
+            <UnlockRequestForm result={result} />
           </div>
         </Section>
       )}
     </SiteLayout>
-  );
-}
-
-function AuditUploader({
-  file,
-  onFile,
-  disabled,
-}: {
-  file: File | null;
-  onFile: (f: File | null) => void;
-  disabled?: boolean;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [drag, setDrag] = useState(false);
-
-  return (
-    <div
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDrag(true);
-      }}
-      onDragLeave={() => setDrag(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDrag(false);
-        if (disabled) return;
-        const f = e.dataTransfer.files?.[0] ?? null;
-        if (f) onFile(f);
-      }}
-      className={cn(
-        "rounded-2xl border-2 border-dashed bg-card p-8 text-center transition-colors",
-        drag ? "border-brand bg-brand/5" : "border-border",
-        disabled && "opacity-60",
-      )}
-    >
-      <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-brand">
-        <Upload className="h-6 w-6" />
-      </div>
-      <h3 className="mt-4 font-display text-lg font-bold">Téléversez votre base de données</h3>
-      <p className="mt-1.5 text-sm text-muted-foreground">
-        Tous formats acceptés : SPSS (.sav), Excel (.xlsx, .xls), CSV, Stata (.dta), JSON, Parquet,
-        etc.
-      </p>
-
-      <input
-        ref={inputRef}
-        type="file"
-        className="hidden"
-        onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-        disabled={disabled}
-      />
-
-      <div className="mt-5">
-        <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={disabled}>
-          Choisir un fichier
-        </Button>
-      </div>
-
-      {file && (
-        <div className="mt-5 inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm">
-          <FileBarChart2 className="h-4 w-4 text-brand" />
-          <span className="font-medium">{file.name}</span>
-          <span className="text-muted-foreground">· {(file.size / 1024).toFixed(1)} Ko</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ProtocolUploader({
-  protocol,
-  onProtocol,
-  disabled,
-}: {
-  protocol: File | null;
-  onProtocol: (f: File | null) => void;
-  disabled?: boolean;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  return (
-    <div className="rounded-xl border border-border bg-card/60 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand/10 text-brand">
-            <FileText className="h-4 w-4" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold">
-              Protocole de recherche{" "}
-              <span className="font-normal text-muted-foreground">(optionnel)</span>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Word ou PDF. Avec le protocole, l'audit évalue aussi la faisabilité de vos analyses.
-            </p>
-          </div>
-        </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".docx,.pdf,.txt"
-          className="hidden"
-          onChange={(e) => onProtocol(e.target.files?.[0] ?? null)}
-          disabled={disabled}
-        />
-        {protocol ? (
-          <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs">
-            <FileText className="h-3.5 w-3.5 text-brand" />
-            <span className="font-medium">{protocol.name}</span>
-            {!disabled && (
-              <button
-                onClick={() => onProtocol(null)}
-                className="text-muted-foreground hover:text-destructive"
-                aria-label="Retirer le protocole"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => inputRef.current?.click()}
-            disabled={disabled}
-          >
-            Ajouter le protocole
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: Phase }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h3 className="font-display text-base font-semibold">
-          <Cpu className="mr-2 inline h-4 w-4 text-brand" />
-          Analyses en temps réel
-        </h3>
-        {phase === "running" && (
-          <Badge variant="outline" className="border-brand/30 text-brand">
-            En cours
-          </Badge>
-        )}
-      </div>
-      <ul className="mt-4 space-y-2 text-sm">
-        {events.length === 0 && phase === "idle" && (
-          <li className="text-muted-foreground">
-            Le journal d'analyse s'affichera ici une fois l'audit lancé.
-          </li>
-        )}
-        {events.map((e, i) => (
-          <li
-            key={i}
-            className={cn(
-              "flex gap-3 rounded-md px-3 py-2",
-              e.level === "critical" && "bg-destructive/10 text-destructive",
-              e.level === "warn" && "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-              e.level === "success" && "bg-brand/10 text-brand",
-              e.level === "info" && "text-foreground/80",
-            )}
-          >
-            <span className="font-mono text-xs text-muted-foreground">
-              {new Date(e.ts).toLocaleTimeString()}
-            </span>
-            <span>{e.message}</span>
-          </li>
-        ))}
-        {phase === "running" && (
-          <li className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Analyse structurelle de votre base — quelques secondes…
-          </li>
-        )}
-      </ul>
-    </div>
-  );
-}
-
-const phoneRegex = /^(\+|00)?\d[\d\s().-]{6,18}$/;
-const reportSchema = z.object({
-  phone: z
-    .string()
-    .trim()
-    .min(8, "Numéro trop court")
-    .max(25, "Numéro trop long")
-    .regex(phoneRegex, "Numéro invalide"),
-  email: z.string().trim().email("Email invalide").max(255),
-  name: z.string().trim().max(100).optional().or(z.literal("")),
-});
-
-const FULL_AUDIT_INCLUDES = [
-  "Le verdict clair : votre base est-elle exploitable pour publier ?",
-  "Chaque anomalie classée, expliquée, avec une correction proposée",
-  "Un plan d'action priorisé, étape par étape",
-  "Le classeur Excel d'audit (10 onglets) + le rapport Word complet",
-  "Votre base nettoyée et anonymisée (.sav + .csv), prête à analyser",
-];
-
-function scrollToUnlock() {
-  document.getElementById("debloquer")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function PreviewNotice({ nIssues }: { nIssues: number }) {
-  return (
-    <div className="rounded-2xl border border-brand/30 bg-brand/5 p-6 sm:p-7">
-      <div className="flex flex-wrap items-center gap-3">
-        <Sparkles className="h-5 w-5 text-brand" />
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Aperçu gratuit
-        </p>
-      </div>
-      <p className="mt-2 font-display text-xl font-bold tracking-tight">
-        Voici un premier diagnostic — gratuit et automatique.
-      </p>
-      <p className="mt-2 max-w-3xl text-sm leading-relaxed text-foreground/85">
-        {nIssues > 0 ? (
-          <>
-            Nous avons repéré <strong>{nIssues} point(s) d'attention</strong> sur votre base.
-            L'audit complet vous dit exactement <strong>comment les corriger</strong> et vous livre
-            :
-          </>
-        ) : (
-          <>
-            Bonne base à première vue. L'<strong>audit complet (50 DT)</strong> confirme et va
-            beaucoup plus loin — il vous livre :
-          </>
-        )}
-      </p>
-      <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
-        {FULL_AUDIT_INCLUDES.map((item) => (
-          <li key={item} className="flex items-start gap-2.5 text-sm text-foreground/90">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-      <Button
-        onClick={scrollToUnlock}
-        className="mt-5 bg-brand text-brand-foreground hover:bg-brand/90"
-      >
-        Débloquer l'audit complet — 50 DT
-      </Button>
-    </div>
-  );
-}
-
-function ResultsSummary({
-  result,
-  nIssues,
-  nCrit,
-}: {
-  result: AuditResult;
-  nIssues: number;
-  nCrit: number;
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-surface/60 px-5 py-3.5 text-sm">
-      <span className="font-medium text-foreground">
-        Base de {result.rowCount.toLocaleString("fr-FR")} lignes × {result.columnCount} variables
-      </span>
-      <span className="text-muted-foreground">
-        {" — "}
-        {nIssues === 0
-          ? "aucun point d'attention majeur détecté."
-          : `${nIssues} point(s) d'attention${nCrit ? `, dont ${nCrit} critique(s)` : ""}.`}
-      </span>
-    </div>
-  );
-}
-
-function DeliverablesPreview() {
-  const items = [
-    { label: "Classeur Excel", sub: "10 onglets d'audit", accent: "bg-emerald-500" },
-    { label: "Rapport Word", sub: "11 sections rédigées", accent: "bg-blue-500" },
-    { label: "Base nettoyée", sub: ".sav + .csv anonymisés", accent: "bg-brand" },
-  ];
-  return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <h3 className="font-display text-lg font-bold">Ce que vous recevez après paiement</h3>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Trois livrables prêts à l'emploi, en plus de l'audit complet à l'écran.
-      </p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        {items.map((it) => (
-          <div key={it.label} className="rounded-xl border border-border bg-surface/50 p-4">
-            <div className="flex flex-col gap-1.5" aria-hidden>
-              <div className={cn("h-2 w-10 rounded-full", it.accent)} />
-              <div className="h-1.5 w-full rounded bg-border" />
-              <div className="h-1.5 w-11/12 rounded bg-border" />
-              <div className="h-1.5 w-4/5 rounded bg-border" />
-            </div>
-            <p className="mt-3 text-sm font-semibold text-foreground">{it.label}</p>
-            <p className="text-xs text-muted-foreground">{it.sub}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AuditReportForm({ result, id }: { result: AuditResult; id?: string }) {
-  const [sent, setSent] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [consent, setConsent] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
-  const mountedAtRef = useRef<number>(Date.now());
-
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
-
-    // Anti-spam silencieux : honeypot + soumission trop rapide => faux succès.
-    if (isHoneypotTripped(data[HONEYPOT_FIELD]) || isTooFast(mountedAtRef.current)) {
-      setSent(true);
-      return;
-    }
-
-    if (!consent) {
-      setErrors({ consent: "Acceptation requise pour continuer" });
-      return;
-    }
-
-    const parsed = reportSchema.safeParse(data);
-    if (!parsed.success) {
-      const fe: Record<string, string> = {};
-      for (const i of parsed.error.issues) {
-        const k = String(i.path[0]);
-        if (!fe[k]) fe[k] = i.message;
-      }
-      setErrors(fe);
-      return;
-    }
-    setErrors({});
-    setSending(true);
-    try {
-      const lead = await createLead({
-        source: "audit",
-        name: parsed.data.name || undefined,
-        email: parsed.data.email,
-        phone: parsed.data.phone,
-        auditId: result.id,
-        auditScore: result.score,
-        priority: result.needsHumanReview ? "high" : "normal",
-      });
-      if (result.needsHumanReview) {
-        await updateLead(lead.id, {
-          notes: `Audit ${result.score}/100 — relecture humaine requise (${result.issues.filter((i) => i.level === "critical").length} alerte(s) critique(s)).`,
-        });
-      }
-      setSent(true);
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <div
-      id={id}
-      className="mt-6 scroll-mt-24 rounded-2xl border border-brand/30 bg-card p-6 shadow-sm sm:p-8"
-    >
-      <div className="flex items-center gap-3">
-        <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
-          <Download className="h-5 w-5" />
-        </div>
-        <div>
-          <h3 className="font-display text-lg font-bold">Débloquer l'audit complet — 50 DT</h3>
-          <p className="text-sm text-muted-foreground">
-            Laissez vos coordonnées : nous vous contactons sous 48h ouvrées (téléphone ou email)
-            pour finaliser le paiement, puis nous lançons votre audit complet et vous recevez le
-            lien privé vers vos résultats et vos livrables.
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
-        {[
-          "Validé par un expert humain",
-          "Données anonymisées",
-          "Vous ne payez qu'après nous avoir parlé",
-        ].map((t) => (
-          <span key={t} className="inline-flex items-center gap-1.5">
-            <CheckCircle2 className="h-3.5 w-3.5 text-brand" />
-            {t}
-          </span>
-        ))}
-      </div>
-
-      {sent ? (
-        <div className="mt-6 flex items-start gap-3 rounded-lg border border-brand/30 bg-brand/5 p-4 text-sm text-foreground">
-          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
-          <div>
-            <p className="font-semibold">Demande enregistrée. Merci !</p>
-            <p className="mt-1 text-muted-foreground">
-              Nous vous contactons sous 48h ouvrées (par téléphone ou email) pour finaliser le
-              paiement de 50 DT. Dès réception, votre audit complet est lancé et vous recevez le
-              lien privé vers vos résultats et vos livrables.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={onSubmit} className="mt-6 grid gap-5 sm:grid-cols-2" noValidate>
-          {/* Honeypot anti-bot — invisible aux humains */}
-          <input
-            type="text"
-            name={HONEYPOT_FIELD}
-            tabIndex={-1}
-            autoComplete="off"
-            aria-hidden="true"
-            style={honeypotStyle}
-            defaultValue=""
-          />
-
-          <Field id="name" label="Nom complet">
-            <IconInput icon={<User className="h-4 w-4" />}>
-              <Input
-                id="name"
-                name="name"
-                autoComplete="name"
-                maxLength={100}
-                placeholder="Ibn Sina"
-                className="h-11 pl-10"
-              />
-            </IconInput>
-          </Field>
-
-          <PhoneField required hint="Prioritaire pour vous recontacter" />
-
-          {errors.phone && <p className="text-xs text-destructive sm:col-span-2">{errors.phone}</p>}
-
-          <div className="sm:col-span-2">
-            <Field id="email" label="Email" required>
-              <IconInput icon={<Mail className="h-4 w-4" />}>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  maxLength={255}
-                  placeholder="prenom@exemple.com"
-                  className="h-11 pl-10"
-                />
-              </IconInput>
-            </Field>
-            {errors.email && <p className="mt-1.5 text-xs text-destructive">{errors.email}</p>}
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="flex items-start gap-3 rounded-lg border border-border bg-surface/40 p-3.5 text-sm">
-              <Checkbox
-                id="audit-consent"
-                checked={consent}
-                onCheckedChange={(v) => {
-                  setConsent(v === true);
-                  if (v === true && errors.consent) {
-                    setErrors((prev) => ({ ...prev, consent: undefined }));
-                  }
-                }}
-                className="mt-0.5"
-              />
-              <span className="leading-relaxed text-foreground/90">
-                J'accepte que mon fichier et mes coordonnées soient traités pour générer cet audit
-                et d'être recontacté(e) par Insight Medics.{" "}
-                <a
-                  href="/confidentialite"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-brand underline-offset-2 hover:underline"
-                >
-                  Politique de confidentialité
-                </a>
-                .
-              </span>
-            </label>
-            {errors.consent && <p className="mt-1.5 text-xs text-destructive">{errors.consent}</p>}
-          </div>
-
-          <div className="sm:col-span-2 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-            <Button
-              type="submit"
-              disabled={sending}
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
-            >
-              {sending ? "Envoi…" : "Demander l'audit complet (50 DT)"}
-            </Button>
-          </div>
-        </form>
-      )}
-    </div>
   );
 }
