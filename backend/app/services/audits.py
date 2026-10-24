@@ -25,7 +25,7 @@ from ..pipeline.docs_extract import extract_text
 from ..pipeline.ingest import IngestError, ingest
 from ..pipeline.report_docx import build_report
 from ..pipeline.report_xlsx import build_workbook
-from ..pipeline.runner import run_audit, run_preview
+from ..pipeline.runner import run_preview
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,10 @@ class SourceFileMissingError(AuditError):
     """Le fichier source a expiré ou a disparu du stockage."""
 
 
+class UnlockNotAllowedError(AuditError):
+    """Audit qui ne peut pas être débloqué (aperçu jamais calculé)."""
+
+
 class DeliverableUnavailableError(AuditError):
     pass
 
@@ -79,7 +83,7 @@ def data_path(audit_id: str, ext: str) -> Path:
     return _audit_dir(audit_id) / f"original{ext}"
 
 
-def _link_expiry() -> str:
+def link_expiry() -> str:
     return (datetime.now(UTC) + timedelta(days=settings.file_retention_days)).isoformat()
 
 
@@ -120,7 +124,7 @@ def save_protocol(audit_id: str, src: BinaryIO, file_name: str) -> Path:
     return dest
 
 
-def _protocol_text(audit: Audit) -> str | None:
+def protocol_text(audit: Audit) -> str | None:
     """Ré-extrait le texte du protocole stocké à côté du fichier source, s'il existe."""
     for path in Path(audit.stored_path).parent.glob("protocol.*"):
         try:
@@ -145,13 +149,18 @@ _RESULT_FIELDS = ("started_at", "finished_at", "score", "row_count", "column_cou
                   "ai_audit", "events")
 
 
-def _apply_result(audit: Audit, result: dict[str, Any]) -> None:
-    """Recopie le résultat du pipeline (`runner`) sur l'audit."""
-    for field in _RESULT_FIELDS:
-        setattr(audit, field, result[field])
-    audit.needs_human_review = needs_human_review(
+def result_values(result: dict[str, Any]) -> dict[str, Any]:
+    """Colonnes de l'audit à mettre à jour à partir du résultat du pipeline (`runner`)."""
+    values = {field: result[field] for field in _RESULT_FIELDS}
+    values["needs_human_review"] = needs_human_review(
         result["score"], result["missing_pct"], result["duplicates_pct"],
         result["critical_issues"])
+    return values
+
+
+def _apply_result(audit: Audit, result: dict[str, Any]) -> None:
+    for field, value in result_values(result).items():
+        setattr(audit, field, value)
 
 
 def _mark_failed(db: Session, audit: Audit, exc: Exception) -> None:
@@ -177,7 +186,7 @@ def create_preview(db: Session, audit_id: str, data_path: Path, file_name: str,
     audit = Audit(id=audit_id, file_name=file_name, file_size=file_size,
                   stored_path=str(data_path), started_at=utcnow_iso(),
                   token=secrets.token_urlsafe(32),  # lien privé : 256 bits, non devinable
-                  status=AuditStatus.PREVIEW, paid=False, expires_at=_link_expiry())
+                  status=AuditStatus.PREVIEW, paid=False, expires_at=link_expiry())
     db.add(audit)
     db.commit()
     try:
@@ -190,33 +199,6 @@ def create_preview(db: Session, audit_id: str, data_path: Path, file_name: str,
         _mark_failed(db, audit, exc)
         raise
     _apply_result(audit, result)
-    db.commit()
-    db.refresh(audit)
-    return audit
-
-
-def unlock(db: Session, audit: Audit) -> Audit:
-    """Après paiement : lance l'audit IA complet et ouvre le lien privé du client.
-
-    Idempotent : un audit déjà débloqué est renvoyé tel quel (pas de second appel IA).
-    """
-    if audit.status == AuditStatus.DONE and audit.paid:
-        return audit
-    if not Path(audit.stored_path).exists():
-        raise SourceFileMissingError("Fichier source expiré ou introuvable")
-
-    audit.status = AuditStatus.PROCESSING
-    db.commit()
-    try:
-        result = run_audit(audit.stored_path, audit.file_name, _protocol_text(audit))
-    except Exception as exc:
-        logger.exception("Échec du déblocage %s", audit.id)
-        _mark_failed(db, audit, exc)
-        raise
-    _apply_result(audit, result)
-    audit.status = AuditStatus.DONE
-    audit.paid = True
-    audit.expires_at = _link_expiry()  # le lien client expire N jours après le déblocage
     db.commit()
     db.refresh(audit)
     return audit

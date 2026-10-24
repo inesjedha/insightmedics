@@ -1,9 +1,9 @@
 """Accès base de données : moteur SQLAlchemy, sessions, initialisation du schéma."""
 
-import contextlib
 from collections.abc import Iterator
+from typing import cast
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import CursorResult, Update, create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import settings
@@ -28,6 +28,9 @@ _ADDED_COLUMNS = {
         "email": "VARCHAR",
         "paid": "BOOLEAN",
         "expires_at": "VARCHAR",
+        "purged_at": "VARCHAR",
+        "job_id": "VARCHAR",
+        "job_started_at": "VARCHAR",
     },
 }
 
@@ -37,12 +40,28 @@ def init_db() -> None:
     from . import models  # noqa: F401 — enregistre les modèles auprès de Base.metadata
 
     Base.metadata.create_all(bind=engine)
+    inspector = inspect(engine)
     with engine.begin() as conn:
         for table, columns in _ADDED_COLUMNS.items():
+            existing = {c["name"] for c in inspector.get_columns(table)}
             for column, column_type in columns.items():
-                # La colonne existe déjà : l'ALTER échoue, ce qui est attendu.
-                with contextlib.suppress(Exception):
-                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}"))
+                # On vérifie avant d'ajouter : sur Postgres, un ALTER en échec annulerait
+                # tous les suivants de la transaction.
+                if column not in existing:
+                    # IF NOT EXISTS (Postgres) : deux instances qui démarrent ensemble
+                    # ne se gênent pas. SQLite ne le supporte pas, mais n'a qu'une instance.
+                    guard = "IF NOT EXISTS " if engine.dialect.name == "postgresql" else ""
+                    conn.execute(text(
+                        f"ALTER TABLE {table} ADD COLUMN {guard}{column} {column_type}"))
+
+
+def execute_update(db: Session, statement: Update) -> int:
+    """Exécute un UPDATE et retourne le nombre de lignes modifiées (sans commit).
+
+    Base des écritures conditionnelles atomiques (« UPDATE … WHERE état attendu ») :
+    0 ligne modifiée signifie que l'état a changé entre-temps, ailleurs.
+    """
+    return cast(CursorResult, db.execute(statement)).rowcount
 
 
 def get_db() -> Iterator[Session]:

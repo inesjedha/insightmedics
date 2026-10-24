@@ -12,8 +12,14 @@ class Settings(BaseSettings):
     storage_dir: Path = Path("./storage")
     # Origines autorisées (front local + prod), séparées par des virgules.
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
-    # Rétention des fichiers uploadés (jours) — purge à implémenter (tâche cron).
+    # Rétention (jours) : fichiers et détail d'un audit sont purgés N jours après l'aperçu,
+    # ou N jours après la livraison de l'audit complet (le lien client expire au même moment).
     file_retention_days: int = 30
+    # Maintenance périodique lancée par le serveur (purge + libération des audits IA
+    # interrompus), en minutes ; 0 = désactivée.
+    maintenance_interval_minutes: float = 10
+    # Durée maximale d'un audit IA avant de le considérer interrompu (verrou à bail).
+    unlock_lease_minutes: float = 60
     # Fournisseur IA : "anthropic" ou "openai" ("" = auto selon la clé disponible).
     llm_provider: str = ""
     anthropic_api_key: str = ""

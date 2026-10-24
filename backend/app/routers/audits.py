@@ -7,7 +7,7 @@ traduction HTTP (validation d'entrée, codes d'erreur, sérialisation).
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from ..auth import require_admin
@@ -16,6 +16,7 @@ from ..models import Audit, AuditStatus
 from ..pipeline.ingest import IngestError
 from ..schemas import AuditEvent, AuditResult
 from ..services import audits as service
+from ..services import unlock_jobs
 from ..services.audits import DeliverableKind
 from .downloads import deliverable_response
 
@@ -36,22 +37,31 @@ def _get_or_404(db: Session, audit_id: str) -> Audit:
 def list_audits(db: Session = Depends(get_db)) -> list[AuditResult]:
     """Tous les audits, du plus récent au plus ancien."""
     rows = db.query(Audit).order_by(Audit.started_at.desc()).all()
-    return [AuditResult.from_audit(a, include_token=True) for a in rows]
+    return [AuditResult.from_audit(a, view="admin") for a in rows]
 
 
 @router.post("/{audit_id}/unlock", response_model=AuditResult, response_model_by_alias=True,
-             dependencies=[Depends(require_admin)])
-def unlock_audit(audit_id: str, db: Session = Depends(get_db)) -> AuditResult:
-    """Après paiement : lance l'audit IA complet et active le lien privé du client."""
+             status_code=202, dependencies=[Depends(require_admin)])
+def unlock_audit(audit_id: str, background: BackgroundTasks, response: Response,
+                 db: Session = Depends(get_db)) -> AuditResult:
+    """Après paiement : lance l'audit IA complet en tâche de fond (plusieurs minutes).
+
+    Répond tout de suite 202 avec le statut `processing` ; l'admin suit l'avancement via
+    GET /audit. Répond 200 si l'audit est déjà terminé. Un second appel pendant le
+    traitement ne relance rien.
+    """
     audit = _get_or_404(db, audit_id)
     try:
-        audit = service.unlock(db, audit)
+        job_id = unlock_jobs.claim(db, audit)
     except service.SourceFileMissingError as exc:
         raise HTTPException(410, str(exc)) from exc
-    except Exception as exc:
-        # Détail tracé côté serveur par le service, jamais renvoyé au client.
-        raise HTTPException(500, "Erreur interne pendant l'audit complet") from exc
-    return AuditResult.from_audit(audit, include_token=True)
+    except service.UnlockNotAllowedError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    if job_id is not None:
+        background.add_task(unlock_jobs.run, audit.id, job_id)
+    if audit.status == AuditStatus.DONE:
+        response.status_code = 200
+    return AuditResult.from_audit(audit, view="admin")
 
 
 @router.get("/{audit_id}/profiling", dependencies=[Depends(require_admin)])
@@ -92,7 +102,7 @@ def upload_and_preview(file: UploadFile, protocol: UploadFile | None = None,
         raise HTTPException(422, str(exc)) from exc
     except Exception as exc:
         raise HTTPException(500, "Erreur interne pendant l'aperçu") from exc
-    return AuditResult.from_audit(audit)
+    return AuditResult.from_audit(audit, view="public")
 
 
 @router.get("/{audit_id}", response_model=AuditResult, response_model_by_alias=True)
@@ -100,7 +110,7 @@ def get_audit(audit_id: str, db: Session = Depends(get_db)) -> AuditResult:
     audit = _get_or_404(db, audit_id)
     if audit.status == AuditStatus.FAILED:
         raise HTTPException(404, "Audit introuvable")
-    return AuditResult.from_audit(audit)
+    return AuditResult.from_audit(audit, view="public")
 
 
 @router.get("/{audit_id}/events", response_model=list[AuditEvent],

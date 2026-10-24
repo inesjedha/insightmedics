@@ -1,61 +1,84 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+  AlertTriangle,
+  Check,
+  Copy,
   FileBarChart2,
   Loader2,
   Lock,
-  Unlock,
   RefreshCw,
-  AlertTriangle,
-  Copy,
-  Check,
+  RotateCcw,
+  Unlock,
 } from "lucide-react";
 import { listAudits, unlockAudit, UnauthorizedError } from "@/lib/api/client";
 import type { AuditResult } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { FULL_AUDIT_PRICE_LABEL } from "@/lib/offers";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/audits")({
   component: AdminAudits,
 });
 
+/** Intervalle de rafraîchissement tant qu'un audit IA tourne (il dure plusieurs minutes). */
+const POLL_MS = 5000;
+
 function AdminAudits() {
   const [audits, setAudits] = useState<AuditResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [needKey, setNeedKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [unlocking, setUnlocking] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  // Erreur d'une action (déblocage) : distincte du chargement, elle n'arrête pas le suivi.
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
+  const refresh = useCallback(async () => {
     try {
       setAudits(await listAudits());
       setNeedKey(false);
+      setError(null);
     } catch (e) {
       if (e instanceof UnauthorizedError) setNeedKey(true);
       else setError(e instanceof Error ? e.message : "Erreur de chargement");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    await refresh();
+    setLoading(false);
+  }, [refresh]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
+
+  // Tant qu'un audit est en cours côté serveur, on rafraîchit la liste en silence
+  // (arrêt dès qu'une erreur s'affiche, pour ne pas insister indéfiniment).
+  const anyProcessing = audits.some((a) => a.status === "processing");
+  const pollingBlocked = needKey || error !== null;
+  useEffect(() => {
+    if (!anyProcessing || pollingBlocked) return;
+    const timer = window.setInterval(refresh, POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [anyProcessing, pollingBlocked, refresh]);
 
   const onUnlock = async (id: string) => {
+    if (pendingId) return; // double clic : une seule demande
     if (!window.confirm("Paiement reçu ? Lancer l'audit IA complet (consomme la clé IA) ?")) return;
-    setUnlocking(id);
-    setError(null);
+    setPendingId(id);
+    setActionError(null);
     try {
+      // Réponse immédiate (statut « processing ») : le suivi se fait par rafraîchissement.
       const updated = await unlockAudit(id);
       setAudits((prev) => prev.map((a) => (a.id === id ? updated : a)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Échec du déblocage");
+      setActionError(e instanceof Error ? e.message : "Échec du déblocage");
     } finally {
-      setUnlocking(null);
+      setPendingId(null);
     }
   };
 
@@ -65,7 +88,8 @@ function AdminAudits() {
         <div>
           <h1 className="font-display text-2xl font-bold">Audits</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Débloquez un audit après réception du paiement (50 DT) — l'audit IA complet se lance.
+            Débloquez un audit après réception du paiement ({FULL_AUDIT_PRICE_LABEL}) : l'audit IA
+            complet se lance en arrière-plan (quelques minutes), vous pouvez quitter la page.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={load} disabled={loading}>
@@ -83,6 +107,12 @@ function AdminAudits() {
         <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+      {actionError && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{actionError}</span>
         </div>
       )}
 
@@ -105,7 +135,7 @@ function AdminAudits() {
             </thead>
             <tbody>
               {audits.map((a) => (
-                <tr key={a.id} className="border-t border-border">
+                <tr key={a.id} className="border-t border-border align-top">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 font-medium">
                       <FileBarChart2 className="h-4 w-4 shrink-0 text-brand" />
@@ -114,47 +144,18 @@ function AdminAudits() {
                     <div className="font-mono text-xs text-muted-foreground">{a.id}</div>
                   </td>
                   <td className="px-4 py-3">
-                    {a.paid ? (
-                      <Badge className="border-transparent bg-brand/15 text-brand">
-                        Payé · complet
-                      </Badge>
-                    ) : a.status === "failed" ? (
-                      <Badge variant="outline" className="text-destructive">
-                        Échec
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-muted-foreground">
-                        Aperçu
-                      </Badge>
+                    <StatusBadge audit={a} />
+                    {a.error && <p className="mt-1 max-w-xs text-xs text-destructive">{a.error}</p>}
+                    {a.expiresAt && !a.purged && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {a.status === "done" ? "Lien client" : "Données"} conservées jusqu'au{" "}
+                        {new Date(a.expiresAt).toLocaleDateString("fr-FR")}
+                      </p>
                     )}
                   </td>
                   <td className="px-4 py-3 font-mono tabular-nums">{a.score}/100</td>
                   <td className="px-4 py-3 text-right">
-                    {a.status === "done" ? (
-                      <div className="inline-flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 text-xs text-brand">
-                          <Unlock className="h-3.5 w-3.5" /> débloqué
-                        </span>
-                        {a.token && <CopyLinkButton token={a.token} />}
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => onUnlock(a.id)}
-                        disabled={unlocking === a.id}
-                        className="bg-brand text-brand-foreground hover:bg-brand/90"
-                      >
-                        {unlocking === a.id ? (
-                          <>
-                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Déblocage…
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="mr-2 h-3.5 w-3.5" /> Débloquer
-                          </>
-                        )}
-                      </Button>
-                    )}
+                    <AuditAction audit={a} pending={pendingId === a.id} onUnlock={onUnlock} />
                   </td>
                 </tr>
               ))}
@@ -163,6 +164,87 @@ function AdminAudits() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function StatusBadge({ audit }: { audit: AuditResult }) {
+  if (audit.purged) {
+    return (
+      <Badge variant="outline" className="text-muted-foreground">
+        Expiré · données purgées
+      </Badge>
+    );
+  }
+  switch (audit.status) {
+    case "done":
+      return <Badge className="border-transparent bg-brand/15 text-brand">Payé · complet</Badge>;
+    case "processing":
+      return (
+        <Badge variant="outline" className="gap-1 border-brand/30 text-brand">
+          <Loader2 className="h-3 w-3 animate-spin" /> Audit IA en cours
+        </Badge>
+      );
+    case "failed":
+      return (
+        <Badge variant="outline" className="text-destructive">
+          Échec
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" className="text-muted-foreground">
+          Aperçu
+        </Badge>
+      );
+  }
+}
+
+function AuditAction({
+  audit,
+  pending,
+  onUnlock,
+}: {
+  audit: AuditResult;
+  pending: boolean;
+  onUnlock: (id: string) => void;
+}) {
+  if (audit.status === "done") {
+    return (
+      <div className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-1 text-xs text-brand">
+          <Unlock className="h-3.5 w-3.5" /> débloqué
+        </span>
+        {audit.token && !audit.purged && <CopyLinkButton token={audit.token} />}
+      </div>
+    );
+  }
+  // Rien à débloquer : données purgées, ou aperçu jamais calculé (fichier illisible).
+  if (audit.purged || audit.rowCount === 0) return null;
+  if (audit.status === "processing") {
+    return <span className="text-xs text-muted-foreground">quelques minutes…</span>;
+  }
+  const retry = audit.status === "failed" || Boolean(audit.error);
+  return (
+    <Button
+      size="sm"
+      onClick={() => onUnlock(audit.id)}
+      disabled={pending}
+      className="bg-brand text-brand-foreground hover:bg-brand/90"
+    >
+      {pending ? (
+        <>
+          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Envoi…
+        </>
+      ) : retry ? (
+        <>
+          <RotateCcw className="mr-2 h-3.5 w-3.5" /> Relancer
+        </>
+      ) : (
+        <>
+          <Lock className="mr-2 h-3.5 w-3.5" /> Débloquer
+        </>
+      )}
+    </Button>
   );
 }
 

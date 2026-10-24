@@ -82,10 +82,23 @@ def test_unlock_lance_l_audit_complet(small_csv: Path):
     assert up["status"] == "preview" and up["paid"] is False
 
     assert client.post(f"/audit/{aid}/unlock").status_code == 401  # protégé
+
+    # Réponse immédiate : l'audit IA part en tâche de fond.
     r = client.post(f"/audit/{aid}/unlock", headers=HEADERS)
-    assert r.status_code == 200
-    body = r.json()
-    assert body["status"] == "done" and body["paid"] is True and body["isPreview"] is False
+    assert r.status_code == 202 and r.json()["status"] == "processing"
+
+    # (TestClient exécute la tâche de fond avant de rendre la main.)
+    done = _admin_audit(client, aid)
+    assert done["status"] == "done" and done["paid"] is True and done["isPreview"] is False
+
+    # Second appel : déjà terminé → 200, aucun nouvel audit IA.
+    again = client.post(f"/audit/{aid}/unlock", headers=HEADERS)
+    assert again.status_code == 200 and again.json()["status"] == "done"
+
+
+def _admin_audit(client: TestClient, audit_id: str) -> dict:
+    listed = client.get("/audit", headers=HEADERS).json()
+    return next(a for a in listed if a["id"] == audit_id)
 
 
 def test_liste_audits_admin(small_csv: Path):

@@ -58,8 +58,15 @@ export interface AuditResult {
   status: "preview" | "processing" | "done" | "failed";
   isPreview: boolean;
   paid: boolean;
-  /** Jeton du lien privé client (/r/:token). */
+  /** Jeton du lien privé client (/r/:token) ; absent des réponses publiques. */
   token: string | null;
+  // Vue admin uniquement
+  /** Message de la dernière erreur (audit IA en échec ou interrompu). */
+  error: string | null;
+  /** Données purgées après la durée de conservation. */
+  purged: boolean;
+  /** Date de purge prévue (ISO) : expiration du lien client, ou de l'aperçu. */
+  expiresAt: string | null;
 }
 
 export interface AuditEvent {

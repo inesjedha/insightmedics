@@ -65,7 +65,8 @@ export function listAudits(): Promise<AuditResult[]> {
   return request<AuditResult[]>("/audit", { admin: true });
 }
 
-/** Après paiement : lance l'audit IA complet (plusieurs minutes). */
+/** Après paiement : démarre l'audit IA complet en tâche de fond. Répond tout de suite
+ * (statut « processing ») ; suivre l'avancement avec listAudits. */
 export function unlockAudit(id: string): Promise<AuditResult> {
   return request<AuditResult>(`/audit/${encodeURIComponent(id)}/unlock`, {
     method: "POST",
