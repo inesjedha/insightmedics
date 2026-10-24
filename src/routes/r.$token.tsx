@@ -24,7 +24,7 @@ import {
   getClientResult,
   getClientDetail,
   clientDownloadUrl,
-  LinkError,
+  ApiError,
   type ClientDeliverable,
 } from "@/lib/api/client";
 import type { AiAssessment, AuditResult, ScoreDetail } from "@/lib/api/types";
@@ -61,8 +61,8 @@ function ClientResultPage() {
         setPhase("ready");
       } catch (e) {
         if (!alive) return;
-        if (e instanceof LinkError && e.status === 410) setPhase("expired");
-        else if (e instanceof LinkError && e.status === 404) setPhase("invalid");
+        if (e instanceof ApiError && e.status === 410) setPhase("expired");
+        else if (e instanceof ApiError && e.status === 404) setPhase("invalid");
         else setPhase("error");
       }
     })();

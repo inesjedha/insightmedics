@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { getLead, updateLead } from "@/lib/api/client";
-import type { Lead, LeadStatus } from "@/lib/api/types";
+import type { Lead, LeadStatus, LeadUpdate } from "@/lib/api/types";
+import { LEAD_STATUS_LABELS } from "@/lib/leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,12 +14,7 @@ export const Route = createFileRoute("/admin/leads/$id")({
   component: LeadDetail,
 });
 
-const STATUSES: { value: LeadStatus; label: string }[] = [
-  { value: "new", label: "Nouveau" },
-  { value: "contacted", label: "Contacté" },
-  { value: "won", label: "Client gagné" },
-  { value: "lost", label: "Perdu" },
-];
+const STATUSES = Object.entries(LEAD_STATUS_LABELS) as [LeadStatus, string][];
 
 function toDateInputValue(iso?: string) {
   if (!iso) return "";
@@ -33,38 +29,44 @@ function LeadDetail() {
   const navigate = useNavigate();
   const [lead, setLead] = useState<Lead | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getLead(id).then(setLead);
+    getLead(id)
+      .then(setLead)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Lead introuvable"));
   }, [id]);
 
   if (!lead) {
-    return <div className="text-sm text-muted-foreground">Chargement…</div>;
+    return <div className="text-sm text-muted-foreground">{error ?? "Chargement…"}</div>;
   }
+
+  const save = async (update: LeadUpdate) => {
+    setSaving(true);
+    setError(null);
+    try {
+      setLead(await updateLead(lead.id, update));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Échec de l'enregistrement");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const onSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const patch: Partial<Lead> = {
+    await save({
       status: (fd.get("status") as LeadStatus) || lead.status,
       notes: (fd.get("notes") as string) || undefined,
       nextFollowUpAt: fd.get("nextFollowUpAt")
         ? new Date(fd.get("nextFollowUpAt") as string).toISOString()
         : undefined,
-    };
-    setSaving(true);
-    const updated = await updateLead(lead.id, patch);
-    setSaving(false);
-    if (updated) setLead(updated);
+    });
   };
 
-  const markContacted = async () => {
-    const updated = await updateLead(lead.id, {
-      status: "contacted",
-      lastContactAt: new Date().toISOString(),
-    });
-    if (updated) setLead(updated);
-  };
+  const markContacted = () =>
+    save({ status: "contacted", lastContactAt: new Date().toISOString() });
 
   return (
     <div className="space-y-6">
@@ -130,9 +132,9 @@ function LeadDetail() {
               defaultValue={lead.status}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
-              {STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
+              {STATUSES.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
                 </option>
               ))}
             </select>
@@ -157,7 +159,8 @@ function LeadDetail() {
             placeholder="Historique d'échanges, contexte, devis envoyé…"
           />
         </div>
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-3">
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <Button
             type="submit"
             disabled={saving}

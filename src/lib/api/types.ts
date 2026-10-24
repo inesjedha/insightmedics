@@ -1,33 +1,40 @@
-// Types partagés entre l'UI et le client API.
-// Quand tu branches ton vrai backend, ces types restent identiques.
+// Types des données échangées avec l'API — miroir de backend/app/schemas.py.
 
 export type LeadSource = "contact" | "audit";
 export type LeadStatus = "new" | "contacted" | "won" | "lost";
 export type LeadPriority = "normal" | "high";
 
-export interface Lead {
-  id: string;
-  createdAt: string; // ISO
+/** Champs envoyés par les formulaires publics ; le reste est fixé par le serveur. */
+export interface LeadInput {
   source: LeadSource;
-  priority: LeadPriority;
-  // Identité
   name?: string;
   email: string;
   phone: string;
-  // Contact form
+  // Formulaire de contact
   subject?: string;
   problem?: string;
   objective?: string;
   message?: string;
-  // Audit form
+  // Demande de déblocage : le serveur en déduit score et priorité
   auditId?: string;
+}
+
+export interface Lead extends LeadInput {
+  id: string;
+  createdAt: string; // ISO
+  priority: LeadPriority;
   auditScore?: number;
-  // CRM state
+  // Suivi CRM
   status: LeadStatus;
   lastContactAt?: string;
   nextFollowUpAt?: string;
   notes?: string;
 }
+
+/** Champs de suivi modifiables depuis le CRM. */
+export type LeadUpdate = Partial<
+  Pick<Lead, "priority" | "status" | "lastContactAt" | "nextFollowUpAt" | "notes">
+>;
 
 export interface AuditIssue {
   level: "info" | "warn" | "critical";
@@ -47,11 +54,12 @@ export interface AuditResult {
   duplicatesPct: number;
   issues: AuditIssue[];
   needsHumanReview: boolean;
-  // Parcours aperçu → paiement (renseignés par le backend réel ; absents en mode mock)
-  status?: "preview" | "processing" | "done" | "failed";
-  isPreview?: boolean;
-  paid?: boolean;
-  token?: string | null;
+  // Parcours aperçu → paiement → audit complet
+  status: "preview" | "processing" | "done" | "failed";
+  isPreview: boolean;
+  paid: boolean;
+  /** Jeton du lien privé client (/r/:token). */
+  token: string | null;
 }
 
 export interface AuditEvent {
@@ -61,7 +69,7 @@ export interface AuditEvent {
 }
 
 // --- Détail du score (grille Hamza en 8 domaines) — renvoyé par /audit/:id/score ---
-export interface ScoreCriterion {
+interface ScoreCriterion {
   critere: string;
   max: number;
   obtenu: number;

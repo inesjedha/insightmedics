@@ -14,7 +14,8 @@ export const Route = createFileRoute("/admin")({
   component: AdminLayout,
 });
 
-// TODO security: protéger cette zone avant publication (auth backend).
+// Les pages admin sont publiques mais vides sans clé : toutes les données passent par
+// l'API, qui exige l'en-tête X-Admin-Key (backend/app/auth.py).
 function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 

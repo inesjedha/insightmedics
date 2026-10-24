@@ -14,6 +14,9 @@ export type Offer = {
   badge?: string;
 };
 
+/** Prix de l'audit complet (déblocage après l'aperçu gratuit). */
+export const FULL_AUDIT_PRICE_LABEL = "50 DT";
+
 /**
  * Source unique de vérité pour les trois offres payantes.
  * L'audit IA gratuit est géré séparément car ses CTA et son UI sont propres.
