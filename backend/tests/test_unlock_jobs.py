@@ -145,3 +145,23 @@ def test_apercu_en_echec_ne_peut_pas_etre_debloque(tmp_path: Path, admin_headers
     failed = next(a for a in client.get("/audit", headers=admin_headers).json()
                   if a["fileName"] == "vide.csv")
     assert client.post(f"/audit/{failed['id']}/unlock", headers=admin_headers).status_code == 409
+
+
+def test_battement_de_coeur_renouvelle_le_bail_pendant_un_audit_long(audit_id: str, monkeypatch):
+    """Un audit IA lent garde son verrou : le bail est renouvelé pendant l'exécution."""
+    import time
+
+    monkeypatch.setattr(unlock_jobs, "HEARTBEAT_SECONDS", 0.05)
+    seen: list[str] = []
+    real = unlock_jobs.run_audit
+
+    def slow(path, name, protocol):
+        seen.append(_status(audit_id).job_started_at)
+        time.sleep(0.4)
+        seen.append(_status(audit_id).job_started_at)
+        return real(path, name, protocol)
+
+    monkeypatch.setattr(unlock_jobs, "run_audit", slow)
+    unlock_jobs.run(audit_id, _claim(audit_id))
+    assert seen[1] > seen[0]                       # bail renouvelé en cours de route
+    assert _status(audit_id).status == "done"

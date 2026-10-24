@@ -72,12 +72,14 @@ def purge_expired(db: Session, now: datetime | None = None) -> PurgeReport:
             _delete_audit_files(audit)
             purged += 1
 
-    known_ids = {a for (a,) in db.query(Audit.id).all()}
+    # Dossiers sans audit actif : uploads rejetés anciens, ou audits déjà purgés dont la
+    # suppression des fichiers a été interrompue (crash entre l'écriture et la suppression).
+    active_ids = {a for (a,) in db.query(Audit.id).filter(Audit.purged_at.is_(None)).all()}
     cutoff = (now - timedelta(days=settings.file_retention_days)).timestamp()
     orphans = 0
     if settings.storage_dir.exists():
         for path in settings.storage_dir.iterdir():
-            if path.is_dir() and path.name not in known_ids and path.stat().st_mtime < cutoff:
+            if path.is_dir() and path.name not in active_ids and path.stat().st_mtime < cutoff:
                 shutil.rmtree(path, ignore_errors=True)
                 orphans += 1
 

@@ -11,9 +11,11 @@ La solution : un verrou à bail (« lease ») stocké sur la ligne de l'audit.
    les deux.
 2. `run` : seule la tâche qui détient ce `job_id` peut écrire le résultat (écriture
    conditionnée au `job_id`, atomique elle aussi). Une tâche dépossédée ne fait rien.
-3. `release_stale_claims` : un bail plus vieux que `UNLOCK_LEASE_MINUTES` (serveur
-   arrêté en plein audit) est libéré, l'audit revient en aperçu et peut être relancé.
-   Appelé par la maintenance périodique du serveur.
+3. Battement de cœur : tant que l'audit IA tourne, le bail est renouvelé chaque minute.
+   Un audit lent (API qui rame, nouvelles tentatives) garde donc son verrou.
+4. `release_stale_claims` : un bail non renouvelé depuis `UNLOCK_LEASE_MINUTES`
+   (serveur arrêté en plein audit) est libéré, l'audit revient en aperçu et peut être
+   relancé. Appelé par la maintenance périodique du serveur.
 """
 
 from __future__ import annotations
@@ -21,6 +23,8 @@ from __future__ import annotations
 import logging
 import secrets
 import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -44,6 +48,7 @@ logger = logging.getLogger(__name__)
 
 # Un seul audit IA à la fois par serveur : coût, quotas d'API et mémoire prévisibles.
 _AI_AUDIT_SLOT = threading.Semaphore(1)
+HEARTBEAT_SECONDS = 60
 
 
 def claim(db: Session, audit: Audit) -> str | None:
@@ -83,20 +88,17 @@ def run(audit_id: str, job_id: str) -> None:
     """
     with _AI_AUDIT_SLOT:
         try:
+            # Bail renouvelé une fois le créneau obtenu (l'attente ne compte pas).
+            if not _renew_lease(audit_id, job_id):
+                logger.warning("Audit %s : tâche %s dépossédée, abandon", audit_id, job_id)
+                return
             with SessionLocal() as db:
-                # Bail renouvelé une fois le créneau obtenu (l'attente ne compte pas).
-                still_ours = execute_update(db, (
-                    update(Audit).where(_owned(audit_id, job_id))
-                    .values(job_started_at=utcnow_iso())))
-                db.commit()
-                if not still_ours:
-                    logger.warning("Audit %s : tâche %s dépossédée, abandon", audit_id, job_id)
-                    return
                 audit = db.get(Audit, audit_id)
                 assert audit is not None
                 path, name, protocol = audit.stored_path, audit.file_name, protocol_text(audit)
 
-            result = run_audit(path, name, protocol)
+            with _heartbeat(audit_id, job_id):
+                result = run_audit(path, name, protocol)
 
             with SessionLocal() as db:
                 written = execute_update(db, (
@@ -112,6 +114,38 @@ def run(audit_id: str, job_id: str) -> None:
         except Exception as exc:
             logger.exception("Échec de l'audit complet %s", audit_id)
             _mark_failed(audit_id, job_id, exc)
+
+
+def _renew_lease(audit_id: str, job_id: str) -> bool:
+    """Renouvelle le bail ; False si la tâche n'est plus propriétaire de l'audit."""
+    with SessionLocal() as db:
+        renewed = execute_update(db, (
+            update(Audit).where(_owned(audit_id, job_id))
+            .values(job_started_at=utcnow_iso())))
+        db.commit()
+    return renewed == 1
+
+
+@contextmanager
+def _heartbeat(audit_id: str, job_id: str) -> Iterator[None]:
+    """Renouvelle le bail toutes les HEARTBEAT_SECONDS pendant le bloc (thread dédié)."""
+    stop = threading.Event()
+
+    def beat() -> None:
+        while not stop.wait(HEARTBEAT_SECONDS):
+            try:
+                if not _renew_lease(audit_id, job_id):
+                    return  # dépossédée : le résultat sera de toute façon ignoré
+            except Exception:
+                logger.exception("Battement de cœur en échec pour l'audit %s", audit_id)
+
+    thread = threading.Thread(target=beat, name=f"lease-{audit_id}", daemon=True)
+    thread.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        thread.join(timeout=5)
 
 
 def _mark_failed(audit_id: str, job_id: str, exc: Exception) -> None:
@@ -138,7 +172,8 @@ def release_stale_claims(db: Session, now: datetime | None = None) -> int:
         .where(Audit.status == AuditStatus.PROCESSING,
                or_(Audit.job_started_at.is_(None), Audit.job_started_at < cutoff))
         .values(status=AuditStatus.PREVIEW, job_id=None,
-                error="Audit IA interrompu (serveur redémarré) : relancer le déblocage.")))
+                error="Audit IA interrompu (serveur arrêté pendant le traitement) : "
+                      "relancer le déblocage.")))
     db.commit()
     if released:
         logger.warning("%d audit(s) interrompu(s) remis en aperçu", released)

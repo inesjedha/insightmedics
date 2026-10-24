@@ -81,9 +81,10 @@ Documentation interactive générée par FastAPI : `http://localhost:8000/docs`.
     déploiement : verrou à bail en base. La réservation (`claim`) est un `UPDATE … WHERE
     statut libre` atomique qui inscrit un `job_id` ; seule la tâche qui détient ce
     `job_id` peut écrire le résultat.
-  - **Jamais bloqué à vie** : un bail plus vieux que `UNLOCK_LEASE_MINUTES` (serveur
-    arrêté en plein audit) est libéré par la maintenance ; l'audit revient en aperçu et
-    peut être relancé. Un échec (IA, base) passe l'audit en `failed` avec son message.
+  - **Jamais bloqué à vie** : pendant l'audit, un battement de cœur renouvelle le bail
+    chaque minute ; un bail non renouvelé depuis `UNLOCK_LEASE_MINUTES` (serveur arrêté en
+    plein audit) est libéré par la maintenance, l'audit revient en aperçu et peut être
+    relancé. Un échec (IA, base) passe l'audit en `failed` avec son message.
   - Limite assumée : la tâche vit dans le processus web. Si le volume grandit (plusieurs
     audits simultanés), passer à une vraie file (ex. Redis + worker dédié).
 - **Maintenance** (au démarrage puis toutes les `MAINTENANCE_INTERVAL_MINUTES`) : libère

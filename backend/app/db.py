@@ -48,7 +48,11 @@ def init_db() -> None:
                 # On vérifie avant d'ajouter : sur Postgres, un ALTER en échec annulerait
                 # tous les suivants de la transaction.
                 if column not in existing:
-                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}"))
+                    # IF NOT EXISTS (Postgres) : deux instances qui démarrent ensemble
+                    # ne se gênent pas. SQLite ne le supporte pas, mais n'a qu'une instance.
+                    guard = "IF NOT EXISTS " if engine.dialect.name == "postgresql" else ""
+                    conn.execute(text(
+                        f"ALTER TABLE {table} ADD COLUMN {guard}{column} {column_type}"))
 
 
 def execute_update(db: Session, statement: Update) -> int:

@@ -31,6 +31,8 @@ function AdminAudits() {
   const [needKey, setNeedKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  // Erreur d'une action (déblocage) : distincte du chargement, elle n'arrête pas le suivi.
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -68,13 +70,13 @@ function AdminAudits() {
     if (pendingId) return; // double clic : une seule demande
     if (!window.confirm("Paiement reçu ? Lancer l'audit IA complet (consomme la clé IA) ?")) return;
     setPendingId(id);
-    setError(null);
+    setActionError(null);
     try {
       // Réponse immédiate (statut « processing ») : le suivi se fait par rafraîchissement.
       const updated = await unlockAudit(id);
       setAudits((prev) => prev.map((a) => (a.id === id ? updated : a)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Échec du déblocage");
+      setActionError(e instanceof Error ? e.message : "Échec du déblocage");
     } finally {
       setPendingId(null);
     }
@@ -105,6 +107,12 @@ function AdminAudits() {
         <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+      {actionError && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{actionError}</span>
         </div>
       )}
 

@@ -75,3 +75,15 @@ def test_demarrage_et_arret_du_serveur():
     """Le lifespan (schéma, reprise, purge planifiée) démarre et s'arrête proprement."""
     with TestClient(app) as client:
         assert client.get("/health").status_code == 200
+
+
+def test_fichiers_restants_d_un_audit_deja_purge_supprimes(uploaded_audit_id: str):
+    """Crash entre la purge en base et la suppression des fichiers : rattrapé ensuite."""
+    later = _in_days(settings.file_retention_days + 1)
+    with SessionLocal() as db:
+        purge_expired(db, now=later)
+    leftover = settings.storage_dir / uploaded_audit_id
+    leftover.mkdir(parents=True)  # simule les fichiers restés sur le disque
+    with SessionLocal() as db:
+        purge_expired(db, now=_in_days(2 * settings.file_retention_days + 2))
+    assert not leftover.exists()
