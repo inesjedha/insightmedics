@@ -85,3 +85,10 @@ export const OFFERS: Offer[] = [
     badge: "Le plus choisi",
   },
 ];
+
+/** Montant affichable d'une offre, sans la devise (ex. « 1 200 »). */
+export function offerPrice(id: Offer["id"]): string {
+  const offer = OFFERS.find((o) => o.id === id);
+  if (!offer) throw new Error(`Offre inconnue : ${id}`);
+  return offer.priceLabel.replace(/\s*DT$/, "");
+}

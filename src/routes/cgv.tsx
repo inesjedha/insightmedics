@@ -3,6 +3,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
 import { siteConfig } from "@/lib/site-config";
+import { LegalBlock } from "@/components/site/LegalBlock";
 
 export const Route = createFileRoute("/cgv")({
   head: () => ({
@@ -174,14 +175,5 @@ function CgvPage() {
         </article>
       </Section>
     </SiteLayout>
-  );
-}
-
-function LegalBlock({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <h2 className="font-display text-xl font-bold tracking-tight text-foreground">{title}</h2>
-      <div className="space-y-2 text-muted-foreground">{children}</div>
-    </section>
   );
 }
