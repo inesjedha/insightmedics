@@ -134,7 +134,7 @@ function PipelineTimeline() {
       role: "team",
       roleLabel: "Insight Medics",
       title: "Protection des données",
-      text: "Les colonnes qui pourraient identifier un patient sont repérées automatiquement. Elles sont masquées avant tout envoi à l'IA, qui ne voit qu'un court échantillon, et retirées de la base nettoyée.",
+      text: "Les colonnes nominatives (nom, téléphone, e-mail, CIN…) sont repérées automatiquement. Elles sont masquées avant tout envoi à l'IA, qui ne voit qu'un extrait de 50 lignes au plus, et retirées de la base nettoyée.",
     },
     {
       n: 3,

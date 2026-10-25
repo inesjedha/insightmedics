@@ -9,7 +9,7 @@ export function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: A
   return (
     <div className="rounded-md border border-border bg-card p-6 lg:self-start">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold">Vérification en direct</h3>
+        <h2 className="font-sans text-base font-semibold">Journal de la vérification</h2>
         {phase === "running" && (
           <Badge variant="outline" className="border-brand/30 text-brand">
             En cours

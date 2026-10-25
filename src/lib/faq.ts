@@ -19,16 +19,16 @@ export const FAQ: FaqItem[] = [
   {
     question: "Ma base est mal saisie : est-ce un problème ?",
     answer:
-      "C'est le cas de la plupart des bases. Le test gratuit vous montre en quelques minutes ce qui bloque : données manquantes, doublons, valeurs extrêmes. Nous corrigeons ensuite ce qui peut l'être et vous disons ce qui doit être complété à la source.",
+      "C'est le cas de la plupart des bases. Le test gratuit vous montre en quelques minutes ce qui bloque : données manquantes, doublons, codes « 999 » non déclarés. Nous corrigeons ensuite ce qui peut l'être et vous disons ce qui doit être complété à la source.",
   },
   {
     question: "Mes données patients sont-elles protégées ?",
     answer:
-      "Envoyez une base anonymisée, sans nom ni numéro de dossier. Les colonnes qui pourraient identifier un patient sont détectées et masquées avant tout envoi à l'IA, qui ne voit jamais votre base complète. Vos fichiers sont supprimés automatiquement 30 jours après le test ou la livraison, et rien n'est réutilisé.",
+      "Envoyez une base anonymisée, sans nom ni numéro de dossier. Les colonnes nominatives (nom, téléphone, e-mail, adresse, CIN, date de naissance) sont repérées et masquées avant tout envoi à l'IA, qui ne voit qu'un extrait de 50 lignes au plus. Le numéro patient est transmis tel quel : utilisez un identifiant d'étude (P-001…), jamais un numéro de dossier. Vos fichiers sont supprimés automatiquement 30 jours après le test ou la livraison, et rien n'est réutilisé.",
   },
   {
     question: "Combien de temps faut-il ?",
-    answer: `${weeksLabel(analyses.delayWeeks)} pour les analyses et les résultats, ${weeksLabel(discussion.delayWeeks)} pour la discussion, ${weeksLabel(these.delayWeeks)} pour la thèse complète, à partir d'une base exploitable. Votre soutenance approche ? Dites-le dès le premier échange : nous vous dirons dès le premier appel si le délai est tenable.`,
+    answer: `${weeksLabel(analyses.delayWeeks)} pour les analyses et les résultats, ${weeksLabel(discussion.delayWeeks)} pour la discussion, ${weeksLabel(these.delayWeeks)} pour la thèse complète, à partir d'une base exploitable. Votre soutenance approche ? Indiquez sa date : nous vous dirons dès le premier appel si le délai est tenable.`,
   },
   {
     question: "Quand est-ce que je paie ?",
@@ -52,7 +52,7 @@ export const FAQ: FaqItem[] = [
   {
     question: "Quels formats acceptez-vous ?",
     answer:
-      "SPSS (.sav), Excel (.xlsx, .xls) et CSV pour la base, Word ou PDF pour le protocole. Vous recevez des tableaux et des figures prêts à insérer dans votre manuscrit.",
+      "SPSS (.sav), Excel (.xlsx, .xls) et CSV pour la base, Word (.docx), PDF ou texte (.txt) pour le protocole. Vous recevez des tableaux et des figures prêts à insérer dans votre manuscrit.",
   },
   {
     question: "Comment se passe la suite, concrètement ?",

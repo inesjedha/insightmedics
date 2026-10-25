@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
-import { FREE_TEST_PRICE_LABEL, FULL_AUDIT_PRICE_LABEL, OFFERS, weeksLabel } from "@/lib/offers";
+import { FULL_AUDIT_PRICE_LABEL, OFFERS, weeksLabel } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 import { LegalBlock } from "@/components/site/LegalBlock";
 
@@ -53,8 +53,8 @@ function CgvPage() {
             <p>Les tarifs sont exprimés en dinars tunisiens (DT) :</p>
             <ul className="ml-5 list-disc space-y-1">
               <li>
-                <strong>Test de la base</strong> (aperçu automatique, sans IA) :{" "}
-                {FREE_TEST_PRICE_LABEL}, sans engagement.
+                <strong>Test gratuit de la base</strong> (aperçu automatique, sans IA) : sans frais,
+                sans engagement.
               </li>
               <li>
                 <strong>Audit complet</strong> (rapport, plan de correction, base nettoyée) :{" "}
@@ -63,7 +63,7 @@ function CgvPage() {
               {OFFERS.map((o) => (
                 <li key={o.id}>
                   <strong>{o.title}</strong>
-                   : {o.priceLabel}.
+                  {"\u00a0"}: {o.priceLabel}.
                 </li>
               ))}
             </ul>
@@ -87,7 +87,7 @@ function CgvPage() {
               {OFFERS.map((o) => (
                 <li key={o.id}>
                   <strong>{o.shortTitle}</strong>
-                   : {weeksLabel(o.delayWeeks)}.
+                  {"\u00a0"}: {weeksLabel(o.delayWeeks)}.
                 </li>
               ))}
             </ul>
@@ -140,7 +140,8 @@ function CgvPage() {
             <p>
               Après règlement, le client devient pleinement propriétaire des livrables (analyses,
               tableaux, figures, textes rédigés). Il peut les intégrer librement à sa thèse, son
-              article ou tout autre support, sous sa seule signature.
+              article ou tout autre support, dans le respect des règles de sa faculté ou de la
+              revue, notamment sur la déclaration des aides extérieures.
             </p>
             <p>
               {siteConfig.name} se réserve le droit de mentionner anonymement les types de projets

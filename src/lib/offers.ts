@@ -38,9 +38,6 @@ export function weeksLabel(weeks: number): string {
   return frTypo(`${weeks} semaine${weeks > 1 ? "s" : ""}`);
 }
 
-/** Test de la base (aperçu) : gratuit. */
-export const FREE_TEST_PRICE_LABEL = formatPrice(0);
-
 /** Prix de l'audit complet (déblocage après le test gratuit). */
 export const FULL_AUDIT_PRICE_LABEL = formatPrice(50);
 

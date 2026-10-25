@@ -39,7 +39,7 @@ const SCENES: Scene[] = [
   },
   {
     title: "Notre code la vérifie, ligne par ligne.",
-    note: "valeurs extrêmes, doublons, manquants",
+    note: "codes manquants, doublons, cases vides",
     duration: 6500,
     render: () => <CheckScene />,
   },
@@ -157,6 +157,8 @@ export function ExplainerVideo({ className }: { className?: string }) {
   const goTo = (i: number) => {
     setScene(i);
     setCycle((c) => c + 1);
+    // Choisir un chapitre relance la lecture : en pause, la scène resterait figée à sa
+    // première image (vide). En mouvement réduit, les scènes sont déjà statiques.
     if (!reducedMotion) setUserPaused(false);
     setAnnouncement(`Étape ${i + 1} sur ${SCENES.length} : ${SCENES[i].title} ${SCENES[i].note}.`);
   };
@@ -311,7 +313,7 @@ function UploadScene() {
 const ROWS = [
   { id: "P-012", age: "54", sexe: "F", saps: "33" },
   { id: "P-013", age: "61", sexe: "M", saps: "45" },
-  { id: "P-014", age: "212", sexe: "F", saps: "38", flag: "age" },
+  { id: "P-014", age: "999", sexe: "F", saps: "38", flag: "age" },
   { id: "P-015", age: "47", sexe: "M", saps: "", flag: "missing" },
   { id: "P-015", age: "47", sexe: "M", saps: "", flag: "dup" },
 ] as const;
@@ -392,7 +394,7 @@ function CheckScene() {
         className="ev-fade-up mt-[3cqw] font-hand text-[max(17px,5cqw)] leading-tight text-brand"
         style={delay(4)}
       >
-        âge extrême · manquant · doublon
+        code 999 · case vide · doublon
       </p>
     </div>
   );
@@ -428,7 +430,7 @@ function ScoreScene() {
 
   // Ce que le test gratuit montre : les anomalies, pas encore le plan de correction.
   const findings = [
-    ["Âge à vérifier", "212 ans"],
+    ["Âge codé 999, non déclaré", "P-014"],
     ["Patient en double", "P-015"],
     ["SAPS II manquant", "12 %"],
   ].map(([label, value]) => [label, frTypo(value)] as const);

@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FREE_TEST_PRICE_LABEL, FULL_AUDIT_PRICE_LABEL } from "@/lib/offers";
+import { FULL_AUDIT_PRICE_LABEL } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
@@ -30,12 +30,12 @@ export function TestBanner({
           Pour commencer
         </p>
         <Heading className="mt-2 font-display text-4xl leading-tight">
-          Test de votre base : <span className="mark">{FREE_TEST_PRICE_LABEL}</span>
+          Test de votre base : <span className="mark">gratuit</span>
         </Heading>
         <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
           En quelques minutes, un score sur 100 et ce qui bloque : données manquantes, doublons,
-          valeurs extrêmes. Sans inscription. Aucune IA pendant le test : tout est calculé par notre
-          code, sur vos données.
+          codes « 999 » non déclarés. Sans inscription. Aucune IA pendant le test : tout est calculé
+          par notre code, sur vos données.
         </p>
       </div>
 

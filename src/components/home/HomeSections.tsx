@@ -132,12 +132,12 @@ export function AuditTeaser() {
       text: "SPSS, Excel ou CSV. Votre fichier d'origine n'est jamais modifié.",
     },
     {
-      title: "Suivez la vérification en direct",
-      text: "Chaque contrôle s'affiche à l'écran, en quelques minutes.",
+      title: "Lisez le détail de chaque contrôle",
+      text: "Le journal de la vérification s'affiche à la fin, en quelques minutes.",
     },
     {
       title: "Recevez votre score sur 100",
-      text: "Données manquantes, doublons, valeurs extrêmes : tout est chiffré.",
+      text: "Manquants, doublons, codes « 999 » non déclarés : tout est chiffré.",
     },
     {
       title: "Sachez ce qui bloque",
@@ -218,13 +218,13 @@ export function AiHuman() {
             </h3>
             <ul className="mt-4 space-y-3 text-[15px]">
               <li>
-                Lit un échantillon anonymisé de votre base (50 lignes au plus), jamais le fichier
-                entier.
+                Lit au plus 50 lignes de votre base, colonnes nominatives masquées, jamais le
+                fichier entier.
               </li>
               <li>
                 Propose un verdict et un plan de correction à partir des contrôles de notre code.
               </li>
-              <li>Nous fait gagner du temps sur la mise en forme et les premières versions.</li>
+              <li>Nous aide à mettre en forme les tableaux et le rapport d'audit.</li>
             </ul>
           </div>
           <div className="border-t border-brand pt-5">
@@ -234,7 +234,7 @@ export function AiHuman() {
             <ul className="mt-4 space-y-3 text-[15px]">
               <li>Un médecin vérifie la pertinence clinique.</li>
               <li>Un biostatisticien valide chaque analyse.</li>
-              <li>Aucun livrable ne part sans relecture humaine.</li>
+              <li>Aucune formule n'est livrée sans relecture humaine.</li>
             </ul>
           </div>
         </div>

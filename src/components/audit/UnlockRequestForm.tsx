@@ -100,7 +100,7 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
 
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
         {[
-          "Relu par un médecin et un biostatisticien",
+          "Calculé par notre code sur vos données",
           "Données anonymisées",
           "Vous ne payez qu'après nous avoir parlé",
         ].map((t) => (

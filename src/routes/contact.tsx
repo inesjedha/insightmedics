@@ -174,6 +174,7 @@ function ContactPage() {
       } else if (hasConsentError) {
         const el = formRef.current?.querySelector<HTMLElement>("#contact-consent");
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => el?.focus(), 300);
       }
       return;
     }
@@ -279,9 +280,11 @@ function ContactPage() {
 
                   <FormSection number={1} title="Vos coordonnées">
                     <div className="grid gap-5 sm:grid-cols-2">
-                      <Field id="name" label="Nom complet" required>
+                      <Field id="name" error={errors.name} label="Nom complet" required>
                         <Input
                           id="name"
+                          aria-invalid={!!errors.name || undefined}
+                          aria-describedby={errors.name ? "name-error" : undefined}
                           name="name"
                           autoComplete="name"
                           required
@@ -294,6 +297,7 @@ function ContactPage() {
                       </Field>
                       <Field
                         id="phone"
+                        error={errors.phone}
                         label="Téléphone"
                         required
                         hint="Prioritaire pour vous recontacter"
@@ -306,12 +310,15 @@ function ContactPage() {
                           onDialCodeChange={setDialCode}
                           digits={values.phone}
                           onDigitsChange={(digits) => setValue("phone", digits)}
+                          invalid={!!errors.phone}
                         />
                       </Field>
                     </div>
-                    <Field id="email" label="Email" required>
+                    <Field id="email" error={errors.email} label="Email" required>
                       <Input
                         id="email"
+                        aria-invalid={!!errors.email || undefined}
+                        aria-describedby={errors.email ? "email-error" : undefined}
                         name="email"
                         type="email"
                         autoComplete="email"
@@ -326,9 +333,11 @@ function ContactPage() {
                   </FormSection>
 
                   <FormSection number={2} title="Votre étude">
-                    <Field id="subject" label="Sujet" required>
+                    <Field id="subject" error={errors.subject} label="Sujet" required>
                       <Input
                         id="subject"
+                        aria-invalid={!!errors.subject || undefined}
+                        aria-describedby={errors.subject ? "subject-error" : undefined}
                         name="subject"
                         required
                         maxLength={150}
@@ -369,12 +378,15 @@ function ContactPage() {
                   <FormSection number={3} title="Ce dont vous avez besoin">
                     <Field
                       id="problem"
+                      error={errors.problem}
                       label="Problématique"
                       required
                       hint="Ce que vous cherchez à comprendre"
                     >
                       <Textarea
                         id="problem"
+                        aria-invalid={!!errors.problem || undefined}
+                        aria-describedby={errors.problem ? "problem-error" : undefined}
                         name="problem"
                         rows={4}
                         required
@@ -388,12 +400,15 @@ function ContactPage() {
                     </Field>
                     <Field
                       id="objective"
-                      label="Objectif"
+                      error={errors.objective}
+                      label="Ce que vous attendez de nous"
                       required
                       hint="Le livrable attendu : thèse complète, partie statistique, article…"
                     >
                       <Textarea
                         id="objective"
+                        aria-invalid={!!errors.objective || undefined}
+                        aria-describedby={errors.objective ? "objective-error" : undefined}
                         name="objective"
                         rows={4}
                         required
@@ -405,9 +420,16 @@ function ContactPage() {
                       />
                       <CharCount value={values.objective} max={1000} />
                     </Field>
-                    <Field id="message" label="Autre chose à nous dire ?" hint="Facultatif">
+                    <Field
+                      id="message"
+                      error={errors.message}
+                      label="Autre chose à nous dire ?"
+                      hint="Facultatif"
+                    >
                       <Textarea
                         id="message"
+                        aria-invalid={!!errors.message || undefined}
+                        aria-describedby={errors.message ? "message-error" : undefined}
                         name="message"
                         rows={4}
                         maxLength={2000}

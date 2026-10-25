@@ -40,7 +40,7 @@ export function AuditUploader({
       )}
     >
       <Upload className="mx-auto h-8 w-8 text-brand" aria-hidden />
-      <h3 className="mt-4 text-lg font-semibold">Déposez votre base de données</h3>
+      <h2 className="mt-4 font-sans text-lg font-semibold">Déposez votre base de données</h2>
       <p className="mt-1.5 text-[15px] text-muted-foreground">
         Glissez votre fichier ici ou choisissez-le : SPSS (.sav), Excel (.xlsx, .xls) ou CSV.
       </p>
@@ -101,8 +101,8 @@ export function ProtocolUploader({
               <span className="font-normal text-muted-foreground">(optionnel)</span>
             </p>
             <p className="text-sm text-muted-foreground">
-              Word ou PDF. Utile pour l'audit complet, qui vérifie que les analyses prévues sont
-              faisables avec votre base.
+              Word (.docx), PDF ou texte. Utile pour l'audit complet, qui vérifie que les analyses
+              prévues sont faisables avec votre base.
             </p>
           </div>
         </div>

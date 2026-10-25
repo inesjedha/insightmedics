@@ -54,10 +54,12 @@ export function PhoneInputGroup({
   onDialCodeChange,
   digits,
   onDigitsChange,
+  invalid,
 }: {
   id: string;
   name?: string;
   required?: boolean;
+  invalid?: boolean;
   dialCode: string;
   onDialCodeChange: (code: string) => void;
   digits: string;
@@ -104,6 +106,8 @@ export function PhoneInputGroup({
         placeholder="Numéro local"
         value={digits}
         onChange={(e) => onDigitsChange(toLocalDigits(e.target.value))}
+        aria-invalid={invalid || undefined}
+        aria-describedby={invalid ? `${id}-error` : undefined}
         className="h-11 w-full min-w-0 flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
       />
     </div>
@@ -212,12 +216,15 @@ export function Field({
   label,
   hint,
   required,
+  error,
   children,
 }: {
   id: string;
   label: string;
   hint?: string;
   required?: boolean;
+  /** Message d'erreur : le champ doit porter aria-describedby={`${id}-error`}. */
+  error?: string;
   children: ReactNode;
 }) {
   return (
@@ -232,6 +239,11 @@ export function Field({
       </Label>
       {children}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {error && (
+        <p id={`${id}-error`} className="text-sm font-medium text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
