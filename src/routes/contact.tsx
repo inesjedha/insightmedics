@@ -255,11 +255,7 @@ function ContactPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:gap-10 xl:grid-cols-[1.6fr_1fr]">
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-brand/5 via-transparent to-transparent"
-            />
+          <div className="relative overflow-hidden rounded-md border border-foreground bg-card">
             <div className="relative p-5 sm:p-8 lg:p-10">
               {submitted ? (
                 <SuccessState onReset={() => setSubmitted(false)} />
@@ -289,7 +285,7 @@ function ContactPage() {
                   {showErrorBanner && (
                     <div
                       role="alert"
-                      className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
+                      className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
                     >
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>Merci de compléter les champs obligatoires avant l'envoi.</span>
@@ -299,7 +295,7 @@ function ContactPage() {
                   {submitError && (
                     <div
                       role="alert"
-                      className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
+                      className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
                     >
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>{submitError}</span>
@@ -467,7 +463,7 @@ function ContactPage() {
                   <div className="-mx-5 space-y-5 rounded-b-3xl border-t border-border bg-surface/60 px-5 py-6 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
                     <label
                       className={cn(
-                        "flex items-start gap-3 rounded-xl border bg-background/60 p-3.5 text-sm transition-colors",
+                        "flex items-start gap-3 rounded-md border bg-background/60 p-3.5 text-sm transition-colors",
                         consentError ? "border-destructive/40 bg-destructive/5" : "border-border",
                       )}
                     >
@@ -567,7 +563,7 @@ function ContactPage() {
       <FinalCTA
         title="Vous préférez voir avant de discuter ?"
         description="Lancez l'audit gratuit de votre base. Vous recevez un rapport clair sur l'état de vos données — et un aperçu concret de notre méthode."
-        primary={{ to: "/audit", label: "Lancer un audit gratuit" }}
+        primary={{ to: "/audit", label: "Tester ma base gratuitement" }}
         secondary={{ to: "/methode", label: "Voir notre méthode" }}
       />
     </SiteLayout>

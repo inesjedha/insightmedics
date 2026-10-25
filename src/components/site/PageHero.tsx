@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Section } from "./Section";
 
+/** En-tête des pages intérieures : aligné à gauche, sur papier quadrillé. */
 export function PageHero({
   eyebrow,
   title,
@@ -11,21 +11,20 @@ export function PageHero({
   description?: ReactNode;
 }) {
   return (
-    <Section className="pb-4 pt-12 sm:pb-6 sm:pt-24">
-      <div className="mx-auto max-w-3xl text-center">
-        <span className="inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-brand sm:text-[11px] sm:tracking-[0.22em]">
+    <section className="border-b border-border bg-paper">
+      <div className="mx-auto max-w-6xl px-4 pb-12 pt-14 sm:px-6 sm:pb-16 sm:pt-20">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           {eyebrow}
-        </span>
-        <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-balance sm:mt-5 sm:text-5xl lg:text-6xl">
+        </p>
+        <h1 className="mt-4 max-w-4xl font-display text-[44px] leading-[0.98] text-balance sm:text-6xl lg:text-7xl">
           {title}
         </h1>
         {description && (
-          <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground text-balance sm:mt-5 sm:text-lg">
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             {description}
           </p>
         )}
-        <div className="mx-auto mt-6 h-px w-16 bg-brand/40 sm:mt-8" aria-hidden />
       </div>
-    </Section>
+    </section>
   );
 }

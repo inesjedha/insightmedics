@@ -3,7 +3,7 @@ export const siteConfig = {
   tagline:
     "Rédaction scientifique · Analyse statistique · Data visualisation pour vos thèses de médecine.",
   description:
-    "Insight Medics aide les thésards en médecine à boucler stats, discussion et rédaction dans les délais — sans compromis sur la rigueur. Audit IA gratuit de votre base, puis prise en charge humaine.",
+    "Insight Medics réalise les statistiques et la rédaction des thèses, mémoires et articles en médecine. Vous envoyez votre base, on l'analyse, on rédige, et un médecin et un biostatisticien relisent tout.",
   url: "https://www.insightmedics.tn",
   email: "helpinsightmedics@gmail.com",
   location: "Sousse, Tunisie",
@@ -16,7 +16,7 @@ export const siteConfig = {
     { to: "/contact", label: "Contact" },
   ] as const,
   cta: {
-    audit: { to: "/audit", label: "Lancer un audit gratuit" },
+    audit: { to: "/audit", label: "Tester ma base gratuitement", short: "Audit gratuit" },
     order: { to: "/contact", label: "Confier ma thèse" },
   },
   legal: [

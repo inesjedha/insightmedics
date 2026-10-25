@@ -84,14 +84,14 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
   return (
     <div
       id={UNLOCK_ANCHOR_ID}
-      className="mt-6 scroll-mt-24 rounded-2xl border border-brand/30 bg-card p-6 shadow-sm sm:p-8"
+      className="mt-6 scroll-mt-24 rounded-md border border-brand/30 bg-card p-6 sm:p-8"
     >
       <div className="flex items-center gap-3">
         <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
           <Download className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="font-display text-lg font-bold">
+          <h3 className="font-sans text-lg font-bold">
             Débloquer l'audit complet — {FULL_AUDIT_PRICE_LABEL}
           </h3>
           <p className="text-sm text-muted-foreground">

@@ -123,7 +123,7 @@ function AdminAudits() {
       ) : audits.length === 0 && !needKey ? (
         <p className="text-sm text-muted-foreground">Aucun audit pour l'instant.</p>
       ) : audits.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="overflow-x-auto rounded-md border border-border">
           <table className="w-full text-sm">
             <thead className="bg-surface/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>

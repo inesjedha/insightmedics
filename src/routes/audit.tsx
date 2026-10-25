@@ -87,10 +87,16 @@ function AuditPage() {
 
   return (
     <SiteLayout>
-      <Section>
+      <Section className="bg-paper">
         <SectionHeader
+          as="h1"
           eyebrow="Audit · aperçu gratuit"
-          title="Votre base radiographiée en quelques minutes."
+          title={
+            <>
+              Votre base radiographiée{" "}
+              <span className="italic text-brand">en quelques minutes.</span>
+            </>
+          }
           description={`L'aperçu est gratuit et 100 % calculé par du code — zéro valeur hallucinée : score préliminaire et anomalies structurelles. L'audit complet (verdict d'exploitabilité, anomalies classées, plan d'action et livrables) se débloque pour ${FULL_AUDIT_PRICE_LABEL}.`}
         />
 

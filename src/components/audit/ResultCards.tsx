@@ -32,7 +32,7 @@ export function VerdictBanner({
 }) {
   const st = VERDICT_STYLES[verdict.level] ?? VERDICT_STYLES[3];
   return (
-    <div className={cn("mt-2 rounded-2xl border p-6 sm:p-7", st.ring, st.bg)}>
+    <div className={cn("mt-2 rounded-md border p-6 sm:p-7", st.ring, st.bg)}>
       <div className="flex flex-wrap items-center gap-3">
         <Gauge className={cn("h-5 w-5", st.text)} />
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -55,8 +55,8 @@ export function VerdictBanner({
 export function ExecutiveSummaryCard({ assessment }: { assessment: AiAssessment }) {
   const r = assessment.report_sections_fr;
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+    <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
+      <h3 className="flex items-center gap-2 font-sans text-lg font-bold">
         <ClipboardList className="h-5 w-5 text-brand" />
         Synthèse de l'audit
       </h3>
@@ -116,8 +116,8 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
     (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
   );
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+    <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
+      <h3 className="flex items-center gap-2 font-sans text-lg font-bold">
         <ShieldAlert className="h-5 w-5 text-brand" />
         Anomalies détectées
         <span className="text-sm font-normal text-muted-foreground">({findings.length})</span>
@@ -130,7 +130,7 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
             <li
               key={f.id}
               className={cn(
-                "rounded-xl border p-4",
+                "rounded-md border p-4",
                 crit && "border-destructive/30 bg-destructive/5",
                 maj && "border-amber-300/40 bg-amber-500/5",
                 !crit && !maj && "border-border bg-surface/50",
@@ -180,8 +180,8 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
 
 export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+    <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
+      <h3 className="flex items-center gap-2 font-sans text-lg font-bold">
         <Gauge className="h-5 w-5 text-brand" />
         Détail du score par domaine
       </h3>
@@ -246,7 +246,7 @@ export function AuditScoreCard({
     result.score >= 80 ? "text-brand" : result.score >= 60 ? "text-amber-600" : "text-destructive";
 
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+    <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
       <div className="grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -277,7 +277,7 @@ export function AuditScoreCard({
       </div>
 
       <div className="mt-8">
-        <h4 className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        <h4 className="font-sans text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Observations
         </h4>
         <ul className="mt-3 space-y-2">
@@ -318,10 +318,10 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 export function HumanAlert() {
   return (
-    <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-300/50 bg-amber-500/5 p-5 text-amber-800 dark:text-amber-200">
+    <div className="mt-6 flex items-start gap-3 rounded-md border border-amber-300/50 bg-amber-500/5 p-5 text-amber-800 dark:text-amber-200">
       <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
       <div>
-        <p className="font-display text-base font-semibold">
+        <p className="font-sans text-base font-semibold">
           Un expert humain reviendra vers vous sous 48h.
         </p>
         <p className="mt-1 text-sm">

@@ -2,29 +2,31 @@
 @source "../src";
 @import "tw-animate-css";
 
-@import "@fontsource/manrope/400.css";
-@import "@fontsource/manrope/600.css";
-@import "@fontsource/manrope/700.css";
-@import "@fontsource/manrope/800.css";
-@import "@fontsource/inter/400.css";
-@import "@fontsource/inter/500.css";
-@import "@fontsource/inter/600.css";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+@import "@fontsource/hanken-grotesk/400.css";
+@import "@fontsource/hanken-grotesk/500.css";
+@import "@fontsource/hanken-grotesk/600.css";
+@import "@fontsource/hanken-grotesk/700.css";
+@import "@fontsource/caveat/700.css";
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Insights Medics — Design system
- * Direction: médical sobre, confiance clinique.
- * - Bleu nuit profond (autorité, sérieux médical)
- * - Vert clinique / teal (clarté, données, "sain")
- * - Blancs et gris très froids
- * - Manrope pour les titres (caractère, moderne mais sérieux)
- * - Inter pour le corps (lisibilité maximale)
+ * Insight Medics — charte « Carnet de thèse »
+ * Idée : on relit votre base comme un directeur de thèse, stylo bleu en main.
+ * - Papier blanc quadrillé, encre quasi noire, UN accent : le bleu stylo (cobalt).
+ * - Surligneur jaune pour mettre en valeur un mot clé (jamais pour du texte long).
+ * - Instrument Serif pour les titres (poids unique 400, italique pour l'emphase),
+ *   Hanken Grotesk pour le texte, Caveat pour les annotations manuscrites.
+ * - Coins peu arrondis, filets fins, ombre « décalée » franche plutôt que floue.
+ * Contrastes vérifiés AA : encre/papier 17:1, cobalt/blanc 7,4:1, gris/blanc 7,6:1.
  */
 
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-hand: "Caveat", "Segoe Print", cursive;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -58,79 +60,85 @@
   --color-brand-foreground: var(--brand-foreground);
   --color-surface: var(--surface);
   --color-surface-foreground: var(--surface-foreground);
+  --color-highlight: var(--highlight);
+  --color-ink: var(--ink);
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.375rem;
 
-  /* Surfaces */
-  --background: oklch(0.99 0.005 220);
-  --foreground: oklch(0.18 0.04 250);
-  --surface: oklch(0.97 0.012 220);
-  --surface-foreground: oklch(0.22 0.04 250);
+  /* Papier et encre */
+  --background: #ffffff;
+  --foreground: #111827;
+  --surface: #f7f8fb;
+  --surface-foreground: #111827;
+  --ink: #111827;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.04 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.04 250);
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
 
-  /* Bleu nuit médical = primary */
-  --primary: oklch(0.28 0.08 255);
-  --primary-foreground: oklch(0.985 0.005 220);
+  /* Bleu stylo = action principale et accent unique */
+  --primary: #1f3fd1;
+  --primary-foreground: #ffffff;
+  --brand: #1f3fd1;
+  --brand-foreground: #ffffff;
 
-  /* Vert clinique / teal = brand accent */
-  --brand: oklch(0.62 0.13 180);
-  --brand-foreground: oklch(0.99 0.005 220);
+  /* Surligneur : fond de mise en valeur, texte toujours en encre */
+  --highlight: #fff1a8;
 
-  --secondary: oklch(0.96 0.015 220);
-  --secondary-foreground: oklch(0.22 0.04 250);
+  --secondary: #f3f4f6;
+  --secondary-foreground: #111827;
 
-  --muted: oklch(0.96 0.012 220);
-  --muted-foreground: oklch(0.5 0.03 250);
+  --muted: #f3f4f6;
+  --muted-foreground: #4b5563;
 
-  --accent: oklch(0.94 0.025 195);
-  --accent-foreground: oklch(0.22 0.06 220);
+  --accent: #eef1fd;
+  --accent-foreground: #162e9a;
 
-  --destructive: oklch(0.58 0.22 27);
-  --destructive-foreground: oklch(0.99 0.005 220);
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
 
-  --border: oklch(0.9 0.015 230);
-  --input: oklch(0.92 0.012 230);
-  --ring: oklch(0.62 0.13 180);
+  --border: #d7dce8;
+  --input: #c9cfdd;
+  --ring: #1f3fd1;
 }
 
 .dark {
-  --background: oklch(0.16 0.03 255);
-  --foreground: oklch(0.97 0.008 220);
-  --surface: oklch(0.21 0.04 255);
-  --surface-foreground: oklch(0.97 0.008 220);
+  --background: #111827;
+  --foreground: #f3f4f6;
+  --surface: #1a2232;
+  --surface-foreground: #f3f4f6;
+  --ink: #f3f4f6;
 
-  --card: oklch(0.21 0.04 255);
-  --card-foreground: oklch(0.97 0.008 220);
-  --popover: oklch(0.21 0.04 255);
-  --popover-foreground: oklch(0.97 0.008 220);
+  --card: #1a2232;
+  --card-foreground: #f3f4f6;
+  --popover: #1a2232;
+  --popover-foreground: #f3f4f6;
 
-  --primary: oklch(0.72 0.12 195);
-  --primary-foreground: oklch(0.16 0.03 255);
+  --primary: #a9b8ff;
+  --primary-foreground: #111827;
+  --brand: #a9b8ff;
+  --brand-foreground: #111827;
 
-  --brand: oklch(0.72 0.13 180);
-  --brand-foreground: oklch(0.16 0.03 255);
+  --highlight: #5c5220;
 
-  --secondary: oklch(0.26 0.04 255);
-  --secondary-foreground: oklch(0.97 0.008 220);
+  --secondary: #243047;
+  --secondary-foreground: #f3f4f6;
 
-  --muted: oklch(0.26 0.04 255);
-  --muted-foreground: oklch(0.72 0.03 230);
+  --muted: #243047;
+  --muted-foreground: #c9ced8;
 
-  --accent: oklch(0.3 0.05 220);
-  --accent-foreground: oklch(0.97 0.008 220);
+  --accent: #243047;
+  --accent-foreground: #f3f4f6;
 
-  --destructive: oklch(0.7 0.19 22);
-  --destructive-foreground: oklch(0.97 0.008 220);
+  --destructive: #f97066;
+  --destructive-foreground: #111827;
 
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.72 0.13 180);
+  --border: rgb(255 255 255 / 12%);
+  --input: rgb(255 255 255 / 16%);
+  --ring: #a9b8ff;
 }
 
 @layer base {
@@ -148,17 +156,38 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
   }
 
   h1,
-  h2,
+  h2 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+    line-height: 1.05;
+  }
+
+  /* Petits titres (cartes, listes) en sans-serif : le serif ne tient pas sous 20 px. */
   h3,
   h4,
   h5,
   h6 {
-    font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    font-family: var(--font-sans);
+    letter-spacing: -0.005em;
   }
+
+  ::selection {
+    background: var(--color-highlight);
+    color: var(--color-ink);
+  }
+}
+
+/*
+ * Hors couche, exprès : Instrument Serif n'existe qu'en graisse 400. Cette règle
+ * l'emporte sur les classes font-bold/font-semibold des titres (sinon le navigateur
+ * fabrique un faux gras). Un h1/h2 qui doit rester en sans-serif porte `font-sans`.
+ */
+:is(h1, h2, .font-display):not(.font-sans) {
+  font-weight: 400;
 }
 
 @layer utilities {
@@ -166,19 +195,48 @@
     font-family: var(--font-display);
   }
 
-  .bg-grid-soft {
+  /* Papier quadrillé de carnet (fond des sections « page ») */
+  .bg-paper {
+    background-color: var(--color-background);
     background-image:
       linear-gradient(
         to right,
-        color-mix(in oklch, var(--color-border) 60%, transparent) 1px,
+        color-mix(in srgb, var(--color-border) 45%, transparent) 1px,
         transparent 1px
       ),
       linear-gradient(
         to bottom,
-        color-mix(in oklch, var(--color-border) 60%, transparent) 1px,
+        color-mix(in srgb, var(--color-border) 45%, transparent) 1px,
         transparent 1px
       );
-    background-size: 40px 40px;
+    background-size: 28px 28px;
+  }
+
+  /* Surligneur : à poser sur un mot ou une courte expression */
+  .mark {
+    background: linear-gradient(
+      to top,
+      transparent 0.06em,
+      var(--color-highlight) 0.06em,
+      var(--color-highlight) 0.52em,
+      transparent 0.52em
+    );
+    color: inherit;
+    padding: 0 0.1em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  /* Ombre décalée franche, façon fiche posée sur le carnet */
+  .shadow-offset {
+    box-shadow: 6px 6px 0 var(--color-ink);
+  }
+
+  /* Anomalie entourée au stylo */
+  .circled {
+    border: 2px solid var(--color-brand);
+    border-radius: 9999px;
+    padding: 0 0.4em;
   }
 
   .text-balance {

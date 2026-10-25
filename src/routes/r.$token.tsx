@@ -73,8 +73,9 @@ function ClientResultPage() {
 
   return (
     <SiteLayout>
-      <Section>
+      <Section className="bg-paper">
         <SectionHeader
+          as="h1"
           eyebrow="Rapport privé"
           title="Votre audit de qualité de données"
           description="Accès sécurisé par lien privé. Ne le partagez qu'avec les personnes autorisées."
@@ -131,11 +132,11 @@ function ClientResultPage() {
 
 function StateCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
-    <div className="mt-8 flex max-w-xl flex-col items-start gap-3 rounded-2xl border border-border bg-card p-6 sm:p-8">
-      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+    <div className="mt-8 flex max-w-xl flex-col items-start gap-3 rounded-md border border-border bg-card p-6 sm:p-8">
+      <div className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-muted text-muted-foreground">
         {icon}
       </div>
-      <h3 className="font-display text-lg font-bold">{title}</h3>
+      <h3 className="font-sans text-lg font-bold">{title}</h3>
       <p className="text-sm leading-relaxed text-muted-foreground">{body}</p>
     </div>
   );
@@ -175,8 +176,8 @@ const DELIVERABLES: {
 
 function DeliverablesDownload({ token }: { token: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+    <div className="rounded-md border border-border bg-card p-6 sm:p-8">
+      <h3 className="flex items-center gap-2 font-sans text-lg font-bold">
         <Download className="h-5 w-5 text-brand" />
         Vos livrables
       </h3>
@@ -189,7 +190,7 @@ function DeliverablesDownload({ token }: { token: string }) {
           <a
             key={d.kind}
             href={clientDownloadUrl(token, d.kind)}
-            className="group flex items-start gap-3 rounded-xl border border-border bg-surface/50 p-4 transition-colors hover:border-brand/40 hover:bg-brand/5"
+            className="group flex items-start gap-3 rounded-md border border-border bg-surface/50 p-4 transition-colors hover:border-brand/40 hover:bg-brand/5"
           >
             <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
               {d.icon}

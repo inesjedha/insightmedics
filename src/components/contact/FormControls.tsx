@@ -150,7 +150,7 @@ export function SuccessState({ onReset }: { onReset: () => void }) {
   ];
   return (
     <div className="flex flex-col items-start gap-5">
-      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand">
+      <div className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-brand/10 text-brand">
         <CheckCircle2 className="h-5 w-5" />
       </div>
       <div>
@@ -163,9 +163,9 @@ export function SuccessState({ onReset }: { onReset: () => void }) {
         {steps.map((s, i) => (
           <li
             key={i}
-            className="flex items-start gap-3 rounded-xl border border-border bg-surface/60 p-3.5"
+            className="flex items-start gap-3 rounded-md border border-border bg-surface/60 p-3.5"
           >
-            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 font-display text-xs font-bold text-brand">
+            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 font-sans text-xs font-bold text-brand">
               {i + 1}
             </span>
             <span className="text-sm leading-relaxed text-foreground/90">{s}</span>
@@ -191,10 +191,10 @@ export function FormSection({
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 font-display text-sm font-bold text-brand">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-brand/10 font-sans text-sm font-bold text-brand">
           {number}
         </span>
-        <h3 className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-foreground/80">
+        <h3 className="font-sans text-sm font-semibold uppercase tracking-[0.18em] text-foreground/80">
           {title}
         </h3>
         <div className="h-px flex-1 bg-border" />
@@ -218,20 +218,20 @@ export function InfoCard({
   return (
     <div
       className={cn(
-        "flex h-full items-start gap-3 rounded-2xl border p-4 sm:gap-4 sm:p-5",
+        "flex h-full items-start gap-3 rounded-md border p-4 sm:gap-4 sm:p-5",
         highlight ? "border-brand/30 bg-brand/5" : "border-border bg-surface/60",
       )}
     >
       <span
         className={cn(
-          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10",
+          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md sm:h-10 sm:w-10",
           highlight ? "bg-brand text-brand-foreground" : "bg-brand/10 text-brand",
         )}
       >
         {icon}
       </span>
       <div className="min-w-0">
-        <h3 className="font-display text-sm font-semibold tracking-tight sm:text-base">{title}</h3>
+        <h3 className="font-sans text-sm font-semibold tracking-tight sm:text-base">{title}</h3>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{text}</p>
       </div>
     </div>
@@ -380,7 +380,7 @@ export function OffersField({
               aria-checked={selected}
               onClick={() => toggle(offer.id)}
               className={cn(
-                "group relative flex h-full flex-col overflow-hidden rounded-xl border-2 p-4 text-left transition-all",
+                "group relative flex h-full flex-col overflow-hidden rounded-md border-2 p-4 text-left transition-all",
                 selected
                   ? "border-brand bg-brand/5"
                   : "border-border bg-surface/40 hover:border-brand/40",

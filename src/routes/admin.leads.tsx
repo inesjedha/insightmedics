@@ -26,7 +26,7 @@ function LeadsPage() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="overflow-hidden rounded-md border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-surface/60 text-xs uppercase tracking-wider text-muted-foreground">

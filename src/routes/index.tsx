@@ -15,22 +15,21 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       {
-        title:
-          "Insight Medics — Analyses fiables et rédaction scientifique pour thèses de médecine",
+        title: "Insight Medics — Statistiques et rédaction de votre thèse de médecine",
       },
       {
         name: "description",
         content:
-          "Biostatistique, rédaction IMRAD et data visualisation pour thèses, mémoires et publications. Audit de votre base offert. Chaque livrable validé par un expert humain.",
+          "Envoyez votre base : on fait les statistiques, on rédige résultats et discussion, un médecin et un biostatisticien relisent tout. Thèse complète en 2 semaines. Audit de votre base gratuit.",
       },
       {
         property: "og:title",
-        content: "Insight Medics — La rigueur qu'attend votre jury",
+        content: "Insight Medics — Votre thèse de médecine, des statistiques à la soutenance",
       },
       {
         property: "og:description",
         content:
-          "Analyses statistiques, rédaction IMRAD, data visualisation. Audit de base offert. Validation humaine systématique.",
+          "Statistiques, rédaction IMRAD et figures pour votre thèse. Audit de votre base gratuit. Relu par un médecin et un biostatisticien.",
       },
     ],
   }),

@@ -53,9 +53,9 @@ function AdminDashboard() {
         <StatCard icon={<UserX className="h-4 w-4" />} label="Perdus" value={stats.lost} />
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
+      <div className="rounded-md border border-border bg-card p-6">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-lg font-semibold">
+          <h2 className="font-sans text-lg font-semibold">
             <BellRing className="mr-2 inline h-4 w-4 text-brand" />
             Relances à effectuer
           </h2>
@@ -81,7 +81,7 @@ function AdminDashboard() {
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-md border border-border bg-card p-5">
       <div className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-brand/10 text-brand">
         {icon}
       </div>

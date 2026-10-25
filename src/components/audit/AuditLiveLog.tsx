@@ -7,9 +7,9 @@ export type AuditPhase = "idle" | "running" | "done";
 
 export function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: AuditPhase }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <div className="rounded-md border border-border bg-card p-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-display text-base font-semibold">
+        <h3 className="font-sans text-base font-semibold">
           <Cpu className="mr-2 inline h-4 w-4 text-brand" />
           Analyses en temps réel
         </h3>

@@ -34,15 +34,15 @@ export function AuditUploader({
         if (f) onFile(f);
       }}
       className={cn(
-        "rounded-2xl border-2 border-dashed bg-card p-8 text-center transition-colors",
+        "rounded-md border-2 border-dashed bg-card p-8 text-center transition-colors",
         drag ? "border-brand bg-brand/5" : "border-border",
         disabled && "opacity-60",
       )}
     >
-      <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-brand">
+      <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-md bg-brand/10 text-brand">
         <Upload className="h-6 w-6" />
       </div>
-      <h3 className="mt-4 font-display text-lg font-bold">Téléversez votre base de données</h3>
+      <h3 className="mt-4 font-sans text-lg font-bold">Téléversez votre base de données</h3>
       <p className="mt-1.5 text-sm text-muted-foreground">
         Formats acceptés : SPSS (.sav), Excel (.xlsx, .xls) et CSV.
       </p>
@@ -84,7 +84,7 @@ export function ProtocolUploader({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="rounded-xl border border-border bg-card/60 p-4">
+    <div className="rounded-md border border-border bg-card/60 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand/10 text-brand">

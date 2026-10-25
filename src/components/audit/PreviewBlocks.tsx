@@ -19,7 +19,7 @@ function scrollToUnlock() {
 
 export function PreviewNotice({ nIssues }: { nIssues: number }) {
   return (
-    <div className="rounded-2xl border border-brand/30 bg-brand/5 p-6 sm:p-7">
+    <div className="rounded-md border border-brand/30 bg-brand/5 p-6 sm:p-7">
       <div className="flex flex-wrap items-center gap-3">
         <Sparkles className="h-5 w-5 text-brand" />
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -71,7 +71,7 @@ export function ResultsSummary({
   nCrit: number;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface/60 px-5 py-3.5 text-sm">
+    <div className="rounded-md border border-border bg-surface/60 px-5 py-3.5 text-sm">
       <span className="font-medium text-foreground">
         Base de {result.rowCount.toLocaleString("fr-FR")} lignes × {result.columnCount} variables
       </span>
@@ -92,14 +92,14 @@ export function DeliverablesPreview() {
     { label: "Base nettoyée", sub: ".sav + .csv anonymisés", accent: "bg-brand" },
   ];
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <h3 className="font-display text-lg font-bold">Ce que vous recevez après paiement</h3>
+    <div className="rounded-md border border-border bg-card p-6 sm:p-8">
+      <h3 className="font-sans text-lg font-bold">Ce que vous recevez après paiement</h3>
       <p className="mt-1 text-sm text-muted-foreground">
         Trois livrables prêts à l'emploi, en plus de l'audit complet à l'écran.
       </p>
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
         {items.map((it) => (
-          <div key={it.label} className="rounded-xl border border-border bg-surface/50 p-4">
+          <div key={it.label} className="rounded-md border border-border bg-surface/50 p-4">
             <div className="flex flex-col gap-1.5" aria-hidden>
               <div className={cn("h-2 w-10 rounded-full", it.accent)} />
               <div className="h-1.5 w-full rounded bg-border" />
