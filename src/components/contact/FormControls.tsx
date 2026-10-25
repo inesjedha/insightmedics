@@ -144,20 +144,16 @@ export function PhoneField({
 
 export function SuccessState({ onReset }: { onReset: () => void }) {
   const steps = [
-    "Nous vous appelons sous 48h ouvrées pour cadrer le projet.",
-    "Nous validons ensemble le périmètre, le délai et le tarif.",
-    "Vous recevez un plan d'action — et nous démarrons.",
+    "Nous vous appelons sous 48 h ouvrées pour comprendre votre projet.",
+    "Nous fixons ensemble le travail à faire, le délai et le prix.",
+    "Nous démarrons dès votre accord. Vous payez à la livraison.",
   ];
   return (
-    <div className="flex flex-col items-start gap-5">
-      <div className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-brand/10 text-brand">
-        <CheckCircle2 className="h-5 w-5" />
-      </div>
+    <div role="status" className="flex flex-col items-start gap-5">
+      <CheckCircle2 className="h-8 w-8 text-brand" aria-hidden />
       <div>
-        <h3 className="font-display text-xl font-bold tracking-tight">Message envoyé.</h3>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Merci. Voici ce qui se passe maintenant :
-        </p>
+        <h3 className="font-display text-4xl">Message bien reçu, merci.</h3>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Voici la suite :</p>
       </div>
       <ol className="w-full space-y-3">
         {steps.map((s, i) => (
@@ -165,8 +161,8 @@ export function SuccessState({ onReset }: { onReset: () => void }) {
             key={i}
             className="flex items-start gap-3 rounded-md border border-border bg-surface/60 p-3.5"
           >
-            <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand/10 font-sans text-xs font-bold text-brand">
-              {i + 1}
+            <span aria-hidden className="font-hand text-2xl leading-none text-brand">
+              {i + 1}.
             </span>
             <span className="text-sm leading-relaxed text-foreground/90">{s}</span>
           </li>
@@ -191,8 +187,8 @@ export function FormSection({
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-brand/10 font-sans text-sm font-bold text-brand">
-          {number}
+        <span aria-hidden className="font-hand text-3xl leading-none text-brand">
+          {Number(number)}.
         </span>
         <h3 className="font-sans text-sm font-semibold uppercase tracking-[0.18em] text-foreground/80">
           {title}

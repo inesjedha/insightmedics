@@ -99,18 +99,18 @@ function AdminAudits() {
       </div>
 
       {needKey && (
-        <div className="rounded-lg border border-amber-300/40 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300">
+        <div className="rounded-md border border-amber-300/40 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300">
           Clé admin requise ou invalide. Renseignez-la dans la barre latérale, puis rafraîchissez.
         </div>
       )}
       {error && (
-        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+        <div className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
       {actionError && (
-        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+        <div className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{actionError}</span>
         </div>

@@ -5,6 +5,8 @@ type Offer = {
   shortTitle: string;
   price: number;
   priceLabel: string;
+  /** Délai standard en semaines, à partir d'une base exploitable (cf. CGV §4). */
+  delayWeeks: number;
   delay: string;
   tagline: string;
   description: string;
@@ -17,30 +19,37 @@ type Offer = {
 /** Prix de l'audit complet (déblocage après l'aperçu gratuit). */
 export const FULL_AUDIT_PRICE_LABEL = "50 DT";
 
+/** « 1 semaine », « 2 semaines ». */
+export function weeksLabel(weeks: number): string {
+  return `${weeks} semaine${weeks > 1 ? "s" : ""}`;
+}
+
 /**
- * Source unique de vérité pour les trois offres payantes.
- * L'audit IA gratuit est géré séparément car ses CTA et son UI sont propres.
+ * Source unique de vérité pour les trois offres payantes (prix, délais, contenu).
+ * Tout texte du site qui cite un prix ou un délai le lit ici : jamais en dur.
+ * L'audit gratuit est géré séparément car ses CTA et son UI sont propres.
  */
 export const OFFERS: Offer[] = [
   {
     id: "analyses",
     number: "01",
-    title: "Analyse + rédaction des résultats",
-    shortTitle: "Analyses & résultats",
+    title: "Analyses statistiques + résultats rédigés",
+    shortTitle: "Analyses + résultats",
     price: 500,
     priceLabel: "500 DT",
-    delay: "Livré en 1 semaine",
-    tagline: "Le plus demandé",
+    delayWeeks: 1,
+    delay: `Livré en ${weeksLabel(1)}`,
+    tagline: "Pour vos statistiques",
     description:
-      "Analyses complètes (descriptif, comparatif, multivarié) et rédaction de la partie « Résultats » prête à intégrer.",
+      "Les statistiques de votre étude (descriptives, comparaisons, analyses multivariées) et la partie « Résultats » rédigée, prête à insérer.",
     features: [
       "Plan d'analyse validé par un biostatisticien",
-      "Tests adaptés à votre design d'étude",
-      "Tableaux & figures publiables",
-      "Texte des résultats rédigé",
-      "Validation humaine",
+      "Tests adaptés à votre type d'étude",
+      "Tableaux et figures prêts à insérer",
+      "Partie « Résultats » rédigée",
+      "Relu par un médecin et un biostatisticien",
     ],
-    ctaLabel: "Demander cette offre",
+    ctaLabel: "Choisir cette formule",
   },
   {
     id: "discussion",
@@ -49,17 +58,18 @@ export const OFFERS: Offer[] = [
     shortTitle: "Discussion rédigée",
     price: 500,
     priceLabel: "500 DT",
-    delay: "Livré en 1 semaine",
-    tagline: "Rédaction ciblée",
+    delayWeeks: 1,
+    delay: `Livré en ${weeksLabel(1)}`,
+    tagline: "Pour votre discussion",
     description:
-      "Rédaction structurée : comparaison à la littérature, forces, limites, perspectives.",
+      "Une discussion structurée et référencée : comparaison avec la littérature, forces, limites et perspectives.",
     features: [
       "Recherche bibliographique ciblée",
       "Argumentation alignée sur vos résultats",
       "Forces et limites discutées",
-      "Aller-retours de relecture inclus",
+      "Allers-retours de relecture inclus",
     ],
-    ctaLabel: "Demander cette offre",
+    ctaLabel: "Choisir cette formule",
   },
   {
     id: "these",
@@ -68,27 +78,33 @@ export const OFFERS: Offer[] = [
     shortTitle: "Thèse complète",
     price: 1200,
     priceLabel: "1 200 DT",
-    delay: "Livré en 2 semaines",
-    tagline: "Accompagnement intégral",
+    delayWeeks: 2,
+    delay: `Livré en ${weeksLabel(2)}`,
+    tagline: "De la base brute à la conclusion",
     description:
-      "De la base brute à la conclusion : introduction, matériel & méthodes, résultats, discussion, conclusion.",
+      "Tout le manuscrit, accompagné de bout en bout : introduction, matériel et méthodes, résultats, discussion, conclusion.",
     features: [
       "Introduction rédigée",
-      "Matériel & Méthodes rédigés",
+      "Matériel et méthodes rédigés",
       "Analyses + résultats rédigés",
       "Discussion rédigée",
       "Conclusion rédigée",
       "Priorité sur les délais",
     ],
-    ctaLabel: "Discuter du projet",
+    ctaLabel: "Discuter de ma thèse",
     highlight: true,
-    badge: "Le plus choisi",
+    badge: "La plus complète",
   },
 ];
 
-/** Montant affichable d'une offre, sans la devise (ex. « 1 200 »). */
-export function offerPrice(id: Offer["id"]): string {
+/** Offre par identifiant (lève une erreur si l'identifiant est inconnu). */
+export function getOffer(id: Offer["id"]): Offer {
   const offer = OFFERS.find((o) => o.id === id);
   if (!offer) throw new Error(`Offre inconnue : ${id}`);
-  return offer.priceLabel.replace(/\s*DT$/, "");
+  return offer;
+}
+
+/** Montant affichable d'une offre, sans la devise (ex. « 1 200 »). */
+export function offerPrice(id: Offer["id"]): string {
+  return getOffer(id).priceLabel.replace(/\s*DT$/, "");
 }

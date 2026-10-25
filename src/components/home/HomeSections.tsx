@@ -2,30 +2,36 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Check, ChevronLeft, ChevronRight, ShieldCheck, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ExplainerVideo } from "@/components/home/ExplainerVideo";
 import { FinalCTA } from "@/components/site/FinalCTA";
 import { OfferCard } from "@/components/site/OfferCard";
 import { Section, SectionHeader } from "@/components/site/Section";
 import { siteConfig } from "@/lib/site-config";
-import { OFFERS } from "@/lib/offers";
+import { FULL_AUDIT_PRICE_LABEL, OFFERS, getOffer, weeksLabel } from "@/lib/offers";
+
+const analyses = getOffer("analyses");
+const these = getOffer("these");
 
 /* ------------------------------------------------------------------ Hero */
 
 export function Hero() {
   return (
     <section className="border-b border-border bg-paper">
-      <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-12 sm:px-6 sm:pb-24 sm:pt-20 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16">
+      <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-12 sm:px-6 sm:pb-24 sm:pt-20 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:gap-14">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             Thèses · mémoires · articles en médecine
           </p>
-          <h1 className="mt-5 font-display text-[52px] leading-[0.95] text-balance sm:text-7xl lg:text-[88px]">
+          <h1 className="mt-5 font-display text-[52px] leading-[0.95] text-balance sm:text-7xl lg:text-[84px]">
             Votre thèse de médecine,{" "}
             <span className="mark italic">des statistiques à la soutenance.</span>
           </h1>
           <p className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Envoyez votre base de données. On la reprend ligne par ligne, comme votre directeur de
-            thèse, on fait les analyses et on rédige vos résultats et votre discussion. Un médecin
-            et un biostatisticien relisent tout.
+            Envoyez votre base de données. Nous réalisons les analyses, rédigeons avec vous les
+            résultats et la discussion, puis un médecin et un biostatisticien relisent tout.{" "}
+            <span className="text-foreground">
+              Vous restez l'auteur, et vous comprenez chaque chiffre.
+            </span>
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button asChild size="lg">
@@ -38,86 +44,21 @@ export function Hero() {
               <Link to="/tarifs">Voir les formules et tarifs</Link>
             </Button>
           </div>
-          <p className="mt-8 -rotate-1 origin-left font-hand text-[26px] leading-snug text-brand">
-            thèse complète : 2 semaines, 1 200 DT
+          <p className="mt-4 text-sm text-muted-foreground">
+            Gratuit et sans inscription · Paiement à la livraison, sans acompte
+          </p>
+          <p className="mt-8 origin-left -rotate-1 font-hand text-[26px] leading-snug text-brand">
+            thèse complète : {weeksLabel(these.delayWeeks)}, {these.priceLabel}
             <br />
-            stats + résultats rédigés : 1 semaine, 500 DT
+            analyses + résultats : {weeksLabel(analyses.delayWeeks)}, {analyses.priceLabel}
           </p>
         </div>
 
-        <AuditSample />
+        <div className="mx-auto w-full max-w-[440px] lg:mr-1.5 lg:max-w-none">
+          <ExplainerVideo />
+        </div>
       </div>
     </section>
-  );
-}
-
-/** Extrait d'aperçu d'audit, données fictives : montre le produit plutôt que d'en parler. */
-function AuditSample() {
-  const rows = [
-    { id: "P-014", age: "47", sexe: "F", saps: "38" },
-    { id: "P-015", age: "212", sexe: "M", saps: "41", flag: "age" },
-    { id: "P-016", age: "63", sexe: "M", saps: "—", flag: "dup" },
-  ] as const;
-
-  return (
-    <figure className="mr-1.5 min-w-0 rounded-md border border-foreground bg-card p-5 shadow-offset sm:mr-0 sm:p-7">
-      <figcaption className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        Votre audit gratuit · exemple fictif
-      </figcaption>
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[300px] border-collapse text-[15px]">
-          <thead>
-            <tr className="border-b-2 border-foreground text-left">
-              <th scope="col" className="py-2 pr-3 font-semibold">
-                id
-              </th>
-              <th scope="col" className="px-3 py-2 font-semibold">
-                âge
-              </th>
-              <th scope="col" className="px-3 py-2 font-semibold">
-                sexe
-              </th>
-              <th scope="col" className="py-2 pl-3 font-semibold">
-                SAPS II
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-b border-border">
-                <td className="py-2.5 pr-3">
-                  <span
-                    className={
-                      "flag" in r && r.flag === "dup"
-                        ? "line-through decoration-brand decoration-2"
-                        : undefined
-                    }
-                  >
-                    {r.id}
-                  </span>
-                </td>
-                <td className="px-3 py-2.5">
-                  <span className={"flag" in r && r.flag === "age" ? "circled" : undefined}>
-                    {r.age}
-                  </span>
-                </td>
-                <td className="px-3 py-2.5">{r.sexe}</td>
-                <td className="py-2.5 pl-3">{r.saps}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-3 font-hand text-2xl leading-tight text-brand">
-        âge impossible · P-016 en double · SAPS II manquant
-      </p>
-      <div className="mt-5 flex items-baseline justify-between border-t border-dashed border-muted-foreground/50 pt-4">
-        <span className="text-[15px] text-muted-foreground">Score de la base</span>
-        <span className="font-display text-6xl leading-none">
-          64<span className="text-2xl text-muted-foreground">/100</span>
-        </span>
-      </div>
-    </figure>
   );
 }
 
@@ -125,16 +66,16 @@ function AuditSample() {
 
 export function ProblemApproach() {
   const problems = [
-    "Une base de données saisie, mais difficile à exploiter seul.",
-    "Des heures sur SPSS sans certitude sur la validité des résultats.",
-    "Une discussion qui n'avance pas, faute de temps pour la littérature.",
-    "Une méthodologie à défendre devant le jury, sans filet.",
+    "Une base saisie, mais difficile à exploiter seul.",
+    "Des heures sur SPSS, sans être sûr du bon test.",
+    "Une discussion qui n'avance pas, faute de temps pour lire la littérature.",
+    "La peur des questions du jury sur la méthode.",
   ];
   const answers = [
-    "Analyses statistiques conçues et vérifiées par un biostatisticien.",
-    "Rédaction scientifique au standard IMRAD.",
-    "Tableaux et figures prêts pour publication.",
-    "Un interlocuteur unique, du début à la soutenance.",
+    "Le bon test pour votre question, choisi et vérifié par un biostatisticien.",
+    "Des résultats et une discussion rédigés au format IMRAD, avec vous.",
+    "Des tableaux et des figures prêts à insérer dans votre manuscrit.",
+    "Une restitution expliquée : vous comprenez chaque chiffre avant la soutenance.",
   ];
 
   return (
@@ -145,12 +86,12 @@ export function ProblemApproach() {
             Le constat
           </p>
           <h2 className="mt-3 font-display text-4xl text-balance sm:text-5xl">
-            Une base prête, des résultats incertains, une deadline qui approche.
+            Votre base est prête. Vos résultats, pas encore.
           </h2>
           <ul className="mt-8 border-t border-foreground">
             {problems.map((t) => (
               <li key={t} className="flex gap-4 border-b border-border py-4 text-muted-foreground">
-                <X className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <X className="mt-1 h-4 w-4 shrink-0" aria-hidden />
                 <span>{t}</span>
               </li>
             ))}
@@ -162,8 +103,8 @@ export function ProblemApproach() {
             Notre réponse
           </p>
           <h2 className="mt-3 font-display text-4xl text-balance sm:text-5xl">
-            Des analyses cadrées. Une rédaction structurée.{" "}
-            <span className="italic text-brand">Une thèse défendable.</span>
+            Des analyses justes, une rédaction claire,{" "}
+            <span className="italic text-brand">une thèse que vous savez défendre.</span>
           </h2>
           <ul className="mt-8 border-t border-foreground">
             {answers.map((t) => (
@@ -179,22 +120,25 @@ export function ProblemApproach() {
   );
 }
 
-/* ------------------------------------------------------------ Audit offert */
+/* ------------------------------------------------------------ Audit gratuit */
 
 export function AuditTeaser() {
   const steps = [
     {
       title: "Déposez votre fichier",
-      text: "SPSS, Excel ou CSV. Votre original n'est jamais modifié.",
+      text: "SPSS, Excel ou CSV. Votre fichier d'origine n'est jamais modifié.",
     },
-    { title: "Suivez l'analyse en direct", text: "Chaque contrôle s'affiche sous vos yeux." },
     {
-      title: "Recevez un score sur 100",
-      text: "Données manquantes, doublons, valeurs impossibles.",
+      title: "Suivez la vérification en direct",
+      text: "Chaque contrôle s'affiche à l'écran, en quelques minutes.",
+    },
+    {
+      title: "Recevez votre score sur 100",
+      text: "Données manquantes, doublons, valeurs impossibles : tout est chiffré.",
     },
     {
       title: "Sachez quoi corriger",
-      text: "Une liste par ordre de priorité, avant vos statistiques.",
+      text: "Les problèmes à régler en priorité, avant de lancer vos statistiques.",
     },
   ];
 
@@ -202,7 +146,7 @@ export function AuditTeaser() {
     <section className="bg-ink text-background">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-background/60">
-          Gratuit · sans engagement
+          Gratuit · sans inscription
         </p>
         <h2 className="mt-3 max-w-3xl font-display text-4xl text-balance sm:text-6xl">
           Votre base est-elle exploitable ?{" "}
@@ -214,12 +158,17 @@ export function AuditTeaser() {
               <span aria-hidden className="font-hand text-4xl leading-none text-[#A9B8FF]">
                 {i + 1}.
               </span>
-              <h3 className="mt-3 font-sans text-lg font-semibold">{s.title}</h3>
+              <h3 className="mt-3 text-lg font-semibold">{s.title}</h3>
               <p className="mt-1.5 text-[15px] leading-relaxed text-background/75">{s.text}</p>
             </li>
           ))}
         </ol>
-        <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <p className="mt-10 max-w-3xl text-[15px] leading-relaxed text-background/75">
+          Besoin d'aller plus loin ? L'audit complet ({FULL_AUDIT_PRICE_LABEL}) vous remet le
+          verdict d'exploitabilité, le plan de correction détaillé, un rapport Word, un classeur
+          Excel et votre base nettoyée.
+        </p>
+        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
           <Button
             asChild
             size="lg"
@@ -232,7 +181,7 @@ export function AuditTeaser() {
           </Button>
           <p className="inline-flex items-start gap-2 text-sm text-background/70">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            Chaque chiffre est calculé directement sur vos données, rien n'est estimé.
+            Chaque chiffre est calculé directement sur vos données : rien n'est estimé.
           </p>
         </div>
       </div>
@@ -250,36 +199,80 @@ export function AiHuman() {
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             IA + humain
           </p>
-          <p className="mt-4 font-display text-4xl leading-[1.1] text-balance sm:text-5xl">
-            L'IA fait le tri. <span className="mark">Un humain relit tout,</span> avant que vous ne
-            voyiez quoi que ce soit.
-          </p>
-          <p className="mt-6 -rotate-1 origin-left font-hand text-[26px] text-brand">
-            relu par un médecin et un biostatisticien, à chaque fois
+          <h2 className="mt-4 font-display text-4xl leading-[1.1] text-balance sm:text-5xl">
+            L'IA fait le tri. <span className="mark">Un médecin et un biostatisticien</span>{" "}
+            relisent tout.
+          </h2>
+          <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-muted-foreground">
+            L'IA nous fait gagner du temps sur les tâches répétitives. Les choix statistiques, la
+            lecture clinique et la validation finale restent entre des mains humaines.
           </p>
         </div>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-1">
           <div className="border-t border-foreground pt-5">
-            <h3 className="font-sans text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Ce que l'IA prend en charge
+            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Ce que fait l'IA
             </h3>
             <ul className="mt-4 space-y-3 text-[15px]">
-              <li>Profilage et tri automatique de la base.</li>
-              <li>Détection des anomalies, valeurs aberrantes et manquantes.</li>
-              <li>Premières analyses descriptives.</li>
+              <li>Profile et trie la base.</li>
+              <li>Repère les anomalies, valeurs aberrantes et données manquantes.</li>
+              <li>Prépare les premières analyses descriptives.</li>
             </ul>
           </div>
           <div className="border-t border-brand pt-5">
-            <h3 className="font-sans text-sm font-semibold uppercase tracking-[0.12em] text-brand">
-              Ce qu'un expert valide
+            <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-brand">
+              Ce que valident les experts
             </h3>
             <ul className="mt-4 space-y-3 text-[15px]">
               <li>Un médecin vérifie la pertinence clinique.</li>
               <li>Un biostatisticien valide chaque analyse.</li>
-              <li>Aucun livrable envoyé sans relecture humaine.</li>
+              <li>Aucun livrable ne part sans relecture humaine.</li>
             </ul>
           </div>
         </div>
+      </div>
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------ Intégrité académique */
+
+export function Authorship() {
+  const points = [
+    {
+      title: "Vous gardez la main",
+      text: "Votre question de recherche, vos hypothèses, vos choix : tout est discuté avec vous avant le moindre calcul.",
+    },
+    {
+      title: "Vous comprenez tout",
+      text: "Nous vous présentons chaque résultat, répondons à vos questions et vous remettons les scripts d'analyse.",
+    },
+    {
+      title: "Vous restez l'auteur",
+      text: "Nous accompagnons, vous signez et vous soutenez. La responsabilité scientifique reste la vôtre, comme le prévoient nos conditions.",
+    },
+  ];
+  return (
+    <Section className="border-t border-border bg-surface">
+      <SectionHeader
+        eyebrow="Votre thèse, votre nom"
+        title={
+          <>
+            Un accompagnement, <span className="italic text-brand">pas un prête-plume.</span>
+          </>
+        }
+        description="Votre thèse engage votre nom et celui de votre directeur. Notre rôle : vous donner des analyses justes et une rédaction solide, que vous savez expliquer."
+      />
+      <div className="mt-10 grid gap-8 md:grid-cols-3">
+        {points.map((p, i) => (
+          <div key={p.title} className="border-t border-foreground pt-5">
+            <span aria-hidden className="font-hand text-3xl leading-none text-brand">
+              {i + 1}.
+            </span>
+            <h3 className="mt-2 font-display text-3xl">{p.title}</h3>
+            <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{p.text}</p>
+          </div>
+        ))}
       </div>
     </Section>
   );
@@ -292,8 +285,8 @@ export function ServicesTeaser() {
     <Section className="border-y border-border bg-surface">
       <SectionHeader
         eyebrow="Formules"
-        title="Choisissez la formule qui correspond à votre étape."
-        description="Commencez par l'audit gratuit de votre base. Ajoutez ensuite ce dont vous avez besoin : analyses, discussion, ou thèse complète."
+        title="Choisissez l'aide dont vous avez besoin."
+        description="Commencez par l'audit gratuit de votre base. Ensuite, ne prenez que ce qui vous manque."
       />
 
       <div className="mt-10 flex flex-col gap-5 rounded-md border border-foreground bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
@@ -302,7 +295,7 @@ export function ServicesTeaser() {
             Audit de votre base : <span className="mark">0 DT</span>
           </p>
           <p className="mt-2 text-[15px] text-muted-foreground">
-            Contrôle qualité complet, score sur 100, sans engagement.
+            Score sur 100 et anomalies en quelques minutes, sans inscription ni engagement.
           </p>
         </div>
         <Button asChild size="lg" className="shrink-0">
@@ -319,10 +312,11 @@ export function ServicesTeaser() {
             key={o.id}
             number={String(Number(o.number))}
             title={o.shortTitle}
+            tagline={o.tagline}
             price={o.priceLabel}
             delay={o.delay}
             features={o.features}
-            ctaLabel="Choisir cette formule"
+            ctaLabel={o.ctaLabel}
             ctaHref="/contact"
             highlight={o.highlight}
             badge={o.badge}
@@ -333,7 +327,7 @@ export function ServicesTeaser() {
       <ul className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-[15px] text-muted-foreground">
         <li className="flex items-center gap-2">
           <Check className="h-4 w-4 text-brand" aria-hidden />
-          Paiement à la livraison
+          Paiement à la livraison, sans acompte
         </li>
         <li className="flex items-center gap-2">
           <Check className="h-4 w-4 text-brand" aria-hidden />
@@ -341,7 +335,7 @@ export function ServicesTeaser() {
         </li>
         <li className="flex items-center gap-2">
           <Check className="h-4 w-4 text-brand" aria-hidden />
-          Devis personnalisé pour articles et mémoires
+          Devis sur mesure pour articles et mémoires
         </li>
       </ul>
     </Section>
@@ -509,23 +503,23 @@ function TestimonialsMobileCarousel({ items }: { items: Testimonial[] }) {
 export function ForWho() {
   const audiences = [
     {
-      title: "Étudiants en médecine",
-      text: "Livrer une thèse solide, dans les temps, sans devenir biostatisticien.",
+      title: "Étudiants et internes",
+      text: "Soutenir une thèse solide, dans les temps, sans devenir biostatisticien.",
     },
     {
-      title: "Médecins résidents",
-      text: "Un article, un poster ou un mémoire qui tient sur le plan statistique.",
+      title: "Résidents et médecins",
+      text: "Un article, un poster ou un mémoire solide sur le plan statistique.",
     },
     {
       title: "Équipes hospitalières",
-      text: "Auditer une cohorte ou un registre avant de le valoriser.",
+      text: "Vérifier une cohorte ou un registre avant de l'exploiter.",
     },
   ];
   return (
-    <Section className="border-t border-border bg-surface">
+    <Section>
       <SectionHeader
         eyebrow="Pour qui"
-        title="Pensé pour ceux qui travaillent sur de vraies données patients."
+        title="Pour ceux qui travaillent sur de vraies données patients."
       />
       <div className="mt-10 grid gap-8 md:grid-cols-3">
         {audiences.map((a, i) => (
@@ -538,9 +532,10 @@ export function ForWho() {
           </div>
         ))}
       </div>
-      <p className="mt-10 flex items-center gap-2 text-[15px] text-muted-foreground">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-brand" aria-hidden />
-        Vos données restent confidentielles et ne sont jamais réutilisées.
+      <p className="mt-10 flex items-start gap-2 text-[15px] text-muted-foreground">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
+        Vos données restent confidentielles : identifiants masqués, fichiers supprimés au bout de 30
+        jours, jamais réutilisés.
       </p>
     </Section>
   );
@@ -553,13 +548,13 @@ export function FinalCta() {
     <FinalCTA
       title={
         <>
-          Testez votre base aujourd'hui.{" "}
-          <span className="italic text-[#A9B8FF]">Avancez sereinement.</span>
+          Testez votre base ce soir.{" "}
+          <span className="italic text-[#A9B8FF]">Avancez sereinement demain.</span>
         </>
       }
-      description="En quelques minutes, vous saurez si votre base est exploitable et ce qu'il reste à corriger. En cas d'alerte critique, un expert vous recontacte sous 48 h ouvrées."
+      description="En quelques minutes, vous saurez si votre base est exploitable et ce qu'il reste à corriger. Gratuit, sans inscription."
       primary={{ to: siteConfig.cta.audit.to, label: siteConfig.cta.audit.label }}
-      secondary={{ to: "/contact", label: "Nous contacter" }}
+      secondary={{ to: "/contact", label: "Parler à un expert" }}
     />
   );
 }

@@ -1,0 +1,202 @@
+/*
+ * Animations de la vidéo explicative (ExplainerVideo).
+ * Chaque scène est remontée à son affichage : ses animations repartent de zéro.
+ * `--ev-play` (running | paused) suit le bouton lecture/pause.
+ * Mouvement réduit : tout est montré dans son état final, sans animation.
+ */
+
+.ev-stage * {
+  animation-play-state: var(--ev-play, running);
+}
+
+@keyframes ev-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ev-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-120%) rotate(-6deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(6%) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ev-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes ev-scan {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(var(--ev-scan-distance, 200px));
+    opacity: 0;
+  }
+}
+
+@keyframes ev-circle {
+  0% {
+    opacity: 0;
+    transform: scale(1.5) rotate(-6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-6deg);
+  }
+}
+
+@keyframes ev-strike {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes ev-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes ev-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(var(--ev-rot, -8deg));
+  }
+  70% {
+    opacity: 1;
+    transform: scale(0.95) rotate(var(--ev-rot, -8deg));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(var(--ev-rot, -8deg));
+  }
+}
+
+@keyframes ev-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.ev-fade-up {
+  opacity: 0;
+  animation: ev-fade-up 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: var(--ev-delay, 0s);
+}
+
+.ev-drop {
+  opacity: 0;
+  animation: ev-drop 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: var(--ev-delay, 0s);
+}
+
+.ev-fill {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: ev-fill 1.2s ease-in-out forwards;
+  animation-delay: var(--ev-delay, 0s);
+}
+
+.ev-scan {
+  opacity: 0;
+  animation: ev-scan 1.6s ease-in-out forwards;
+  animation-delay: var(--ev-delay, 0s);
+}
+
+.ev-circle {
+  opacity: 0;
+  animation: ev-circle 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: var(--ev-delay, 0s);
+}
+
+.ev-strike {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: ev-strike 0.45s ease-out forwards;
+  animation-delay: var(--ev-delay, 0s);
+}
+
+.ev-grow {
+  transform: scaleY(0);
+  transform-origin: bottom;
+  animation: ev-grow 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: var(--ev-delay, 0s);
+}
+
+.ev-stamp {
+  opacity: 0;
+  animation: ev-stamp 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: var(--ev-delay, 0s);
+}
+
+.ev-progress {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: ev-progress var(--ev-duration, 5s) linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ev-fade-up,
+  .ev-drop,
+  .ev-scan,
+  .ev-stamp {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .ev-scan {
+    opacity: 0;
+  }
+  .ev-fill,
+  .ev-strike,
+  .ev-grow {
+    animation: none;
+    transform: none;
+  }
+  .ev-circle {
+    animation: none;
+    opacity: 1;
+    transform: rotate(-6deg);
+  }
+  .ev-progress {
+    animation: none;
+    transform: none;
+  }
+  .ev-stamp {
+    transform: rotate(var(--ev-rot, -8deg));
+  }
+}

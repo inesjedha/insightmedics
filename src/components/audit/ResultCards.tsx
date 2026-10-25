@@ -4,12 +4,8 @@ import type { AiAssessment, AuditResult, Finding, ScoreDetail } from "@/lib/api/
 import { cn } from "@/lib/utils";
 
 const VERDICT_STYLES: Record<number, { ring: string; text: string; bg: string }> = {
-  1: {
-    ring: "border-emerald-300/50",
-    text: "text-emerald-700 dark:text-emerald-300",
-    bg: "bg-emerald-500/5",
-  },
-  2: { ring: "border-brand/40", text: "text-brand", bg: "bg-brand/5" },
+  1: { ring: "border-brand/50", text: "text-brand", bg: "bg-accent" },
+  2: { ring: "border-brand/40", text: "text-brand", bg: "bg-accent/60" },
   3: {
     ring: "border-amber-300/50",
     text: "text-amber-700 dark:text-amber-300",
@@ -42,9 +38,7 @@ export function VerdictBanner({
           Confiance : {scoreDetail.confiance.niveau}
         </Badge>
       </div>
-      <p className={cn("mt-2 font-display text-2xl font-extrabold tracking-tight", st.text)}>
-        {verdict.label}
-      </p>
+      <p className={cn("mt-2 font-display text-4xl", st.text)}>{verdict.label}</p>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-foreground/85">
         {verdict.justification_fr}
       </p>
@@ -56,7 +50,7 @@ export function ExecutiveSummaryCard({ assessment }: { assessment: AiAssessment 
   const r = assessment.report_sections_fr;
   return (
     <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
-      <h3 className="flex items-center gap-2 font-sans text-lg font-bold">
+      <h3 className="flex items-center gap-2 text-lg font-semibold">
         <ClipboardList className="h-5 w-5 text-brand" />
         Synthèse de l'audit
       </h3>
@@ -117,7 +111,7 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
   );
   return (
     <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
-      <h3 className="flex items-center gap-2 font-sans text-lg font-bold">
+      <h3 className="flex items-center gap-2 text-lg font-semibold">
         <ShieldAlert className="h-5 w-5 text-brand" />
         Anomalies détectées
         <span className="text-sm font-normal text-muted-foreground">({findings.length})</span>
@@ -181,7 +175,7 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
 export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
   return (
     <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
-      <h3 className="flex items-center gap-2 font-sans text-lg font-bold">
+      <h3 className="flex items-center gap-2 text-lg font-semibold">
         <Gauge className="h-5 w-5 text-brand" />
         Détail du score par domaine
       </h3>
@@ -206,7 +200,7 @@ export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
                 <div
                   className={cn(
                     "h-full rounded-full",
-                    good && "bg-emerald-500",
+                    good && "bg-brand",
                     mid && "bg-amber-500",
                     !good && !mid && "bg-destructive",
                   )}
@@ -218,7 +212,7 @@ export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
         })}
       </ul>
       {scoreDetail.plafonds_appliques.length > 0 && (
-        <div className="mt-5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+        <div className="mt-5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <p className="font-semibold">Plafond appliqué</p>
           <ul className="mt-1 list-disc pl-5">
             {scoreDetail.plafonds_appliques.map((p, i) => (
@@ -243,7 +237,7 @@ export function AuditScoreCard({
   preview?: boolean;
 }) {
   const scoreColor =
-    result.score >= 80 ? "text-brand" : result.score >= 60 ? "text-amber-600" : "text-destructive";
+    result.score >= 80 ? "text-brand" : result.score >= 60 ? "text-amber-700" : "text-destructive";
 
   return (
     <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
@@ -252,7 +246,7 @@ export function AuditScoreCard({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {preview ? "Score préliminaire" : "Score de qualité"}
           </p>
-          <p className={cn("font-display text-6xl font-extrabold tracking-tight", scoreColor)}>
+          <p className={cn("font-display text-7xl leading-none", scoreColor)}>
             {result.score}
             <span className="text-2xl text-muted-foreground">/100</span>
           </p>
@@ -309,25 +303,28 @@ export function AuditScoreCard({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-surface/60 px-4 py-3">
+    <div className="rounded-md border border-border bg-surface/60 px-4 py-3">
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 font-display text-xl font-bold text-foreground">{value}</div>
+      <div className="mt-1 font-display text-3xl leading-none text-foreground">{value}</div>
     </div>
   );
 }
 
-export function HumanAlert() {
+/** Alerte « relecture humaine ». `client` : audit livré (nous avons déjà les coordonnées). */
+export function HumanAlert({ context = "preview" }: { context?: "preview" | "client" }) {
   return (
     <div className="mt-6 flex items-start gap-3 rounded-md border border-amber-300/50 bg-amber-500/5 p-5 text-amber-800 dark:text-amber-200">
       <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
       <div>
-        <p className="font-sans text-base font-semibold">
-          Un expert humain reviendra vers vous sous 48h.
+        <p className="text-base font-semibold">
+          {context === "client"
+            ? "Plusieurs alertes critiques : un expert vous recontacte."
+            : "Plusieurs alertes critiques : parlez-en à un expert."}
         </p>
         <p className="mt-1 text-sm">
-          Plusieurs alertes critiques ont été détectées dans votre base. Notre équipe (médecin +
-          biostatisticien) va analyser le rapport et vous recontactera personnellement par
-          téléphone.
+          {context === "client"
+            ? "Un médecin et un biostatisticien relisent votre rapport et vous recontactent sous 48 h ouvrées pour en parler."
+            : "Laissez vos coordonnées ci-dessous. Un médecin et un biostatisticien regardent votre rapport et vous rappellent sous 48 h ouvrées, sans engagement."}
         </p>
       </div>
     </div>

@@ -12,7 +12,6 @@ import {
   HelpCircle,
   MessageSquare,
   Loader2,
-  Sparkles,
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,15 +45,16 @@ import {
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Insight Medics" },
+      { title: "Contact — parlons de votre thèse · Insight Medics" },
       {
         name: "description",
-        content: "Décrivez votre projet de thèse ou de publication. Réponse sous 48h.",
+        content:
+          "Décrivez votre thèse ou votre article en quelques lignes : nous vous rappelons sous 48 h ouvrées. Premier échange gratuit.",
       },
       { property: "og:title", content: "Contact — Insight Medics" },
       {
         property: "og:description",
-        content: "Réponse sous 48h. Décrivez votre projet et nous revenons vers vous.",
+        content: "Décrivez votre projet : nous vous rappelons sous 48 h ouvrées, sans engagement.",
       },
     ],
   }),
@@ -236,20 +236,20 @@ function ContactPage() {
         eyebrow="Contact"
         title={
           <>
-            Parlons de <span className="text-brand">votre projet</span>.
+            Parlons de <span className="italic text-brand">votre thèse.</span>
           </>
         }
-        description="Décrivez votre étude, votre problématique et votre objectif. Nous revenons vers vous sous 48h ouvrées — par téléphone en priorité."
+        description="Décrivez votre étude en quelques lignes. Nous vous rappelons sous 48 h ouvrées pour cadrer ensemble le travail, le délai et le prix. Premier échange gratuit, sans engagement."
       />
 
       <Section className="pt-2 sm:pt-4">
         <div className="mx-auto mb-6 flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:mb-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1.5 text-xs font-medium text-brand">
-            <Sparkles className="h-3.5 w-3.5" />
-            Réponse sous 48h ouvrées
+          <span className="inline-flex items-center gap-2 rounded-sm bg-highlight px-3 py-1.5 text-sm font-medium text-foreground">
+            <Clock className="h-4 w-4" aria-hidden />
+            Rappel sous 48 h ouvrées
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3.5 py-1.5 text-xs font-medium text-muted-foreground">
-            <Phone className="h-3.5 w-3.5" />
+          <span className="inline-flex items-center gap-2 rounded-sm border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-foreground">
+            <Phone className="h-4 w-4" aria-hidden />
             Premier échange gratuit
           </span>
         </div>
@@ -497,22 +497,26 @@ function ContactPage() {
 
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-xs text-muted-foreground sm:max-w-[60%]">
-                        Réponse sous 48h ouvrées · Premier échange gratuit, sans engagement.
+                        Rappel sous 48 h ouvrées · Premier échange gratuit, sans engagement.
                       </p>
                       <Button
                         type="submit"
                         disabled={submitting}
-                        className="group h-12 w-full bg-brand px-6 text-base text-brand-foreground hover:bg-brand/90 sm:w-auto"
+                        size="lg"
+                        className="group w-full sm:w-auto"
                       >
                         {submitting ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                             Envoi…
                           </>
                         ) : (
                           <>
-                            Envoyer
-                            <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                            Envoyer ma demande
+                            <Send
+                              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                              aria-hidden
+                            />
                           </>
                         )}
                       </Button>
@@ -529,8 +533,8 @@ function ContactPage() {
                 <InfoCard
                   highlight
                   icon={<Phone className="h-4 w-4 sm:h-5 sm:w-5" />}
-                  title="Téléphone prioritaire"
-                  text="Nous rappelons par téléphone en priorité. Indiquez un numéro joignable dans le formulaire."
+                  title="On vous rappelle"
+                  text="Nous préférons le téléphone : c'est plus rapide pour cadrer votre projet. Indiquez un numéro joignable."
                 />
               </div>
               <InfoCard
@@ -547,13 +551,13 @@ function ContactPage() {
               />
               <InfoCard
                 icon={<Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
-                title="Délais de réponse"
-                text="Sous 48h ouvrées. Soutenance imminente ? Signalez-le, nous traitons en priorité."
+                title="Sous 48 h ouvrées"
+                text="Votre soutenance approche ? Dites-le dans votre message : nous traitons les demandes urgentes en priorité."
               />
               <InfoCard
                 icon={<User className="h-4 w-4 sm:h-5 sm:w-5" />}
                 title="Basé à Sousse, Tunisie"
-                text="Équipe biostatisticien + médecin pour thèses et publications."
+                text="Un médecin et un biostatisticien, pour les thèses, mémoires et articles en médecine."
               />
             </div>
           </aside>
@@ -561,8 +565,8 @@ function ContactPage() {
       </Section>
 
       <FinalCTA
-        title="Vous préférez voir avant de discuter ?"
-        description="Lancez l'audit gratuit de votre base. Vous recevez un rapport clair sur l'état de vos données — et un aperçu concret de notre méthode."
+        title="Vous préférez d'abord tester votre base ?"
+        description="En quelques minutes, vous saurez si votre base est exploitable et ce qu'il reste à corriger. Gratuit, sans inscription."
         primary={{ to: "/audit", label: "Tester ma base gratuitement" }}
         secondary={{ to: "/methode", label: "Voir notre méthode" }}
       />

@@ -1,4 +1,4 @@
-import { Cpu, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { AuditEvent } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -9,20 +9,17 @@ export function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: A
   return (
     <div className="rounded-md border border-border bg-card p-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-sans text-base font-semibold">
-          <Cpu className="mr-2 inline h-4 w-4 text-brand" />
-          Analyses en temps réel
-        </h3>
+        <h3 className="text-base font-semibold">Vérification en direct</h3>
         {phase === "running" && (
           <Badge variant="outline" className="border-brand/30 text-brand">
             En cours
           </Badge>
         )}
       </div>
-      <ul className="mt-4 space-y-2 text-sm">
+      <ul className="mt-4 space-y-2 text-sm" aria-live="polite">
         {events.length === 0 && phase === "idle" && (
           <li className="text-muted-foreground">
-            Le journal d'analyse s'affichera ici une fois l'audit lancé.
+            Le détail de chaque contrôle s'affichera ici dès que vous lancerez la vérification.
           </li>
         )}
         {events.map((e, i) => (
@@ -31,8 +28,8 @@ export function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: A
             className={cn(
               "flex gap-3 rounded-md px-3 py-2",
               e.level === "critical" && "bg-destructive/10 text-destructive",
-              e.level === "warn" && "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-              e.level === "success" && "bg-brand/10 text-brand",
+              e.level === "warn" && "bg-highlight/60 text-foreground",
+              e.level === "success" && "bg-accent text-accent-foreground",
               e.level === "info" && "text-foreground/80",
             )}
           >
@@ -44,8 +41,8 @@ export function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: A
         ))}
         {phase === "running" && (
           <li className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Analyse structurelle de votre base — quelques secondes…
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+            Vérification de la structure de votre base, quelques secondes…
           </li>
         )}
       </ul>

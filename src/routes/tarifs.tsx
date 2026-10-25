@@ -4,22 +4,23 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
+import { FaqSection } from "@/components/site/Faq";
 import { OfferCard } from "@/components/site/OfferCard";
-import { OFFERS } from "@/lib/offers";
+import { OrderSteps } from "@/components/site/OrderSteps";
+import { OFFERS, getOffer } from "@/lib/offers";
 
 export const Route = createFileRoute("/tarifs")({
   head: () => ({
     meta: [
-      { title: "Tarifs — Insight Medics" },
+      { title: "Tarifs thèse de médecine — Insight Medics" },
       {
         name: "description",
-        content:
-          "Audit IA gratuit. Analyse + résultats à 500 DT. Discussion à 500 DT. Accompagnement thèse complète à 1 200 DT.",
+        content: `Audit de votre base gratuit. Analyses + résultats ${getOffer("analyses").priceLabel}, discussion ${getOffer("discussion").priceLabel}, thèse complète ${getOffer("these").priceLabel}. Paiement à la livraison.`,
       },
       { property: "og:title", content: "Tarifs — Insight Medics" },
       {
         property: "og:description",
-        content: "Tarifs transparents en dinars tunisiens pour vos thèses et publications.",
+        content: "Des prix clairs en dinars tunisiens, sans acompte : vous payez à la livraison.",
       },
     ],
   }),
@@ -33,10 +34,10 @@ function TarifsPage() {
         eyebrow="Tarifs"
         title={
           <>
-            Tarifs transparents en <span className="italic text-brand">dinars tunisiens.</span>
+            Des prix clairs, <span className="italic text-brand">en dinars tunisiens.</span>
           </>
         }
-        description="Pas de frais cachés. Chaque livrable est relu et validé par un humain — biostatisticien et médecin — avant envoi."
+        description="Sans frais cachés ni acompte : vous payez à la livraison. Chaque livrable est relu par un médecin et un biostatisticien avant de vous être remis."
       />
 
       <Section>
@@ -76,17 +77,21 @@ function TarifsPage() {
         <div className="mx-auto mt-10 flex max-w-3xl items-start gap-3 rounded-md border border-border bg-surface p-5">
           <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
           <p className="text-[15px] leading-relaxed text-muted-foreground">
-            Paiement à la livraison. Aucun acompte demandé pour les prestations en dinars tunisiens
-            — vous validez la qualité avant de régler.
+            Paiement à la livraison, sans acompte : vous voyez le travail avant de régler, par
+            virement ou selon le moyen convenu ensemble.
           </p>
         </div>
       </Section>
 
+      <OrderSteps />
+
+      <FaqSection />
+
       <FinalCTA
-        title="Un doute sur le bon périmètre ?"
-        description="Commencez par l'audit gratuit de votre base. Nous identifions les zones à risque et vous proposons l'offre la plus juste."
+        title="Vous hésitez entre deux formules ?"
+        description="Testez d'abord votre base : nous repérons ce qui bloque et vous conseillons la formule la plus juste."
         primary={{ to: "/audit", label: "Tester ma base gratuitement" }}
-        secondary={{ to: "/contact", label: "Parler à un humain" }}
+        secondary={{ to: "/contact", label: "Parler à un expert" }}
       />
     </SiteLayout>
   );

@@ -6,6 +6,7 @@ import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
 import { OfferCard } from "@/components/site/OfferCard";
+import { OrderSteps } from "@/components/site/OrderSteps";
 import { OFFERS } from "@/lib/offers";
 
 export const Route = createFileRoute("/services")({
@@ -15,12 +16,12 @@ export const Route = createFileRoute("/services")({
       {
         name: "description",
         content:
-          "Audit gratuit, analyse statistique + rédaction des résultats, rédaction de la discussion, accompagnement thèse complète. Tarifs en dinars tunisiens.",
+          "Audit gratuit de votre base, analyses statistiques et résultats rédigés, discussion, accompagnement de thèse complète. Relu par un médecin et un biostatisticien.",
       },
       { property: "og:title", content: "Services — Insight Medics" },
       {
         property: "og:description",
-        content: "3 manières de travailler avec nous. Tarifs transparents en DT.",
+        content: "Un audit gratuit, puis trois formules claires en dinars tunisiens.",
       },
     ],
   }),
@@ -34,11 +35,10 @@ function ServicesPage() {
         eyebrow="Nos services"
         title={
           <>
-            Choisissez le périmètre qui correspond à{" "}
-            <span className="italic text-brand">votre étape.</span>
+            L'aide dont vous avez besoin, <span className="italic text-brand">rien de plus.</span>
           </>
         }
-        description="Un audit gratuit pour démarrer, puis trois offres claires en dinars tunisiens. Chaque livrable est validé par un humain — biostatisticien et médecin — avant envoi."
+        description="Un audit gratuit pour savoir où vous en êtes, puis trois formules claires, en dinars tunisiens. Chaque livrable est relu par un médecin et un biostatisticien avant de vous être remis."
       />
 
       {/* Audit gratuit, mis en avant */}
@@ -52,8 +52,8 @@ function ServicesPage() {
               Audit de votre base : <span className="mark">0 DT</span>
             </h2>
             <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-              Contrôle qualité automatique de votre base, analyse de sa structure et pistes
-              d'ajustement, avec un score sur 100.
+              En quelques minutes : un score sur 100 et la liste de ce qui bloque votre analyse.
+              Sans inscription, sans engagement.
             </p>
             <ul className="mt-4 grid gap-2 text-[15px] sm:grid-cols-2">
               {[
@@ -99,11 +99,13 @@ function ServicesPage() {
         </div>
       </Section>
 
+      <OrderSteps />
+
       <FinalCTA
-        title="Pas sûr·e du périmètre adapté ?"
-        description="Lancez l'audit gratuit de votre base : vous repartez avec un état des lieux clair, et nous vous proposons l'offre la plus juste."
+        title="Vous hésitez entre deux formules ?"
+        description="Testez d'abord votre base : vous saurez ce qu'il faut faire, et nous vous conseillerons la formule la plus juste, sans vous pousser à prendre plus."
         primary={{ to: "/audit", label: "Tester ma base gratuitement" }}
-        secondary={{ to: "/contact", label: "Parler à un humain" }}
+        secondary={{ to: "/contact", label: "Parler à un expert" }}
       />
     </SiteLayout>
   );

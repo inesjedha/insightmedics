@@ -77,8 +77,8 @@ function ClientResultPage() {
         <SectionHeader
           as="h1"
           eyebrow="Rapport privé"
-          title="Votre audit de qualité de données"
-          description="Accès sécurisé par lien privé. Ne le partagez qu'avec les personnes autorisées."
+          title="Votre audit complet."
+          description="Ce lien privé reste valable 30 jours après la livraison : pensez à enregistrer vos fichiers. Ne le partagez qu'avec des personnes de confiance, votre directeur de thèse par exemple."
         />
 
         {phase === "loading" && (
@@ -98,7 +98,7 @@ function ClientResultPage() {
           <StateCard
             icon={<Clock className="h-6 w-6" />}
             title="Lien expiré"
-            body="Ce lien d'accès a expiré. Contactez-nous pour réactiver l'accès à votre audit."
+            body="Ce lien a expiré : vos fichiers ont été supprimés au bout de 30 jours, comme prévu par notre politique de confidentialité. Contactez-nous si vous avez besoin d'aide."
           />
         )}
         {phase === "error" && (
@@ -121,7 +121,7 @@ function ClientResultPage() {
             {assessment?.executive_summary_fr && <ExecutiveSummaryCard assessment={assessment} />}
             {assessment?.findings?.length ? <FindingsCard findings={assessment.findings} /> : null}
             {scoreDetail && <DomainsCard scoreDetail={scoreDetail} />}
-            {result.needsHumanReview && <HumanAlert />}
+            {result.needsHumanReview && <HumanAlert context="client" />}
             <DeliverablesDownload token={token} />
           </div>
         )}
@@ -192,7 +192,7 @@ function DeliverablesDownload({ token }: { token: string }) {
             href={clientDownloadUrl(token, d.kind)}
             className="group flex items-start gap-3 rounded-md border border-border bg-surface/50 p-4 transition-colors hover:border-brand/40 hover:bg-brand/5"
           >
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
               {d.icon}
             </span>
             <span className="min-w-0">

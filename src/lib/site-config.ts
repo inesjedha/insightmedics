@@ -1,13 +1,10 @@
 export const siteConfig = {
   name: "Insight Medics",
-  tagline:
-    "Rédaction scientifique · Analyse statistique · Data visualisation pour vos thèses de médecine.",
   description:
     "Insight Medics réalise les statistiques et la rédaction des thèses, mémoires et articles en médecine. Vous envoyez votre base, on l'analyse, on rédige, et un médecin et un biostatisticien relisent tout.",
   url: "https://www.insightmedics.tn",
   email: "helpinsightmedics@gmail.com",
   location: "Sousse, Tunisie",
-  promise: "Votre thèse, prête en 2 semaines.",
   nav: [
     { to: "/", label: "Accueil" },
     { to: "/services", label: "Services" },

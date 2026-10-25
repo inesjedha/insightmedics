@@ -38,7 +38,7 @@ function MethodePage() {
             <span className="italic text-brand">justifier.</span>
           </>
         }
-        description="Votre thèse engage votre nom et celui de votre directeur. Notre méthode vise une chose : que chaque chiffre de votre travail soit calculé directement sur vos données, traçable et reproductible, du premier calcul à la soutenance."
+        description="Votre thèse engage votre nom et celui de votre directeur. Notre méthode vise une chose : que chaque chiffre soit calculé sur vos données, traçable et reproductible, et que vous sachiez l'expliquer devant votre jury."
       />
 
       {/* Piliers */}
@@ -47,17 +47,17 @@ function MethodePage() {
           <Pillar
             number="01"
             title="Des analyses choisies pour votre sujet"
-            text="Nous partons de votre question de recherche et de votre base pour sélectionner les analyses réellement pertinentes — pas un menu standard appliqué à tout le monde."
+            text="Nous partons de votre question de recherche et de votre base pour choisir les analyses vraiment pertinentes, pas un menu standard appliqué à tout le monde."
           />
           <Pillar
             number="02"
             title="Des chiffres calculés, jamais saisis à la main"
-            text="Chaque valeur — effectifs, p-values, taux de manquants — provient de l'exécution d'un code statistique sur vos données. Rien n'est recopié ni approximé."
+            text="Effectifs, p-values, taux de données manquantes : chaque valeur sort d'un code statistique exécuté sur vos données. Rien n'est recopié ni arrondi à la main."
           />
           <Pillar
             number="03"
             title="Validés par un biostatisticien"
-            text="Pour la prestation complète, un biostatisticien revoit, ajuste et valide chaque analyse définitive avant livraison."
+            text="Chaque analyse définitive est revue, ajustée si besoin et validée par un biostatisticien avant de vous être livrée."
           />
         </div>
       </Section>
@@ -67,7 +67,7 @@ function MethodePage() {
         <SectionHeader
           eyebrow="Le déroulé, étape par étape"
           title="De votre fichier brut au rapport final."
-          description="Six étapes, deux points d'échange avec vous, une validation humaine systématique avant livraison."
+          description="Six étapes, deux échanges avec vous, et une double relecture humaine avant chaque livraison."
           align="center"
         />
         <PipelineTimeline />
@@ -123,36 +123,36 @@ function PipelineTimeline() {
       n: 1,
       role: "client",
       roleLabel: "Vous",
-      title: "Upload",
-      text: "Vous déposez votre base (Excel, CSV, SPSS). Chiffrement avant envoi : aucun nom ne quitte votre poste en clair.",
+      title: "Dépôt de la base",
+      text: "Vous déposez votre base anonymisée (SPSS, Excel ou CSV) et, si vous l'avez, votre protocole. L'envoi est chiffré.",
     },
     {
       n: 2,
       role: "team",
       roleLabel: "Insight Medics",
-      title: "Anonymisation",
-      text: "Les colonnes identifiantes sont détectées et pseudonymisées automatiquement. La table de correspondance reste isolée.",
+      title: "Protection des données",
+      text: "Les colonnes qui pourraient identifier un patient sont repérées automatiquement. Elles sont masquées avant tout envoi à l'IA, qui ne voit qu'un court échantillon, et retirées de la base nettoyée.",
     },
     {
       n: 3,
       role: "exchange",
       roleLabel: "Échange avec vous",
       title: "Cadrage",
-      text: "Court questionnaire et appel si besoin : objectif de la thèse, hypothèses, variables clés. C'est vous qui orientez l'analyse.",
+      text: "Un appel pour fixer l'objectif de la thèse, les hypothèses et les variables clés. C'est vous qui orientez l'analyse.",
     },
     {
       n: 4,
       role: "team",
       roleLabel: "Insight Medics",
-      title: "Calculs",
-      text: "Analyses statistiques exécutées sur vos données réelles : descriptives, tests, modèles. Les sorties brutes sont conservées et traçables.",
+      title: "Analyses",
+      text: "Les statistiques sont calculées par du code sur vos vraies données : descriptives, tests, modèles. Chaque résultat est traçable et reproductible.",
     },
     {
       n: 5,
       role: "team",
       roleLabel: "Revue humaine",
-      title: "Revue biostat + médecin",
-      text: "Un biostatisticien relit les analyses, ajuste les choix de tests, vérifie les hypothèses. Un médecin relit la cohérence clinique.",
+      title: "Double relecture",
+      text: "Un biostatisticien relit les analyses, ajuste le choix des tests et vérifie leurs conditions d'application. Un médecin vérifie la cohérence clinique.",
       highlight: true,
     },
     {
@@ -160,7 +160,7 @@ function PipelineTimeline() {
       role: "exchange",
       roleLabel: "Échange avec vous",
       title: "Restitution & livraison",
-      text: "On vous présente les résultats, on répond à vos questions, on intègre vos retours, puis on livre le rapport final et les scripts.",
+      text: "Nous vous présentons les résultats, répondons à vos questions et intégrons vos retours, puis nous livrons le document final et les scripts d'analyse.",
     },
   ];
 
