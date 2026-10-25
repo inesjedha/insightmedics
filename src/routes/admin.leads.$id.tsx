@@ -85,7 +85,7 @@ function LeadDetail() {
 
       <div className="rounded-md border border-border bg-card p-6">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-2xl font-bold">{lead.name || "Lead sans nom"}</h1>
+          <h1 className="font-display text-3xl">{lead.name || "Lead sans nom"}</h1>
           <Badge variant="outline" className="border-border">
             {lead.source === "audit" ? "Audit" : "Contact"}
           </Badge>

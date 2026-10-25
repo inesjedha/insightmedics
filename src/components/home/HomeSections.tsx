@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ExplainerVideo } from "@/components/home/ExplainerVideo";
 import { FinalCTA } from "@/components/site/FinalCTA";
-import { OfferCard } from "@/components/site/OfferCard";
+import { OFFER_GRID, OfferCard } from "@/components/site/OfferCard";
+import { TestBanner } from "@/components/site/TestBanner";
 import { Section, SectionHeader } from "@/components/site/Section";
 import { siteConfig } from "@/lib/site-config";
 import { FULL_AUDIT_PRICE_LABEL, OFFERS, getOffer, weeksLabel } from "@/lib/offers";
@@ -24,7 +25,9 @@ export function Hero() {
           </p>
           <h1 className="mt-5 font-display text-[52px] leading-[0.95] text-balance sm:text-7xl lg:text-[84px]">
             Votre thèse de médecine,{" "}
-            <span className="mark italic">des statistiques à la soutenance.</span>
+            <span className="italic">
+              des statistiques à la <span className="mark">soutenance.</span>
+            </span>
           </h1>
           <p className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground">
             Envoyez votre base de données. Nous réalisons les analyses, rédigeons avec vous les
@@ -33,7 +36,12 @@ export function Hero() {
               Vous restez l'auteur, et vous comprenez chaque chiffre.
             </span>
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <p className="mt-6 origin-left -rotate-1 font-hand text-2xl sm:text-[26px] leading-snug text-brand">
+            thèse complète : {weeksLabel(these.delayWeeks)}, {these.priceLabel}
+            <br />
+            analyses + résultats : {weeksLabel(analyses.delayWeeks)}, {analyses.priceLabel}
+          </p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button asChild size="lg">
               <Link to={siteConfig.cta.audit.to}>
                 {siteConfig.cta.audit.label}
@@ -46,11 +54,6 @@ export function Hero() {
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
             Gratuit et sans inscription · Paiement à la livraison, sans acompte
-          </p>
-          <p className="mt-8 origin-left -rotate-1 font-hand text-[26px] leading-snug text-brand">
-            thèse complète : {weeksLabel(these.delayWeeks)}, {these.priceLabel}
-            <br />
-            analyses + résultats : {weeksLabel(analyses.delayWeeks)}, {analyses.priceLabel}
           </p>
         </div>
 
@@ -75,7 +78,7 @@ export function ProblemApproach() {
     "Le bon test pour votre question, choisi et vérifié par un biostatisticien.",
     "Des résultats et une discussion rédigés au format IMRAD, avec vous.",
     "Des tableaux et des figures prêts à insérer dans votre manuscrit.",
-    "Une restitution expliquée : vous comprenez chaque chiffre avant la soutenance.",
+    "Une restitution expliquée : vous comprenez chaque chiffre avant la soutenance.",
   ];
 
   return (
@@ -134,11 +137,11 @@ export function AuditTeaser() {
     },
     {
       title: "Recevez votre score sur 100",
-      text: "Données manquantes, doublons, valeurs impossibles : tout est chiffré.",
+      text: "Données manquantes, doublons, valeurs extrêmes : tout est chiffré.",
     },
     {
-      title: "Sachez quoi corriger",
-      text: "Les problèmes à régler en priorité, avant de lancer vos statistiques.",
+      title: "Sachez ce qui bloque",
+      text: "Les points à régler en priorité, avant de lancer vos statistiques.",
     },
   ];
 
@@ -146,16 +149,16 @@ export function AuditTeaser() {
     <section className="bg-ink text-background">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-background/60">
-          Gratuit · sans inscription
+          Test gratuit · sans inscription
         </p>
         <h2 className="mt-3 max-w-3xl font-display text-4xl text-balance sm:text-6xl">
           Votre base est-elle exploitable ?{" "}
-          <span className="italic text-[#A9B8FF]">Réponse en quelques minutes.</span>
+          <span className="italic text-brand-on-ink">Réponse en quelques minutes.</span>
         </h2>
         <ol className="mt-12 grid gap-8 border-t border-background/20 pt-8 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
             <li key={s.title}>
-              <span aria-hidden className="font-hand text-4xl leading-none text-[#A9B8FF]">
+              <span aria-hidden className="font-hand text-4xl leading-none text-brand-on-ink">
                 {i + 1}.
               </span>
               <h3 className="mt-3 text-lg font-semibold">{s.title}</h3>
@@ -181,7 +184,7 @@ export function AuditTeaser() {
           </Button>
           <p className="inline-flex items-start gap-2 text-sm text-background/70">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            Chaque chiffre est calculé directement sur vos données : rien n'est estimé.
+            Aucune IA pendant le test : chaque chiffre est calculé par notre code, sur vos données.
           </p>
         </div>
       </div>
@@ -200,12 +203,12 @@ export function AiHuman() {
             IA + humain
           </p>
           <h2 className="mt-4 font-display text-4xl leading-[1.1] text-balance sm:text-5xl">
-            L'IA fait le tri. <span className="mark">Un médecin et un biostatisticien</span>{" "}
-            relisent tout.
+            L'IA nous fait gagner du temps.{" "}
+            <span className="mark">Un médecin et un biostatisticien</span> relisent tout.
           </h2>
           <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-muted-foreground">
-            L'IA nous fait gagner du temps sur les tâches répétitives. Les choix statistiques, la
-            lecture clinique et la validation finale restent entre des mains humaines.
+            Elle accélère les tâches répétitives. Les choix statistiques, la lecture clinique et la
+            validation finale restent entre des mains humaines.
           </p>
         </div>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-1">
@@ -214,9 +217,14 @@ export function AiHuman() {
               Ce que fait l'IA
             </h3>
             <ul className="mt-4 space-y-3 text-[15px]">
-              <li>Profile et trie la base.</li>
-              <li>Repère les anomalies, valeurs aberrantes et données manquantes.</li>
-              <li>Prépare les premières analyses descriptives.</li>
+              <li>
+                Lit un échantillon anonymisé de votre base (50 lignes au plus), jamais le fichier
+                entier.
+              </li>
+              <li>
+                Propose un verdict et un plan de correction à partir des contrôles de notre code.
+              </li>
+              <li>Nous fait gagner du temps sur la mise en forme et les premières versions.</li>
             </ul>
           </div>
           <div className="border-t border-brand pt-5">
@@ -241,15 +249,15 @@ export function Authorship() {
   const points = [
     {
       title: "Vous gardez la main",
-      text: "Votre question de recherche, vos hypothèses, vos choix : tout est discuté avec vous avant le moindre calcul.",
+      text: "Votre question de recherche, vos hypothèses, vos choix : tout est discuté avec vous avant le moindre calcul.",
     },
     {
       title: "Vous comprenez tout",
-      text: "Nous vous présentons chaque résultat, répondons à vos questions et vous remettons les scripts d'analyse.",
+      text: "Nous vous présentons chaque résultat, répondons à vos questions et vous expliquons chaque choix de méthode.",
     },
     {
       title: "Vous restez l'auteur",
-      text: "Nous accompagnons, vous signez et vous soutenez. La responsabilité scientifique reste la vôtre, comme le prévoient nos conditions.",
+      text: "Vous signez et vous soutenez ; la thèse est la vôtre. Notre travail : la rendre solide, et vous rendre capable de la défendre.",
     },
   ];
   return (
@@ -261,7 +269,7 @@ export function Authorship() {
             Un accompagnement, <span className="italic text-brand">pas un prête-plume.</span>
           </>
         }
-        description="Votre thèse engage votre nom et celui de votre directeur. Notre rôle : vous donner des analyses justes et une rédaction solide, que vous savez expliquer."
+        description="Votre thèse engage votre nom et celui de votre directeur. Notre rôle : vous donner des analyses justes et une rédaction solide, que vous savez expliquer."
       />
       <div className="mt-10 grid gap-8 md:grid-cols-3">
         {points.map((p, i) => (
@@ -286,31 +294,16 @@ export function ServicesTeaser() {
       <SectionHeader
         eyebrow="Formules"
         title="Choisissez l'aide dont vous avez besoin."
-        description="Commencez par l'audit gratuit de votre base. Ensuite, ne prenez que ce qui vous manque."
+        description="Commencez par tester votre base gratuitement. Ensuite, ne prenez que ce qui vous manque."
       />
 
-      <div className="mt-10 flex flex-col gap-5 rounded-md border border-foreground bg-card p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
-        <div>
-          <p className="font-display text-3xl">
-            Audit de votre base : <span className="mark">0 DT</span>
-          </p>
-          <p className="mt-2 text-[15px] text-muted-foreground">
-            Score sur 100 et anomalies en quelques minutes, sans inscription ni engagement.
-          </p>
-        </div>
-        <Button asChild size="lg" className="shrink-0">
-          <Link to={siteConfig.cta.audit.to}>
-            {siteConfig.cta.audit.label}
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        </Button>
-      </div>
+      <TestBanner headingLevel="h3" className="mt-10" />
 
-      <div className="mt-8 grid gap-6 md:grid-cols-3">
+      <div className={`mt-8 ${OFFER_GRID}`}>
         {OFFERS.map((o) => (
           <OfferCard
             key={o.id}
-            number={String(Number(o.number))}
+            number={o.number}
             title={o.shortTitle}
             tagline={o.tagline}
             price={o.priceLabel}
@@ -318,6 +311,7 @@ export function ServicesTeaser() {
             features={o.features}
             ctaLabel={o.ctaLabel}
             ctaHref="/contact"
+            offerId={o.id}
             highlight={o.highlight}
             badge={o.badge}
           />
@@ -392,14 +386,12 @@ const TESTIMONIALS: Testimonial[] = [
 function TestimonialCard({ t, className }: { t: Testimonial; className?: string }) {
   return (
     <figure
-      className={
-        "flex h-full flex-col rounded-md border border-border bg-card p-5 " + (className ?? "")
-      }
+      className={"flex flex-col rounded-md border border-border bg-card p-5 " + (className ?? "")}
     >
       <span aria-hidden className="font-display text-5xl leading-none text-brand">
         “
       </span>
-      <blockquote className="mt-1 flex-1 text-[15px] leading-relaxed">{t.quote}</blockquote>
+      <blockquote className="mt-1 text-[15px] leading-relaxed">{t.quote}</blockquote>
       <figcaption className="mt-5 border-t border-border pt-3">
         <p className="font-display text-xl leading-none">{t.name}</p>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -421,9 +413,10 @@ export function Testimonials() {
       <div className="mt-10 sm:hidden">
         <TestimonialsMobileCarousel items={TESTIMONIALS} />
       </div>
-      <div className="mt-10 hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+      {/* Colonnes « mur de notes » : pas de trou en fin de grille avec 5 témoignages. */}
+      <div className="mt-10 hidden gap-4 sm:block sm:columns-2 lg:columns-3">
         {TESTIMONIALS.map((t) => (
-          <TestimonialCard key={t.name + t.city} t={t} />
+          <TestimonialCard key={t.name + t.city} t={t} className="mb-4 break-inside-avoid" />
         ))}
       </div>
     </Section>
@@ -534,7 +527,7 @@ export function ForWho() {
       </div>
       <p className="mt-10 flex items-start gap-2 text-[15px] text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
-        Vos données restent confidentielles : identifiants masqués, fichiers supprimés au bout de 30
+        Vos données restent confidentielles : identifiants masqués, fichiers supprimés au bout de 30
         jours, jamais réutilisés.
       </p>
     </Section>
@@ -549,7 +542,7 @@ export function FinalCta() {
       title={
         <>
           Testez votre base ce soir.{" "}
-          <span className="italic text-[#A9B8FF]">Avancez sereinement demain.</span>
+          <span className="italic text-brand-on-ink">Avancez sereinement demain.</span>
         </>
       }
       description="En quelques minutes, vous saurez si votre base est exploitable et ce qu'il reste à corriger. Gratuit, sans inscription."

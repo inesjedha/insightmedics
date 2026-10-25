@@ -1,13 +1,9 @@
 /*
  * Animations de la vidéo explicative (ExplainerVideo).
  * Chaque scène est remontée à son affichage : ses animations repartent de zéro.
- * `--ev-play` (running | paused) suit le bouton lecture/pause.
+ * `--ev-play` (running | paused) suit le bouton lecture/pause (règle en fin de fichier).
  * Mouvement réduit : tout est montré dans son état final, sans animation.
  */
-
-.ev-stage * {
-  animation-play-state: var(--ev-play, running);
-}
 
 @keyframes ev-fade-up {
   from {
@@ -199,4 +195,13 @@
   .ev-stamp {
     transform: rotate(var(--ev-rot, -8deg));
   }
+}
+
+/*
+ * Pause : doit rester APRÈS les classes ci-dessus (le raccourci `animation` remet
+ * animation-play-state à « running ») et l'emporter sur elles (sélecteur doublé).
+ * Un style en ligne (barre de progression) garde la priorité.
+ */
+.ev-stage.ev-stage * {
+  animation-play-state: var(--ev-play, running);
 }

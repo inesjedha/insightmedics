@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 import { UNLOCK_ANCHOR_ID } from "./UnlockRequestForm";
 
 const FULL_AUDIT_INCLUDES = [
-  "Un verdict clair : votre base est-elle exploitable pour votre thèse ?",
+  "Un verdict clair : votre base est-elle exploitable pour votre thèse ?",
   "Chaque anomalie classée et expliquée, avec la correction proposée",
   "Un plan de correction par ordre de priorité, étape par étape",
-  "Le classeur Excel d'audit (10 onglets) et le rapport Word complet",
+  "Le classeur Excel d'audit (10 onglets) et le rapport Word complet",
   "Votre base nettoyée et anonymisée (.sav et .csv), prête à analyser",
 ];
 
@@ -20,7 +20,7 @@ function scrollToUnlock() {
 export function PreviewNotice({ nIssues }: { nIssues: number }) {
   return (
     <div className="rounded-md border border-foreground bg-card p-6 shadow-offset sm:p-7">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand">Aperçu gratuit</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand">Test gratuit</p>
       <p className="mt-2 font-display text-3xl">Voici votre premier diagnostic.</p>
       <p className="mt-3 max-w-3xl text-[15px] leading-relaxed">
         {nIssues > 0 ? (
@@ -30,12 +30,12 @@ export function PreviewNotice({ nIssues }: { nIssues: number }) {
               {nIssues} point{nIssues > 1 ? "s" : ""} d'attention
             </strong>{" "}
             sur votre base. L'audit complet ({FULL_AUDIT_PRICE_LABEL}) vous dit exactement{" "}
-            <strong>comment les corriger</strong> et vous remet :
+            <strong>comment les corriger</strong> et vous remet :
           </>
         ) : (
           <>
             Bonne base à première vue. L'<strong>audit complet ({FULL_AUDIT_PRICE_LABEL})</strong>{" "}
-            le confirme et va beaucoup plus loin. Il vous remet :
+            le confirme et va beaucoup plus loin. Il vous remet :
           </>
         )}
       </p>
@@ -82,7 +82,7 @@ export function ResultsSummary({
 
 export function DeliverablesPreview() {
   const items = [
-    { label: "Classeur Excel", sub: "10 onglets d'audit", accent: "bg-brand" },
+    { label: "Classeur Excel", sub: "10 onglets d'audit", accent: "bg-brand" },
     { label: "Rapport Word", sub: "11 sections rédigées", accent: "bg-foreground" },
     { label: "Base nettoyée", sub: ".sav et .csv anonymisés", accent: "bg-highlight" },
   ];

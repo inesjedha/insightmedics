@@ -12,7 +12,7 @@ export const Route = createFileRoute("/mentions-legales")({
       {
         name: "description",
         content:
-          "Mentions légales d'Insight Medics : éditeur, contact, hébergeur, propriété intellectuelle.",
+          "Mentions légales d'Insight Medics : éditeur, contact, hébergeur, propriété intellectuelle.",
       },
       { property: "og:title", content: "Mentions légales — Insight Medics" },
       {
@@ -122,10 +122,7 @@ function MentionsPage() {
             </p>
           </LegalBlock>
 
-          <p className="text-xs italic text-muted-foreground">
-            Dernière mise à jour : juin 2026 — version initiale, à faire valider par un juriste
-            avant exploitation commerciale.
-          </p>
+          <p className="text-xs italic text-muted-foreground">Dernière mise à jour : juin 2026.</p>
         </article>
       </Section>
     </SiteLayout>

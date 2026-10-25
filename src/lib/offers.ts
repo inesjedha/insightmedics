@@ -1,13 +1,16 @@
-type Offer = {
-  id: "analyses" | "discussion" | "these";
-  number: string;
+import { frTypo } from "@/lib/typo";
+
+export type OfferId = "analyses" | "discussion" | "these";
+
+type OfferInput = {
+  id: OfferId;
+  number: number;
   title: string;
   shortTitle: string;
+  /** Prix en dinars tunisiens. */
   price: number;
-  priceLabel: string;
   /** Délai standard en semaines, à partir d'une base exploitable (cf. CGV §4). */
   delayWeeks: number;
-  delay: string;
   tagline: string;
   description: string;
   features: string[];
@@ -16,80 +19,87 @@ type Offer = {
   badge?: string;
 };
 
-/** Prix de l'audit complet (déblocage après l'aperçu gratuit). */
-export const FULL_AUDIT_PRICE_LABEL = "50 DT";
+type Offer = OfferInput & {
+  /** « 1 200 DT », avec espaces insécables. */
+  priceLabel: string;
+  /** « Livré en 1 semaine ». */
+  delay: string;
+};
 
-/** « 1 semaine », « 2 semaines ». */
-export function weeksLabel(weeks: number): string {
-  return `${weeks} semaine${weeks > 1 ? "s" : ""}`;
+const CURRENCY = "DT";
+
+/** « 1 200 DT » (espaces insécables : jamais coupé en fin de ligne). */
+function formatPrice(amount: number): string {
+  return frTypo(`${amount.toLocaleString("fr-FR")} ${CURRENCY}`);
 }
 
-/**
- * Source unique de vérité pour les trois offres payantes (prix, délais, contenu).
- * Tout texte du site qui cite un prix ou un délai le lit ici : jamais en dur.
- * L'audit gratuit est géré séparément car ses CTA et son UI sont propres.
- */
-export const OFFERS: Offer[] = [
+/** « 1 semaine », « 2 semaines » (insécable). */
+export function weeksLabel(weeks: number): string {
+  return frTypo(`${weeks} semaine${weeks > 1 ? "s" : ""}`);
+}
+
+/** Test de la base (aperçu) : gratuit. */
+export const FREE_TEST_PRICE_LABEL = formatPrice(0);
+
+/** Prix de l'audit complet (déblocage après le test gratuit). */
+export const FULL_AUDIT_PRICE_LABEL = formatPrice(50);
+
+const REVIEWED = "Relu par un médecin et un biostatisticien";
+
+const INPUTS: OfferInput[] = [
   {
     id: "analyses",
-    number: "01",
+    number: 1,
     title: "Analyses statistiques + résultats rédigés",
     shortTitle: "Analyses + résultats",
     price: 500,
-    priceLabel: "500 DT",
     delayWeeks: 1,
-    delay: `Livré en ${weeksLabel(1)}`,
-    tagline: "Pour vos statistiques",
+    tagline: "Votre base est prête, il vous manque les statistiques.",
     description:
-      "Les statistiques de votre étude (descriptives, comparaisons, analyses multivariées) et la partie « Résultats » rédigée, prête à insérer.",
+      "Les statistiques de votre étude (descriptives, comparaisons, analyses multivariées) et la partie « Résultats » rédigée avec vous, prête à insérer.",
     features: [
       "Plan d'analyse validé par un biostatisticien",
       "Tests adaptés à votre type d'étude",
       "Tableaux et figures prêts à insérer",
-      "Partie « Résultats » rédigée",
-      "Relu par un médecin et un biostatisticien",
+      "Partie « Résultats » rédigée avec vous",
+      REVIEWED,
     ],
-    ctaLabel: "Choisir cette formule",
+    ctaLabel: "Demander cette formule",
   },
   {
     id: "discussion",
-    number: "02",
+    number: 2,
     title: "Rédaction de la discussion",
     shortTitle: "Discussion rédigée",
     price: 500,
-    priceLabel: "500 DT",
     delayWeeks: 1,
-    delay: `Livré en ${weeksLabel(1)}`,
-    tagline: "Pour votre discussion",
+    tagline: "Vos résultats sont prêts, il manque la discussion.",
     description:
-      "Une discussion structurée et référencée : comparaison avec la littérature, forces, limites et perspectives.",
+      "Une discussion structurée et référencée, rédigée avec vous : comparaison avec la littérature, forces, limites et perspectives.",
     features: [
       "Recherche bibliographique ciblée",
       "Argumentation alignée sur vos résultats",
       "Forces et limites discutées",
-      "Allers-retours de relecture inclus",
+      REVIEWED,
     ],
-    ctaLabel: "Choisir cette formule",
+    ctaLabel: "Demander cette formule",
   },
   {
     id: "these",
-    number: "03",
+    number: 3,
     title: "Accompagnement thèse complète",
     shortTitle: "Thèse complète",
     price: 1200,
-    priceLabel: "1 200 DT",
     delayWeeks: 2,
-    delay: `Livré en ${weeksLabel(2)}`,
-    tagline: "De la base brute à la conclusion",
+    tagline: "Tout le manuscrit, avec vous, de bout en bout.",
     description:
-      "Tout le manuscrit, accompagné de bout en bout : introduction, matériel et méthodes, résultats, discussion, conclusion.",
+      "De la base à la conclusion : introduction, matériel et méthodes, résultats, discussion et conclusion, rédigés avec vous.",
     features: [
-      "Introduction rédigée",
-      "Matériel et méthodes rédigés",
-      "Analyses + résultats rédigés",
-      "Discussion rédigée",
-      "Conclusion rédigée",
-      "Priorité sur les délais",
+      "Introduction et méthodes, d'après votre protocole",
+      "Analyses + partie « Résultats »",
+      "Discussion référencée",
+      "Conclusion",
+      REVIEWED,
     ],
     ctaLabel: "Discuter de ma thèse",
     highlight: true,
@@ -97,14 +107,27 @@ export const OFFERS: Offer[] = [
   },
 ];
 
+/**
+ * Source unique de vérité pour les trois formules payantes (prix, délais, contenu).
+ * Tout texte du site qui cite un prix ou un délai le lit ici : jamais en dur.
+ * Le test gratuit et l'audit complet sont gérés à part (prix ci-dessus).
+ */
+export const OFFERS: Offer[] = INPUTS.map((o) => ({
+  ...o,
+  priceLabel: formatPrice(o.price),
+  delay: `Livré en ${weeksLabel(o.delayWeeks)}, dès votre base exploitable`,
+}));
+
 /** Offre par identifiant (lève une erreur si l'identifiant est inconnu). */
-export function getOffer(id: Offer["id"]): Offer {
+export function getOffer(id: OfferId): Offer {
   const offer = OFFERS.find((o) => o.id === id);
-  if (!offer) throw new Error(`Offre inconnue : ${id}`);
+  if (!offer) throw new Error(`Offre inconnue : ${id}`);
   return offer;
 }
 
-/** Montant affichable d'une offre, sans la devise (ex. « 1 200 »). */
-export function offerPrice(id: Offer["id"]): string {
-  return getOffer(id).priceLabel.replace(/\s*DT$/, "");
+/** Plus petit prix des formules (« dès 500 DT »). */
+export const LOWEST_PRICE_LABEL = formatPrice(Math.min(...OFFERS.map((o) => o.price)));
+
+export function isOfferId(value: unknown): value is OfferId {
+  return typeof value === "string" && OFFERS.some((o) => o.id === value);
 }

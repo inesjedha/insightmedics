@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
 import { z } from "zod";
-import { AlertTriangle, CheckCircle2, Mail, User } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Field, IconInput, PhoneField } from "@/components/contact/FormControls";
+import { Field, PhoneField } from "@/components/contact/FormControls";
 import { createLead } from "@/lib/api/client";
 import type { AuditResult } from "@/lib/api/types";
 import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
@@ -92,7 +92,7 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
         </p>
         <h3 className="mt-2 font-display text-3xl">Recevez le plan de correction complet.</h3>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-          Laissez vos coordonnées : nous vous rappelons sous 48 h ouvrées pour régler le paiement,
+          Laissez vos coordonnées : nous vous rappelons sous 48 h ouvrées pour régler le paiement,
           puis nous lançons votre audit complet. Vous recevez ensuite un lien privé vers vos
           résultats et vos livrables.
         </p>
@@ -118,9 +118,9 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
         >
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
           <div>
-            <p className="font-semibold">C'est noté, merci !</p>
+            <p className="font-semibold">C'est noté, merci !</p>
             <p className="mt-1 text-muted-foreground">
-              Nous vous rappelons sous 48 h ouvrées pour régler les {FULL_AUDIT_PRICE_LABEL}. Dès le
+              Nous vous rappelons sous 48 h ouvrées pour régler les {FULL_AUDIT_PRICE_LABEL}. Dès le
               paiement reçu, votre audit complet est lancé et vous recevez le lien privé vers vos
               résultats et vos livrables.
             </p>
@@ -140,16 +140,14 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
           />
 
           <Field id="name" label="Nom complet">
-            <IconInput icon={<User className="h-4 w-4" />}>
-              <Input
-                id="name"
-                name="name"
-                autoComplete="name"
-                maxLength={100}
-                placeholder="Ibn Sina"
-                className="h-11 pl-10"
-              />
-            </IconInput>
+            <Input
+              id="name"
+              name="name"
+              autoComplete="name"
+              maxLength={100}
+              placeholder="Ibn Sina"
+              className="h-11"
+            />
           </Field>
 
           <PhoneField required hint="Prioritaire pour vous recontacter" />
@@ -158,18 +156,16 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
 
           <div className="sm:col-span-2">
             <Field id="email" label="Email" required>
-              <IconInput icon={<Mail className="h-4 w-4" />}>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  maxLength={255}
-                  placeholder="prenom@exemple.com"
-                  className="h-11 pl-10"
-                />
-              </IconInput>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                maxLength={255}
+                placeholder="prenom@exemple.com"
+                className="h-11"
+              />
             </Field>
             {errors.email && <p className="mt-1.5 text-xs text-destructive">{errors.email}</p>}
           </div>

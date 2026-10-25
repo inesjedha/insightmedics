@@ -15,7 +15,7 @@ export function FaqSection({ className }: { className?: string }) {
         <div className="border-t border-foreground">
           {FAQ.map((item) => (
             <details key={item.question} className="group border-b border-border">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-left text-[17px] font-semibold marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-left text-[17px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                 {item.question}
                 <Plus
                   className="h-5 w-5 shrink-0 text-brand transition-transform group-open:rotate-45"

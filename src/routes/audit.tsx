@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,15 +20,15 @@ import { FULL_AUDIT_PRICE_LABEL } from "@/lib/offers";
 export const Route = createFileRoute("/audit")({
   head: () => ({
     meta: [
-      { title: "Audit gratuit de votre base — Insight Medics" },
+      { title: "Test gratuit de votre base de thèse — Insight Medics" },
       {
         name: "description",
-        content: `Testez gratuitement votre base de thèse : score sur 100 et anomalies en quelques minutes. Audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}. SPSS, Excel, CSV.`,
+        content: `Testez gratuitement votre base de thèse : score sur 100 et anomalies en quelques minutes. Audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}. SPSS, Excel, CSV.`,
       },
-      { property: "og:title", content: "Audit — aperçu gratuit · Insight Medics" },
+      { property: "og:title", content: "Test gratuit de votre base · Insight Medics" },
       {
         property: "og:description",
-        content: `Votre base vérifiée en quelques minutes. Aperçu gratuit ; audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}.`,
+        content: `Votre base vérifiée en quelques minutes. Test gratuit ; audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}.`,
       },
     ],
   }),
@@ -90,13 +90,13 @@ function AuditPage() {
       <Section className="bg-paper">
         <SectionHeader
           as="h1"
-          eyebrow="Audit · aperçu gratuit"
+          eyebrow="Test gratuit · sans inscription"
           title={
             <>
               Votre base vérifiée <span className="italic text-brand">en quelques minutes.</span>
             </>
           }
-          description={`Gratuit et sans inscription. Le score et les anomalies sont calculés par du code, directement sur vos données : aucune valeur n'est inventée. L'audit complet (verdict d'exploitabilité, plan de correction, rapport Word, classeur Excel, base nettoyée) coûte ${FULL_AUDIT_PRICE_LABEL}.`}
+          description={`Gratuit et sans inscription. Le score et les anomalies sont calculés par du code, directement sur vos données : aucune valeur n'est inventée. L'audit complet (verdict d'exploitabilité, plan de correction, rapport Word, classeur Excel, base nettoyée) coûte ${FULL_AUDIT_PRICE_LABEL}.`}
         />
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
@@ -127,6 +127,14 @@ function AuditPage() {
                 </Button>
               )}
             </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              En lançant la vérification, vous confirmez que votre base est anonymisée et acceptez
+              notre{" "}
+              <Link to="/confidentialite" className="text-brand underline underline-offset-2">
+                politique de confidentialité
+              </Link>
+              .
+            </p>
             {error && (
               <div
                 role="alert"
@@ -144,7 +152,7 @@ function AuditPage() {
 
       {phase === "done" && result && (
         <Section className="pt-0">
-          {/* Rythme vertical unique : un seul écart entre tous les blocs. */}
+          {/* Rythme vertical unique : un seul écart entre tous les blocs. */}
           <div ref={resultsRef} className="scroll-mt-24 space-y-6">
             <ResultsSummary result={result} nIssues={nIssues} nCrit={nCrit} />
             {isPreview && <PreviewNotice nIssues={nIssues} />}

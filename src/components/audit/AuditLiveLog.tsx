@@ -7,7 +7,7 @@ export type AuditPhase = "idle" | "running" | "done";
 
 export function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: AuditPhase }) {
   return (
-    <div className="rounded-md border border-border bg-card p-6">
+    <div className="rounded-md border border-border bg-card p-6 lg:self-start">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold">Vérification en direct</h3>
         {phase === "running" && (
@@ -16,7 +16,7 @@ export function AuditLiveLog({ events, phase }: { events: AuditEvent[]; phase: A
           </Badge>
         )}
       </div>
-      <ul className="mt-4 space-y-2 text-sm" aria-live="polite">
+      <ul className="mt-4 space-y-2 text-sm" role="log" aria-live="polite">
         {events.length === 0 && phase === "idle" && (
           <li className="text-muted-foreground">
             Le détail de chaque contrôle s'affichera ici dès que vous lancerez la vérification.

@@ -10,7 +10,7 @@ const STEPS = [
     text: "Quelques lignes suffisent dans le formulaire de contact.",
   },
   {
-    title: "On vous rappelle sous 48 h ouvrées",
+    title: "On vous rappelle sous 48 h ouvrées",
     text: "Pour cadrer ensemble le travail, le délai et le prix.",
   },
   {
@@ -19,7 +19,7 @@ const STEPS = [
   },
 ];
 
-/** Déroulé d'une commande, de l'audit gratuit au paiement (pages Services et Tarifs). */
+/** Déroulé d'une commande, du test gratuit au paiement (pages Services et Tarifs). */
 export function OrderSteps() {
   return (
     <Section className="border-t border-border bg-surface">

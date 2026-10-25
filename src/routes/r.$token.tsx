@@ -78,7 +78,7 @@ function ClientResultPage() {
           as="h1"
           eyebrow="Rapport privé"
           title="Votre audit complet."
-          description="Ce lien privé reste valable 30 jours après la livraison : pensez à enregistrer vos fichiers. Ne le partagez qu'avec des personnes de confiance, votre directeur de thèse par exemple."
+          description="Ce lien privé reste valable 30 jours après la livraison : pensez à enregistrer vos fichiers. Ne le partagez qu'avec des personnes de confiance, votre directeur de thèse par exemple."
         />
 
         {phase === "loading" && (
@@ -98,7 +98,7 @@ function ClientResultPage() {
           <StateCard
             icon={<Clock className="h-6 w-6" />}
             title="Lien expiré"
-            body="Ce lien a expiré : vos fichiers ont été supprimés au bout de 30 jours, comme prévu par notre politique de confidentialité. Contactez-nous si vous avez besoin d'aide."
+            body="Ce lien a expiré : vos fichiers ont été supprimés au bout de 30 jours, comme prévu par notre politique de confidentialité. Contactez-nous si vous avez besoin d'aide."
           />
         )}
         {phase === "error" && (
@@ -183,7 +183,7 @@ function DeliverablesDownload({ token }: { token: string }) {
       </h3>
       <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
         <ShieldCheck className="h-4 w-4 text-brand" />
-        Les identifiants directs ont été retirés : toutes les bases sont anonymisées.
+        Les identifiants directs ont été retirés : toutes les bases sont anonymisées.
       </p>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {DELIVERABLES.map((d) => (

@@ -14,12 +14,12 @@ export function Logo({ className, inverted = false }: { className?: string; inve
       )}
     >
       insight
-      <span className={cn("italic", inverted ? "text-[#A9B8FF]" : "text-brand")}>medics</span>
+      <span className={cn("italic", inverted ? "text-brand-on-ink" : "text-brand")}>medics</span>
       <span
         aria-hidden
         className={cn(
           "ml-0.5 inline-block h-[7px] w-[7px] rounded-full",
-          inverted ? "bg-[#A9B8FF]" : "bg-brand",
+          inverted ? "bg-brand-on-ink" : "bg-brand",
         )}
       />
     </span>

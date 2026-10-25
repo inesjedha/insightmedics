@@ -1,19 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import {
-  Mail,
-  Send,
-  Phone,
-  Clock,
-  User,
-  FileText,
-  Target,
-  HelpCircle,
-  MessageSquare,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { Send, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +10,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
-import { offerPrice } from "@/lib/offers";
+import { OFFERS, isOfferId, weeksLabel, type OfferId } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
 import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
@@ -32,8 +20,6 @@ import {
   FormSection,
   InfoCard,
   Field,
-  IconInput,
-  IconTextarea,
   CharCount,
   PillsField,
   OffersField,
@@ -49,15 +35,18 @@ export const Route = createFileRoute("/contact")({
       {
         name: "description",
         content:
-          "Décrivez votre thèse ou votre article en quelques lignes : nous vous rappelons sous 48 h ouvrées. Premier échange gratuit.",
+          "Décrivez votre thèse ou votre article en quelques lignes : nous vous rappelons sous 48 h ouvrées. Premier échange gratuit.",
       },
       { property: "og:title", content: "Contact — Insight Medics" },
       {
         property: "og:description",
-        content: "Décrivez votre projet : nous vous rappelons sous 48 h ouvrées, sans engagement.",
+        content: "Décrivez votre projet : nous vous rappelons sous 48 h ouvrées, sans engagement.",
       },
     ],
   }),
+  // ?offre=these : formule pré-cochée quand on arrive depuis une fiche d'offre.
+  validateSearch: (search: Record<string, unknown>): { offre?: OfferId } =>
+    isOfferId(search.offre) ? { offre: search.offre } : {},
   component: ContactPage,
 });
 
@@ -90,25 +79,21 @@ type ContactValues = z.infer<typeof contactSchema>;
 type FieldName = keyof ContactValues;
 type FieldErrors = Partial<Record<FieldName, string>>;
 
-// Prix lus dans lib/offers.ts (source unique) ; libellés courts propres au formulaire.
-const SERVICE_OFFERS: ServiceOffer[] = [
-  {
-    id: "analyses",
-    name: "Analyses + résultats",
-    price: offerPrice("analyses"),
-    tier: "Essentiel",
-  },
-  { id: "discussion", name: "Discussion", price: offerPrice("discussion"), tier: "Expertise" },
-  {
-    id: "these",
-    name: "Thèse complète",
-    price: offerPrice("these"),
-    tier: "Le plus choisi",
-    featured: true,
-  },
-];
+// Lues dans lib/offers.ts (source unique des prix et délais).
+const SERVICE_OFFERS: ServiceOffer[] = OFFERS.map((o) => ({
+  id: o.id,
+  number: o.number,
+  name: o.shortTitle,
+  price: o.priceLabel,
+  delay: `Livré en ${weeksLabel(o.delayWeeks)}`,
+}));
 
-const URGENCIES = ["< 2 semaines", "2-4 semaines", "> 1 mois", "Pas de deadline"] as const;
+const URGENCIES = [
+  "Moins de 2 semaines",
+  "2 à 4 semaines",
+  "Plus d'un mois",
+  "Pas encore de date",
+] as const;
 
 const SUBJECT_EXAMPLES = [
   "Thèse rétrospective en cardiologie",
@@ -127,11 +112,12 @@ const INITIAL_VALUES: Record<FieldName, string> = {
 };
 
 function ContactPage() {
+  const { offre } = Route.useSearch();
   const [values, setValues] = useState<Record<FieldName, string>>(INITIAL_VALUES);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [showErrorBanner, setShowErrorBanner] = useState(false);
-  const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
-  const [urgency, setUrgency] = useState<string>("2-4 semaines");
+  const [selectedOffers, setSelectedOffers] = useState<string[]>(offre ? [offre] : []);
+  const [urgency, setUrgency] = useState<string>("2-4 semaines");
   const [dialCode, setDialCode] = useState<string>(DEFAULT_DIAL_CODE);
   const [consent, setConsent] = useState(false);
   const [consentError, setConsentError] = useState(false);
@@ -239,21 +225,10 @@ function ContactPage() {
             Parlons de <span className="italic text-brand">votre thèse.</span>
           </>
         }
-        description="Décrivez votre étude en quelques lignes. Nous vous rappelons sous 48 h ouvrées pour cadrer ensemble le travail, le délai et le prix. Premier échange gratuit, sans engagement."
+        description="Décrivez votre étude en quelques lignes. Nous vous rappelons sous 48 h ouvrées pour cadrer ensemble le travail, le délai et le prix. Premier échange gratuit, sans engagement."
       />
 
-      <Section className="pt-2 sm:pt-4">
-        <div className="mx-auto mb-6 flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:mb-8">
-          <span className="inline-flex items-center gap-2 rounded-sm bg-highlight px-3 py-1.5 text-sm font-medium text-foreground">
-            <Clock className="h-4 w-4" aria-hidden />
-            Rappel sous 48 h ouvrées
-          </span>
-          <span className="inline-flex items-center gap-2 rounded-sm border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted-foreground">
-            <Phone className="h-4 w-4" aria-hidden />
-            Premier échange gratuit
-          </span>
-        </div>
-
+      <Section className="pt-10 sm:pt-12">
         <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:gap-10 xl:grid-cols-[1.6fr_1fr]">
           <div className="relative overflow-hidden rounded-md border border-foreground bg-card">
             <div className="relative p-5 sm:p-8 lg:p-10">
@@ -302,22 +277,20 @@ function ContactPage() {
                     </div>
                   )}
 
-                  <FormSection number="01" title="Vos coordonnées">
+                  <FormSection number={1} title="Vos coordonnées">
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field id="name" label="Nom complet" required>
-                        <IconInput icon={<User className="h-4 w-4" />}>
-                          <Input
-                            id="name"
-                            name="name"
-                            autoComplete="name"
-                            required
-                            maxLength={100}
-                            value={values.name}
-                            onChange={(e) => setValue("name", e.target.value)}
-                            className="h-11 pl-10 transition-colors"
-                            placeholder="Ibn Sina"
-                          />
-                        </IconInput>
+                        <Input
+                          id="name"
+                          name="name"
+                          autoComplete="name"
+                          required
+                          maxLength={100}
+                          value={values.name}
+                          onChange={(e) => setValue("name", e.target.value)}
+                          className="h-11"
+                          placeholder="Prénom Nom"
+                        />
                       </Field>
                       <Field
                         id="phone"
@@ -337,45 +310,41 @@ function ContactPage() {
                       </Field>
                     </div>
                     <Field id="email" label="Email" required>
-                      <IconInput icon={<Mail className="h-4 w-4" />}>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          autoComplete="email"
-                          required
-                          maxLength={255}
-                          placeholder="vous@exemple.tn"
-                          value={values.email}
-                          onChange={(e) => setValue("email", e.target.value)}
-                          className="h-11 pl-10 transition-colors"
-                        />
-                      </IconInput>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        maxLength={255}
+                        placeholder="vous@exemple.tn"
+                        value={values.email}
+                        onChange={(e) => setValue("email", e.target.value)}
+                        className="h-11"
+                      />
                     </Field>
                   </FormSection>
 
-                  <FormSection number="02" title="Sujet de votre étude">
+                  <FormSection number={2} title="Votre étude">
                     <Field id="subject" label="Sujet" required>
-                      <IconInput icon={<FileText className="h-4 w-4" />}>
-                        <Input
-                          id="subject"
-                          name="subject"
-                          required
-                          maxLength={150}
-                          placeholder="Ex. Thèse sur la prise en charge de l'infarctus aux urgences"
-                          value={values.subject}
-                          onChange={(e) => setValue("subject", e.target.value)}
-                          className="h-11 pl-10 transition-colors"
-                        />
-                      </IconInput>
+                      <Input
+                        id="subject"
+                        name="subject"
+                        required
+                        maxLength={150}
+                        placeholder="Ex. Thèse sur la prise en charge de l'infarctus aux urgences"
+                        value={values.subject}
+                        onChange={(e) => setValue("subject", e.target.value)}
+                        className="h-11"
+                      />
                       <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Inspirations :</span>
+                        <span className="text-xs text-muted-foreground">Exemples :</span>
                         {SUBJECT_EXAMPLES.map((ex) => (
                           <button
                             key={ex}
                             type="button"
                             onClick={() => setValue("subject", ex)}
-                            className="rounded-full border border-border bg-surface/60 px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-brand/40 hover:text-brand"
+                            className="min-h-9 rounded-sm border border-input bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             {ex}
                           </button>
@@ -397,74 +366,65 @@ function ContactPage() {
                     />
                   </FormSection>
 
-                  <FormSection number="03" title="Problématique & objectif">
+                  <FormSection number={3} title="Ce dont vous avez besoin">
                     <Field
                       id="problem"
                       label="Problématique"
                       required
                       hint="Ce que vous cherchez à comprendre"
                     >
-                      <IconTextarea icon={<HelpCircle className="h-4 w-4" />}>
-                        <Textarea
-                          id="problem"
-                          name="problem"
-                          rows={4}
-                          required
-                          maxLength={1000}
-                          placeholder="Quel est le problème clinique ou scientifique abordé ?"
-                          value={values.problem}
-                          onChange={(e) => setValue("problem", e.target.value)}
-                          className="resize-none pl-10 pt-3 transition-colors"
-                        />
-                      </IconTextarea>
+                      <Textarea
+                        id="problem"
+                        name="problem"
+                        rows={4}
+                        required
+                        maxLength={1000}
+                        placeholder="Ex. Facteurs pronostiques de l'infarctus chez le diabétique"
+                        value={values.problem}
+                        onChange={(e) => setValue("problem", e.target.value)}
+                        className="resize-y"
+                      />
                       <CharCount value={values.problem} max={1000} />
                     </Field>
                     <Field
                       id="objective"
                       label="Objectif"
                       required
-                      hint="Le livrable attendu (thèse complète, chapitre stats, article…)"
+                      hint="Le livrable attendu : thèse complète, partie statistique, article…"
                     >
-                      <IconTextarea icon={<Target className="h-4 w-4" />}>
-                        <Textarea
-                          id="objective"
-                          name="objective"
-                          rows={4}
-                          required
-                          maxLength={1000}
-                          placeholder="Quel résultat / livrable cherchez-vous ?"
-                          value={values.objective}
-                          onChange={(e) => setValue("objective", e.target.value)}
-                          className="resize-none pl-10 pt-3 transition-colors"
-                        />
-                      </IconTextarea>
+                      <Textarea
+                        id="objective"
+                        name="objective"
+                        rows={4}
+                        required
+                        maxLength={1000}
+                        placeholder="Ex. Comparer la mortalité à 30 jours selon le score SAPS II"
+                        value={values.objective}
+                        onChange={(e) => setValue("objective", e.target.value)}
+                        className="resize-y"
+                      />
                       <CharCount value={values.objective} max={1000} />
                     </Field>
-                  </FormSection>
-
-                  <FormSection number="04" title="Message complémentaire">
-                    <Field id="message" label="Optionnel">
-                      <IconTextarea icon={<MessageSquare className="h-4 w-4" />}>
-                        <Textarea
-                          id="message"
-                          name="message"
-                          rows={4}
-                          maxLength={2000}
-                          placeholder="Deadline précise, état actuel de la base, points particuliers…"
-                          value={values.message}
-                          onChange={(e) => setValue("message", e.target.value)}
-                          className="resize-none pl-10 pt-3 transition-colors"
-                        />
-                      </IconTextarea>
+                    <Field id="message" label="Autre chose à nous dire ?" hint="Facultatif">
+                      <Textarea
+                        id="message"
+                        name="message"
+                        rows={4}
+                        maxLength={2000}
+                        placeholder="Date de soutenance, état de votre base, consignes de votre directeur…"
+                        value={values.message}
+                        onChange={(e) => setValue("message", e.target.value)}
+                        className="resize-y"
+                      />
                       <CharCount value={values.message} max={2000} />
                     </Field>
                   </FormSection>
 
-                  <div className="-mx-5 space-y-5 rounded-b-3xl border-t border-border bg-surface/60 px-5 py-6 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+                  <div className="space-y-5 border-t border-foreground pt-6">
                     <label
                       className={cn(
-                        "flex items-start gap-3 rounded-md border bg-background/60 p-3.5 text-sm transition-colors",
-                        consentError ? "border-destructive/40 bg-destructive/5" : "border-border",
+                        "flex items-start gap-3 rounded-md border p-3.5 text-sm transition-colors",
+                        consentError ? "border-destructive bg-destructive/5" : "border-border",
                       )}
                     >
                       <Checkbox
@@ -497,7 +457,7 @@ function ContactPage() {
 
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-xs text-muted-foreground sm:max-w-[60%]">
-                        Rappel sous 48 h ouvrées · Premier échange gratuit, sans engagement.
+                        Rappel sous 48 h ouvrées · Premier échange gratuit, sans engagement.
                       </p>
                       <Button
                         type="submit"
@@ -527,36 +487,29 @@ function ContactPage() {
             </div>
           </div>
 
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="sm:col-span-2 lg:col-span-1">
-                <InfoCard
-                  highlight
-                  icon={<Phone className="h-4 w-4 sm:h-5 sm:w-5" />}
-                  title="On vous rappelle"
-                  text="Nous préférons le téléphone : c'est plus rapide pour cadrer votre projet. Indiquez un numéro joignable."
-                />
-              </div>
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-1">
               <InfoCard
-                icon={<Mail className="h-4 w-4 sm:h-5 sm:w-5" />}
-                title="Email direct"
+                title="On vous rappelle"
+                text="Le téléphone reste le plus rapide pour cadrer votre projet : indiquez un numéro où vous êtes joignable."
+              />
+              <InfoCard
+                title="Votre soutenance approche ?"
+                text="Indiquez sa date : nous vous dirons dès l'appel si le délai est tenable."
+              />
+              <InfoCard
+                title="Vous préférez écrire ?"
                 text={
                   <a
                     href={`mailto:${siteConfig.email}`}
-                    className="break-all text-foreground hover:text-brand"
+                    className="text-foreground underline underline-offset-4 [overflow-wrap:anywhere] hover:text-brand"
                   >
                     {siteConfig.email}
                   </a>
                 }
               />
               <InfoCard
-                icon={<Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
-                title="Sous 48 h ouvrées"
-                text="Votre soutenance approche ? Dites-le dans votre message : nous traitons les demandes urgentes en priorité."
-              />
-              <InfoCard
-                icon={<User className="h-4 w-4 sm:h-5 sm:w-5" />}
-                title="Basé à Sousse, Tunisie"
+                title={`Basés à ${siteConfig.location}`}
                 text="Un médecin et un biostatisticien, pour les thèses, mémoires et articles en médecine."
               />
             </div>
@@ -565,7 +518,7 @@ function ContactPage() {
       </Section>
 
       <FinalCTA
-        title="Vous préférez d'abord tester votre base ?"
+        title="Vous préférez d'abord tester votre base ?"
         description="En quelques minutes, vous saurez si votre base est exploitable et ce qu'il reste à corriger. Gratuit, sans inscription."
         primary={{ to: "/audit", label: "Tester ma base gratuitement" }}
         secondary={{ to: "/methode", label: "Voir notre méthode" }}

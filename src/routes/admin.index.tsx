@@ -31,7 +31,7 @@ function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Dashboard</h1>
+        <h1 className="font-display text-3xl">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Vue d'ensemble des prospects et clients (données locales — branchera ton backend via
           VITE_API_BASE_URL).

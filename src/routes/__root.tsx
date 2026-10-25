@@ -7,29 +7,36 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { SiteLayout } from "@/components/site/SiteLayout";
 
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
+  useEffect(() => {
+    document.title = "Page introuvable · Insight Medics";
+  }, []);
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
-      <div className="max-w-md text-center">
-        <p className="font-hand text-3xl text-brand">page introuvable</p>
-        <h1 className="mt-2 font-display text-8xl text-foreground">404</h1>
-        <p className="mt-4 text-[15px] text-muted-foreground">
-          La page que vous cherchez n'existe pas ou a été déplacée.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-[15px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Retour à l'accueil
-          </Link>
+    <SiteLayout>
+      <section className="bg-paper">
+        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
+          <p className="font-hand text-3xl text-brand">page introuvable</p>
+          <h1 className="mt-2 font-display text-8xl text-foreground">404</h1>
+          <p className="mt-4 max-w-md text-[17px] leading-relaxed text-muted-foreground">
+            La page que vous cherchez n'existe pas ou a été déplacée.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Button asChild size="lg">
+              <Link to="/">Retour à l'accueil</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/audit">Tester ma base gratuitement</Link>
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </SiteLayout>
   );
 }
 
@@ -76,7 +83,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Statistiques et accompagnement à la rédaction de votre thèse de médecine, relus par un médecin et un biostatisticien. Audit de votre base gratuit.",
+          "Statistiques et accompagnement à la rédaction de votre thèse de médecine, relus par un médecin et un biostatisticien. Test de votre base gratuit.",
       },
       { name: "author", content: "Insight Medics" },
       { name: "theme-color", content: "#ffffff" },

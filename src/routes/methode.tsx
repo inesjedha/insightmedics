@@ -14,7 +14,7 @@ export const Route = createFileRoute("/methode")({
       {
         name: "description",
         content:
-          "La méthode Insight Medics pour des résultats de thèse traçables et reproductibles : analyses calculées directement sur vos données, validées par un biostatisticien, données patients protégées par des mesures strictes.",
+          "La méthode Insight Medics pour des résultats de thèse traçables et reproductibles : analyses calculées directement sur vos données, validées par un biostatisticien, données patients protégées par des mesures strictes.",
       },
       { property: "og:title", content: "Méthode — Insight Medics" },
       {
@@ -38,11 +38,12 @@ function MethodePage() {
             <span className="italic text-brand">justifier.</span>
           </>
         }
-        description="Votre thèse engage votre nom et celui de votre directeur. Notre méthode vise une chose : que chaque chiffre soit calculé sur vos données, traçable et reproductible, et que vous sachiez l'expliquer devant votre jury."
+        description="Votre thèse engage votre nom et celui de votre directeur. Notre méthode vise une chose : que chaque chiffre soit calculé sur vos données, traçable et reproductible, et que vous sachiez l'expliquer devant votre jury."
       />
 
       {/* Piliers */}
       <Section>
+        <h2 className="sr-only">Nos trois principes</h2>
         <div className="grid items-stretch gap-4 sm:gap-6 md:grid-cols-3">
           <Pillar
             number="01"
@@ -52,7 +53,7 @@ function MethodePage() {
           <Pillar
             number="02"
             title="Des chiffres calculés, jamais saisis à la main"
-            text="Effectifs, p-values, taux de données manquantes : chaque valeur sort d'un code statistique exécuté sur vos données. Rien n'est recopié ni arrondi à la main."
+            text="Effectifs, valeurs de p, taux de données manquantes : chaque valeur sort d'un code statistique exécuté sur vos données. Rien n'est recopié ni arrondi à la main."
           />
           <Pillar
             number="03"
@@ -74,8 +75,9 @@ function MethodePage() {
         <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-md border border-border bg-surface p-5">
           <MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
           <p className="text-[15px] leading-relaxed text-muted-foreground">
-            Deux allers-retours avec vous sont inclus dans la prestation complète : un pour cadrer
-            le plan d'analyse, un pour ajuster après restitution.
+            Deux échanges avec vous sont prévus : un pour cadrer le plan d'analyse, un pour ajuster
+            après la restitution. Les allers-retours de relecture sont inclus dans le périmètre
+            convenu.
           </p>
         </div>
       </Section>
@@ -83,10 +85,11 @@ function MethodePage() {
       <FinalCTA
         title={
           <>
-            Voyez la méthode <span className="italic text-[#A9B8FF]">appliquée à votre base.</span>
+            Voyez la méthode{" "}
+            <span className="italic text-brand-on-ink">appliquée à votre base.</span>
           </>
         }
-        description="L'audit est gratuit. Vous recevez un état clair de votre base, et un aperçu concret de notre méthode."
+        description="Le test est gratuit et sans inscription. En quelques minutes, vous voyez où en est votre base et comment nous travaillons."
         primary={{ to: siteConfig.cta.audit.to, label: siteConfig.cta.audit.label }}
         secondary={{ to: siteConfig.cta.order.to, label: "Nous contacter" }}
       />
@@ -145,7 +148,7 @@ function PipelineTimeline() {
       role: "team",
       roleLabel: "Insight Medics",
       title: "Analyses",
-      text: "Les statistiques sont calculées par du code sur vos vraies données : descriptives, tests, modèles. Chaque résultat est traçable et reproductible.",
+      text: "Les statistiques sont calculées par du code sur vos vraies données : descriptives, tests, modèles. Chaque résultat est traçable et reproductible.",
     },
     {
       n: 5,
@@ -159,8 +162,8 @@ function PipelineTimeline() {
       n: 6,
       role: "exchange",
       roleLabel: "Échange avec vous",
-      title: "Restitution & livraison",
-      text: "Nous vous présentons les résultats, répondons à vos questions et intégrons vos retours, puis nous livrons le document final et les scripts d'analyse.",
+      title: "Restitution et livraison",
+      text: "Nous vous présentons les résultats, répondons à vos questions et intégrons vos retours, puis nous vous livrons le document final.",
     },
   ];
 
@@ -177,7 +180,7 @@ function PipelineTimeline() {
           key={s.n}
           className={cn(
             "grid grid-cols-[3rem_1fr] gap-x-4 border-b border-border py-6 sm:grid-cols-[4rem_1fr]",
-            s.highlight && "bg-highlight/40 -mx-4 px-4 sm:-mx-6 sm:px-6",
+            s.highlight && "-ml-4 border-l-4 border-l-brand pl-3 sm:-ml-5 sm:pl-4",
           )}
         >
           <span aria-hidden className="font-hand text-4xl leading-none text-brand">
@@ -190,7 +193,7 @@ function PipelineTimeline() {
                 labelByRole[s.role],
               )}
             >
-              <span className="sr-only">Rôle : </span>
+              <span className="sr-only">Rôle : </span>
               {s.roleLabel}
             </p>
             <h3 className="mt-1 font-display text-3xl leading-tight">{s.title}</h3>

@@ -42,7 +42,7 @@ export function AuditUploader({
       <Upload className="mx-auto h-8 w-8 text-brand" aria-hidden />
       <h3 className="mt-4 text-lg font-semibold">Déposez votre base de données</h3>
       <p className="mt-1.5 text-[15px] text-muted-foreground">
-        Glissez votre fichier ici ou choisissez-le : SPSS (.sav), Excel (.xlsx, .xls) ou CSV.
+        Glissez votre fichier ici ou choisissez-le : SPSS (.sav), Excel (.xlsx, .xls) ou CSV.
       </p>
 
       <input
@@ -74,7 +74,7 @@ export function AuditUploader({
       <p className="mx-auto mt-6 flex max-w-md items-start justify-center gap-2 text-left text-sm text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
         Envoyez une base anonymisée (sans nom ni numéro de dossier). Votre fichier est supprimé
-        automatiquement au bout de 30 jours.
+        automatiquement au bout de 30 jours.
       </p>
     </div>
   );
@@ -101,8 +101,8 @@ export function ProtocolUploader({
               <span className="font-normal text-muted-foreground">(optionnel)</span>
             </p>
             <p className="text-sm text-muted-foreground">
-              Word ou PDF. Avec votre protocole, l'audit vérifie aussi que les analyses prévues sont
-              faisables.
+              Word ou PDF. Utile pour l'audit complet, qui vérifie que les analyses prévues sont
+              faisables avec votre base.
             </p>
           </div>
         </div>

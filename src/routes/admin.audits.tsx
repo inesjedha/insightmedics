@@ -67,7 +67,7 @@ function AdminAudits() {
   }, [anyProcessing, pollingBlocked, refresh]);
 
   const onUnlock = async (id: string) => {
-    if (pendingId) return; // double clic : une seule demande
+    if (pendingId) return; // double clic : une seule demande
     if (!window.confirm("Paiement reçu ? Lancer l'audit IA complet (consomme la clé IA) ?")) return;
     setPendingId(id);
     setActionError(null);
@@ -86,7 +86,7 @@ function AdminAudits() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold">Audits</h1>
+          <h1 className="font-display text-3xl">Audits</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Débloquez un audit après réception du paiement ({FULL_AUDIT_PRICE_LABEL}) : l'audit IA
             complet se lance en arrière-plan (quelques minutes), vous pouvez quitter la page.
@@ -258,7 +258,7 @@ function CopyLinkButton({ token }: { token: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      window.prompt("Copiez le lien client :", url);
+      window.prompt("Copiez le lien client :", url);
     }
   };
   return (

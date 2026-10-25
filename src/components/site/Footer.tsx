@@ -8,15 +8,17 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-background/10 bg-ink text-background">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="grid gap-10 md:grid-cols-5">
-          <div className="md:col-span-2">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1.2fr_1fr]">
+          <div className="sm:col-span-2 lg:col-span-1">
             <Link to="/" aria-label="Insight Medics, accueil">
               <Logo inverted />
             </Link>
             <p className="mt-4 max-w-md text-[15px] leading-relaxed text-background/75">
               {siteConfig.description}
             </p>
-            <p className="mt-4 font-hand text-2xl text-[#A9B8FF]">Basé à {siteConfig.location}.</p>
+            <p className="mt-4 font-hand text-2xl text-brand-on-ink">
+              Basé à {siteConfig.location}.
+            </p>
           </div>
 
           <FooterColumn title="Navigation">
@@ -33,13 +35,10 @@ export function SiteFooter() {
             <li>
               <a
                 href={`mailto:${siteConfig.email}`}
-                className="inline-flex items-start gap-2 hover:text-background"
+                className="gap-2 [overflow-wrap:anywhere] hover:text-background"
               >
-                <Mail className="mt-1 h-4 w-4 shrink-0" aria-hidden />
-                <span>
-                  {siteConfig.email.split("@")[0]}@<wbr />
-                  {siteConfig.email.split("@")[1]}
-                </span>
+                <Mail className="h-4 w-4 shrink-0" aria-hidden />
+                <span>{siteConfig.email}</span>
               </a>
             </li>
             <li>
@@ -88,7 +87,9 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
       <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.14em] text-background/60">
         {title}
       </h2>
-      <ul className="mt-4 space-y-3 text-[15px] text-background/85">{children}</ul>
+      <ul className="mt-3 space-y-1 text-[15px] text-background/85 [&_a]:inline-flex [&_a]:min-h-10 [&_a]:items-center">
+        {children}
+      </ul>
     </div>
   );
 }

@@ -20,7 +20,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Statistiques et accompagnement à la rédaction de votre thèse de médecine, relus par un médecin et un biostatisticien. Audit de votre base gratuit.",
+          "Statistiques et accompagnement à la rédaction de votre thèse de médecine, relus par un médecin et un biostatisticien. Test de votre base gratuit.",
       },
       {
         property: "og:title",
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Envoyez votre base : analyses, résultats et discussion rédigés avec vous, relus par un médecin et un biostatisticien. Audit gratuit.",
+          "Envoyez votre base : analyses, résultats et discussion rédigés avec vous, relus par un médecin et un biostatisticien. Test de votre base gratuit.",
       },
     ],
   }),

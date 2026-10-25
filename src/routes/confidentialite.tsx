@@ -43,7 +43,7 @@ function PrivacyPage() {
 
       <Section className="pt-4 sm:pt-6">
         <article className="mx-auto max-w-3xl space-y-10 text-sm leading-relaxed text-foreground/90">
-          <LegalBlock title="Qui est responsable du traitement ?">
+          <LegalBlock title="Qui est responsable du traitement ?">
             <p>
               <strong>{siteConfig.name}</strong>, basé à {siteConfig.location}, est responsable du
               traitement des données collectées via ce site.
@@ -57,8 +57,8 @@ function PrivacyPage() {
             </p>
           </LegalBlock>
 
-          <LegalBlock title="Quelles données collectons-nous ?">
-            <p>Selon le formulaire utilisé, nous pouvons collecter :</p>
+          <LegalBlock title="Quelles données collectons-nous ?">
+            <p>Selon le formulaire utilisé, nous pouvons collecter :</p>
             <ul className="ml-5 list-disc space-y-1">
               <li>
                 <strong>Coordonnées</strong> : nom, prénom, adresse email, numéro de téléphone.
@@ -69,7 +69,7 @@ function PrivacyPage() {
               </li>
               <li>
                 <strong>Base de données soumise à l'audit</strong> : fichier téléversé
-                volontairement (CSV, Excel, SPSS, Stata…) contenant vos données d'étude.
+                volontairement (SPSS, Excel ou CSV) contenant vos données d'étude.
               </li>
               <li>
                 <strong>Données techniques</strong> : informations non-personnelles liées à la
@@ -79,14 +79,14 @@ function PrivacyPage() {
             </ul>
           </LegalBlock>
 
-          <LegalBlock title="Pourquoi ces données ?">
+          <LegalBlock title="Pourquoi ces données ?">
             <ul className="ml-5 list-disc space-y-1">
               <li>
                 <strong>Vous recontacter</strong> par téléphone ou email pour cadrer votre projet et
                 vous proposer une offre adaptée.
               </li>
               <li>
-                <strong>Réaliser l'audit gratuit</strong> de votre base de données et vous
+                <strong>Réaliser le test gratuit</strong> de votre base de données et vous
                 transmettre le rapport.
               </li>
               <li>
@@ -104,7 +104,7 @@ function PrivacyPage() {
             </p>
           </LegalBlock>
 
-          <LegalBlock title="Combien de temps gardons-nous vos données ?">
+          <LegalBlock title="Combien de temps gardons-nous vos données ?">
             <ul className="ml-5 list-disc space-y-1">
               <li>
                 <strong>Données de contact (leads)</strong> : conservées 12 mois à compter du
@@ -114,31 +114,31 @@ function PrivacyPage() {
               <li>
                 {/* Délai = FILE_RETENTION_DAYS du backend (purge automatique). */}
                 <strong>Fichiers d'audit téléversés</strong> : votre base et votre protocole sont
-                supprimés automatiquement 30 jours après l'aperçu gratuit, ou 30 jours après la
+                supprimés automatiquement 30 jours après le test gratuit, ou 30 jours après la
                 livraison de l'audit complet (votre lien privé expire à la même date). Nous ne
                 conservons ensuite qu'un résumé sans aucune donnée de patient (nom du fichier, score
-                et statistiques globales) pour le suivi de votre demande ; vos coordonnées suivent
+                et statistiques globales) pour le suivi de votre demande ; vos coordonnées suivent
                 la règle des données de contact ci-dessus.
               </li>
               <li>
                 <strong>Livrables de l'audit</strong> (rapport, classeur, base nettoyée) :
-                téléchargeables via votre lien privé pendant 30 jours après la livraison, puis
+                téléchargeables via votre lien privé pendant 30 jours après la livraison, puis
                 supprimés avec vos fichiers. Pensez à les enregistrer de votre côté.
               </li>
             </ul>
           </LegalBlock>
 
-          <LegalBlock title="Qui a accès à vos données ?">
+          <LegalBlock title="Qui a accès à vos données ?">
             <p>
               Vos données sont strictement réservées à l'équipe {siteConfig.name} (biostatisticien,
               médecin, coordination). Aucune donnée n'est revendue, échangée ou cédée à des tiers à
               des fins commerciales.
             </p>
             <p>
-              Nos sous-traitants techniques : l'hébergeur du site (Railway, serveurs dans l'Union
+              Nos sous-traitants techniques : l'hébergeur du site (Railway, serveurs dans l'Union
               européenne) et, pour l'audit complet uniquement, le service d'intelligence
               artificielle Claude (Anthropic, société américaine). Claude ne reçoit jamais votre
-              base complète : les noms et libellés de vos variables, un extrait d'au plus 50 lignes
+              base complète : les noms et libellés de vos variables, un extrait d'au plus 50 lignes
               dont les colonnes potentiellement identifiantes sont masquées, des statistiques
               calculées par notre code et, si vous l'avez fourni, le texte de votre protocole.
             </p>
@@ -150,11 +150,11 @@ function PrivacyPage() {
           </LegalBlock>
 
           <LegalBlock title="Vos droits">
-            <p>Vous disposez à tout moment des droits suivants :</p>
+            <p>Vous disposez à tout moment des droits suivants :</p>
             <ul className="ml-5 list-disc space-y-1">
               <li>Accès à vos données.</li>
               <li>Rectification de données inexactes.</li>
-              <li>Suppression (« droit à l'oubli »).</li>
+              <li>Suppression (« droit à l'oubli »).</li>
               <li>Opposition au traitement à des fins commerciales.</li>
               <li>Portabilité de vos données.</li>
             </ul>
@@ -163,7 +163,7 @@ function PrivacyPage() {
               <a href={`mailto:${siteConfig.email}`} className="text-brand hover:underline">
                 {siteConfig.email}
               </a>
-              . Nous répondons sous 30 jours maximum.
+              . Nous répondons sous 30 jours maximum.
             </p>
           </LegalBlock>
 
@@ -184,8 +184,7 @@ function PrivacyPage() {
           </LegalBlock>
 
           <p className="text-xs italic text-muted-foreground">
-            Dernière mise à jour : juin 2026 — version initiale, à faire valider par un juriste
-            avant exploitation commerciale.
+            Dernière mise à jour : octobre 2026.
           </p>
         </article>
       </Section>

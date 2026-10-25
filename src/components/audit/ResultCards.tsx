@@ -35,7 +35,7 @@ export function VerdictBanner({
           Verdict d'exploitabilité
         </p>
         <Badge variant="outline" className="border-border text-muted-foreground">
-          Confiance : {scoreDetail.confiance.niveau}
+          Confiance : {scoreDetail.confiance.niveau}
         </Badge>
       </div>
       <p className={cn("mt-2 font-display text-4xl", st.text)}>{verdict.label}</p>
@@ -155,7 +155,7 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
               <p className="mt-1 text-sm leading-relaxed text-foreground/85">{f.explanation_fr}</p>
               {f.proposed_correction && (
                 <p className="mt-2 text-sm text-foreground/80">
-                  <span className="font-medium text-brand">Correction proposée : </span>
+                  <span className="font-medium text-brand">Correction proposée : </span>
                   {f.proposed_correction}
                 </p>
               )}
@@ -180,7 +180,7 @@ export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
         Détail du score par domaine
       </h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        Grille d'audit en 8 domaines. Note globale : {scoreDetail.score_final}/100 —{" "}
+        Grille d'audit en 8 domaines. Note globale : {scoreDetail.score_final}/100 —{" "}
         {scoreDetail.niveau_qualite}.
       </p>
       <ul className="mt-4 space-y-3">
@@ -313,7 +313,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 /** Alerte « relecture humaine ». `client` : audit livré (nous avons déjà les coordonnées). */
 export function HumanAlert({ context = "preview" }: { context?: "preview" | "client" }) {
   return (
-    <div className="mt-6 flex items-start gap-3 rounded-md border border-amber-300/50 bg-amber-500/5 p-5 text-amber-800 dark:text-amber-200">
+    <div className="mt-6 flex items-start gap-3 rounded-md border border-foreground bg-highlight/50 p-5 text-foreground">
       <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
       <div>
         <p className="text-base font-semibold">
@@ -323,8 +323,8 @@ export function HumanAlert({ context = "preview" }: { context?: "preview" | "cli
         </p>
         <p className="mt-1 text-sm">
           {context === "client"
-            ? "Un médecin et un biostatisticien relisent votre rapport et vous recontactent sous 48 h ouvrées pour en parler."
-            : "Laissez vos coordonnées ci-dessous. Un médecin et un biostatisticien regardent votre rapport et vous rappellent sous 48 h ouvrées, sans engagement."}
+            ? "Un médecin et un biostatisticien relisent votre rapport et vous recontactent sous 48 h ouvrées pour en parler."
+            : "Laissez vos coordonnées ci-dessous : nous vous rappelons sous 48 h ouvrées pour voir avec vous ce qui peut être corrigé, sans engagement."}
         </p>
       </div>
     </div>

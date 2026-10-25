@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "Insight Medics",
   description:
-    "Insight Medics réalise les statistiques et la rédaction des thèses, mémoires et articles en médecine. Vous envoyez votre base, on l'analyse, on rédige, et un médecin et un biostatisticien relisent tout.",
+    "Insight Medics accompagne les étudiants et les médecins dans les statistiques et la rédaction de leur thèse, mémoire ou article. Nous analysons votre base, rédigeons avec vous, et un médecin et un biostatisticien relisent tout.",
   url: "https://www.insightmedics.tn",
   email: "helpinsightmedics@gmail.com",
   location: "Sousse, Tunisie",
@@ -13,7 +13,7 @@ export const siteConfig = {
     { to: "/contact", label: "Contact" },
   ] as const,
   cta: {
-    audit: { to: "/audit", label: "Tester ma base gratuitement", short: "Audit gratuit" },
+    audit: { to: "/audit", label: "Tester ma base gratuitement", short: "Tester ma base" },
     order: { to: "/contact", label: "Confier ma thèse" },
   },
   legal: [
