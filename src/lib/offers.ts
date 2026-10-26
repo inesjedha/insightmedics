@@ -86,7 +86,7 @@ const INPUTS: OfferInput[] = [
     number: 3,
     title: "Accompagnement thèse complète",
     shortTitle: "Thèse complète",
-    price: 1200,
+    price: 1500,
     delayWeeks: 2,
     tagline: "Tout le manuscrit, avec vous, de bout en bout.",
     description:
