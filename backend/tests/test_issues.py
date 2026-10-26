@@ -101,3 +101,45 @@ def test_dates_suspectes():
 def test_pii_detectees_critique():
     issues = detect_issues(_prof(pii_candidates=[{"column": "tel"}]))
     assert any(i["level"] == "critical" and "identifiantes" in i["label"] for i in issues)
+
+
+def test_identifiant_partage_par_deux_profils_precise_le_conflit():
+    p = _prof()
+    p["structure"]["duplicates"].update(duplicate_ids=2, id_conflicts={"n_ids": 1, "examples": []})
+    label = next(i["label"] for i in detect_issues(p) if "dupliqué" in i["label"])
+    assert "dont 1 porté(s) par des profils différents" in label
+
+
+def test_copies_blocs_et_doublons_possibles():
+    p = _prof()
+    p["structure"]["duplicates"].update(
+        identical_except_id={"n_groups": 2},
+        copied_blocks=[{"length": 3, "source_lines": [1, 3], "copy_lines": [9, 11]}],
+        same_profile_different_ids={"n_groups": 1,
+                                    "key_columns": ["date_naissance", "sexe"]})
+    labels = [i["label"] for i in detect_issues(p)]
+    assert any("identiques sauf l'identifiant" in lb for lb in labels)
+    assert any("lignes de données 1 à 3 reprises en 9 à 11" in lb for lb in labels)
+    assert any("mêmes date_naissance, sexe" in lb for lb in labels)
+
+
+def test_lignes_vides():
+    p = _prof()
+    p["structure"]["empty_rows"] = {"n": 2, "lines": [101, 102]}
+    assert any("2 ligne(s) sans aucune donnée" in i["label"] for i in detect_issues(p))
+
+
+def test_profiling_ancien_format_sans_les_nouveaux_champs():
+    """Les audits enregistrés avant ces contrôles n'ont pas les nouveaux champs."""
+    p = _prof()
+    p["structure"]["duplicates"]["duplicate_ids"] = 1
+    assert any(i["label"] == "1 identifiant(s) dupliqué(s)" for i in detect_issues(p))
+
+
+def test_lignes_quasi_identiques_critique_avec_contexte():
+    p = _prof()
+    p["structure"]["duplicates"]["near_identical_rows"] = {
+        "n_pairs": 10, "threshold": 0.9, "median_similarity": 0.53}
+    issue = next(i for i in detect_issues(p) if "quasi identiques" in i["label"])
+    assert issue["level"] == "critical"
+    assert "10 paire(s)" in issue["label"] and "53 % en médiane" in issue["label"]

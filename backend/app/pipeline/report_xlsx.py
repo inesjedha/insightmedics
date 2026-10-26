@@ -19,6 +19,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from .llm2 import PRIORITY_LABELS
+
 TITLE = Font(name="Arial", bold=True, size=13, color="1F3B57")
 H = Font(name="Arial", bold=True, color="FFFFFF", size=10)
 HFILL = PatternFill("solid", fgColor="1F3B57")
@@ -68,6 +70,15 @@ def _sheet_resume(wb: Workbook, prof: dict, score: dict, ai: dict | None) -> Non
         ("Colonnes entièrement vides", len(s["empty_columns"])),
         ("Taux de données manquantes", f"{m['pct_global']}%"),
         ("Doublons stricts de lignes", s["duplicates"]["exact_rows"]),
+        ("Identifiants portés par des profils différents",
+         (s["duplicates"].get("id_conflicts") or {}).get("n_ids", 0)),
+        ("Groupes de lignes identiques sauf l'identifiant",
+         (s["duplicates"].get("identical_except_id") or {}).get("n_groups", 0)),
+        ("Paires de lignes quasi identiques (≥ 90 % des variables)",
+         (s["duplicates"].get("near_identical_rows") or {}).get("n_pairs", 0)),
+        ("Groupes de doublons possibles (identifiants différents)",
+         (s["duplicates"].get("same_profile_different_ids") or {}).get("n_groups", 0)),
+        ("Lignes sans aucune donnée", (s.get("empty_rows") or {}).get("n", 0)),
     ]
     if ai and ai.get("assessment"):
         stats.append(("Anomalies enregistrées", len(ai["assessment"].get("findings", []))))
@@ -229,14 +240,15 @@ def _sheet_journal(wb: Workbook, ai: dict | None, cleaning: dict | None = None) 
 def _sheet_decisions(wb: Workbook, ai: dict | None) -> None:
     ws = wb.create_sheet("Décisions à valider")
     ws.sheet_view.showGridLines = False
-    _headers(ws, ["question", "variable", "options", "conséquence", "recommandation"],
-             [40, 16, 24, 32, 32])
+    _headers(ws, ["priorité", "question", "variable", "options", "conséquence", "recommandation"],
+             [18, 40, 16, 24, 32, 32])
     decs = (ai or {}).get("assessment", {}).get("client_decisions", [])
     if not decs:
         _note(ws, "Décisions à valider produites avec l'audit IA.")
         return
     for i, d in enumerate(decs, 2):
-        vals = [d.get("question_fr"), d.get("column"), " / ".join(d.get("options", [])),
+        prio = PRIORITY_LABELS.get(d.get("priority") or "importante", "Importante")
+        vals = [prio, d.get("question_fr"), d.get("column"), " / ".join(d.get("options", [])),
                 d.get("consequence_fr"), d.get("recommendation_fr")]
         for j, v in enumerate(vals, 1):
             c = ws.cell(row=i, column=j, value=v)

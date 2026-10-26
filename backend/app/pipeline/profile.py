@@ -8,6 +8,7 @@ Aucune modification des données : tout est calculé sur des copies.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -26,8 +27,24 @@ PII_NAME_RE = {
     "national_id": re.compile(r"\b(cin|cnss|passeport)\b", re.I),
     "birth_date": re.compile(r"\b(date.{0,3}naissance|ddn)\b", re.I),
 }
+SEX_NAME_RE = re.compile(r"(?:^|_)(sexe?|genre|gender)(?:_|$)", re.I)
 PHONE_CONTENT_RE = re.compile(r"^\+?\d[\d\s.-]{7,14}$")
 EMAIL_CONTENT_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[a-z]{2,}$", re.I)
+
+# Doublons avancés (phase 2 du prompt d'audit v2) : une ligne doit porter au moins ce
+# nombre de valeurs hors identifiant pour être comparée, sinon deux lignes presque vides
+# passeraient pour des copies.
+MIN_FILLED_FOR_COPY = 5
+MAX_EXAMPLES = 10
+# Lignes quasi identiques (proposition de Hamza, 26/10/2026) : part des variables
+# renseignées des deux côtés qui sont égales, signalée au-delà de 90 % sur au moins 30
+# variables. Comparaison de toutes les paires : bornée en nombre de lignes.
+NEAR_DUP_THRESHOLD = 0.90
+NEAR_DUP_MIN_SHARED = 30
+NEAR_DUP_MAX_ROWS = 3000
+
+# Fonction qui traduit un masque ou un index de lignes en identifiants (au plus 20).
+RowIds = Callable[[Any], list]
 
 
 def _py(v: Any) -> Any:
@@ -113,6 +130,163 @@ def _numeric_flags(s: pd.Series) -> list[str]:
     return flags
 
 
+def _row_hash(frame: pd.DataFrame) -> pd.Series:
+    """Empreinte de chaque ligne (valeurs manquantes comprises), pour comparer des lignes."""
+    as_text = frame.astype(object).where(frame.notna(), "__na__").astype(str)
+    return pd.util.hash_pandas_object(as_text, index=False)
+
+
+def _id_conflicts(df: pd.DataFrame, id_col: str) -> dict[str, Any]:
+    """Identifiants répétés : lignes identiques (vrai doublon) ou profils différents
+    (probablement deux patients sous un même numéro)."""
+    repeated = df[df[id_col].notna() & df[id_col].duplicated(keep=False)]
+    n_identical, n_conflicts = 0, 0
+    examples: list[dict[str, Any]] = []
+    for id_value, group in repeated.groupby(id_col, sort=False):
+        others = group.drop(columns=[id_col])
+        differing = [str(c) for c in others.columns if others[c].nunique(dropna=False) > 1]
+        if not differing:
+            n_identical += 1
+            continue
+        n_conflicts += 1
+        if len(examples) < MAX_EXAMPLES:
+            examples.append({"id": _py(id_value), "n_rows": len(group),
+                             "n_differing_columns": len(differing),
+                             "differing_columns": differing[:8]})
+    return {"id_conflicts": {"n_ids": n_conflicts, "examples": examples},
+            "same_id_identical_rows": n_identical}
+
+
+def _same_profile_different_ids(df: pd.DataFrame, id_col: str | None,
+                                row_ids: RowIds) -> dict[str, Any]:
+    """Identifiants différents mais même date de naissance, même sexe et mêmes dates :
+    doublon possible, à vérifier au dossier. Non évaluable sans date de naissance ni au
+    moins deux autres dates."""
+    dob = [c for c in df.columns if PII_NAME_RE["birth_date"].search(str(c))][:1]
+    sex = [c for c in df.columns if SEX_NAME_RE.search(str(c))][:1]
+    dates = [c for c in df.columns
+             if pd.api.types.is_datetime64_any_dtype(df[c]) and c not in dob]
+    if not dob and len(dates) < 2:
+        return {"key_columns": [], "n_groups": 0, "n_rows": 0, "examples": []}
+    key = dob + sex + dates
+    usable = df[dob[0]].notna() if dob else df[dates].notna().sum(axis=1) >= 2
+    hashes = _row_hash(df[key])[usable]
+    body = df.drop(columns=[id_col]) if id_col else df
+    groups = []
+    for _, idx in hashes.groupby(hashes).groups.items():
+        if len(idx) < 2:
+            continue
+        if id_col and df.loc[idx, id_col].nunique(dropna=True) < 2:
+            continue  # même identifiant : déjà couvert par id_conflicts
+        if body.loc[idx].duplicated(keep=False).all():
+            continue  # lignes identiques (hors identifiant) : déjà couvertes par _copies
+        groups.append(idx)
+    return {"key_columns": [str(c) for c in key], "n_groups": len(groups),
+            "n_rows": sum(len(g) for g in groups),
+            "examples": [{"row_ids": row_ids(g)} for g in groups[:MAX_EXAMPLES]]}
+
+
+def _near_identical_pairs(body: pd.DataFrame) -> dict[str, Any]:
+    """Paires de lignes quasi identiques, par position (définition de Hamza : part des
+    variables renseignées des deux côtés qui sont égales).
+
+    Retourne aussi la ressemblance médiane entre deux lignes de la base : c'est le point
+    de comparaison qui montre qu'une paire à 95 % n'est pas une ressemblance ordinaire.
+    """
+    n = len(body)
+    if n < 2 or n > NEAR_DUP_MAX_ROWS or body.shape[1] < NEAR_DUP_MIN_SHARED:
+        return {"evaluated": False, "pairs": [], "median_similarity": None}
+    codes = np.column_stack([pd.factorize(body[c])[0] for c in body.columns])  # manquant = -1
+    filled = codes >= 0
+    pairs: list[tuple[int, int, float, int]] = []
+    all_sims: list[np.ndarray] = []
+    for i in range(n - 1):
+        both = filled[i + 1:] & filled[i]
+        shared = both.sum(axis=1)
+        equal = ((codes[i + 1:] == codes[i]) & both).sum(axis=1)
+        ok = shared >= NEAR_DUP_MIN_SHARED
+        sims = np.divide(equal, shared, out=np.zeros(len(shared)), where=ok)
+        all_sims.append(sims[ok])
+        for k in np.flatnonzero(ok & (sims >= NEAR_DUP_THRESHOLD)):
+            pairs.append((i, i + 1 + int(k), float(sims[k]), int(shared[k])))
+    flat = np.concatenate(all_sims) if all_sims else np.array([])
+    return {"evaluated": True, "pairs": pairs,
+            "median_similarity": round(float(np.median(flat)), 3) if len(flat) else None}
+
+
+def _blocks(pair_sims: dict[tuple[int, int], float]) -> list[dict[str, Any]]:
+    """Bloc = au moins 2 lignes consécutives qui reproduisent, avec le même décalage,
+    une suite de lignes consécutives située plus haut. Clés : (position, décalage)."""
+    blocks: list[dict[str, Any]] = []
+    for a, d in sorted(pair_sims):
+        if (a - 1, d) in pair_sims:
+            continue  # pas le début d'un bloc
+        length = 1
+        while (a + length, d) in pair_sims:
+            length += 1
+        if length >= 2:
+            blocks.append({"length": length,
+                           "source_lines": [a + 1, a + length],
+                           "copy_lines": [a + d + 1, a + d + length],
+                           "min_similarity": round(min(pair_sims[(a + k, d)]
+                                                       for k in range(length)), 3)})
+    blocks.sort(key=lambda b: b["length"], reverse=True)
+    return blocks[:MAX_EXAMPLES]
+
+
+def _copies(df: pd.DataFrame, id_col: str | None, row_ids: RowIds) -> dict[str, Any]:
+    """Lignes identiques ou quasi identiques sauf l'identifiant, et blocs de lignes
+    consécutives recopiés."""
+    body = df.drop(columns=[id_col]) if id_col else df
+    filled = body.notna().sum(axis=1) >= MIN_FILLED_FOR_COPY
+    all_hashes = _row_hash(body)
+    hashes = all_hashes[filled]
+    hashes = hashes[hashes.duplicated(keep=False)]
+
+    identical: list[pd.Index] = []
+    pair_sims: dict[tuple[int, int], float] = {}   # (position, décalage) → ressemblance
+    copy_rows: set[int] = set()                     # positions des lignes « copies »
+    pos = {label: i for i, label in enumerate(df.index)}
+    for _, idx in hashes.groupby(hashes).groups.items():
+        p = sorted(pos[i] for i in idx)
+        if id_col and df.loc[idx, id_col].nunique(dropna=True) >= 2:
+            identical.append(idx)
+            copy_rows.update(p[1:])
+        for k, a in enumerate(p[:50]):
+            for b in p[k + 1:50]:
+                pair_sims[(a, b - a)] = 1.0
+
+    near = _near_identical_pairs(body)
+    hash_values = all_hashes.to_numpy()
+    near_pairs = [(a, b, sim, shared) for a, b, sim, shared in near["pairs"]
+                  if hash_values[a] != hash_values[b]]   # copies exactes : déjà comptées
+    for a, b, sim, _ in near_pairs:
+        pair_sims.setdefault((a, b - a), sim)
+        copy_rows.add(b)
+    labels = df.index
+    return {
+        "identical_except_id": {"n_groups": len(identical),
+                                "n_rows": sum(len(g) for g in identical),
+                                "examples": [{"row_ids": row_ids(g)}
+                                             for g in identical[:MAX_EXAMPLES]]},
+        "near_identical_rows": {
+            "evaluated": near["evaluated"],
+            "threshold": NEAR_DUP_THRESHOLD, "min_shared_variables": NEAR_DUP_MIN_SHARED,
+            "median_similarity": near["median_similarity"],
+            "n_pairs": len(near_pairs),
+            "examples": [{"row_ids": row_ids(pd.Index([labels[a], labels[b]])),
+                          "lines": [a + 1, b + 1], "similarity": round(sim, 3),
+                          "n_compared": shared}
+                         for a, b, sim, shared in sorted(near_pairs, key=lambda p: -p[2])
+                         [:MAX_EXAMPLES]],
+        },
+        "copied_blocks": _blocks(pair_sims),
+        # Lignes probablement recopiées d'une autre (identiques ou quasi identiques sauf
+        # l'identifiant) : elles rendent l'effectif réel incertain (score, domaine 1).
+        "n_suspect_copy_rows": len(copy_rows),
+    }
+
+
 def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
     n_rows, n_cols = len(df), len(df.columns)
     labels = meta.get("spss_column_labels", {})
@@ -152,6 +326,16 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
             groups.setdefault(key, []).append(str(c))
         duplicated_columns = [g for g in groups.values() if len(g) >= 2]
 
+    # Lignes vides (aucune valeur hors identifiant), fréquentes en fin de .sav ou d'Excel.
+    body = df.drop(columns=[id_col]) if id_col else df
+    empty_row_pos = [i + 1 for i, empty in enumerate(body.isna().all(axis=1)) if empty]
+
+    advanced_dups: dict[str, Any] = {}
+    if id_col:
+        advanced_dups.update(_id_conflicts(df, id_col))
+    advanced_dups["same_profile_different_ids"] = _same_profile_different_ids(df, id_col, row_ids)
+    advanced_dups.update(_copies(df, id_col, row_ids))
+
     structure = {
         "n_rows": n_rows,
         "n_cols": n_cols,
@@ -161,7 +345,9 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
             "exact_rows": int(df.duplicated().sum()),
             "duplicate_ids": dup_ids,
             "example_row_ids": row_ids(exact_dup_mask),
+            **advanced_dups,
         },
+        "empty_rows": {"n": len(empty_row_pos), "lines": empty_row_pos[:20]},
         "empty_columns": empty_cols,
         "constant_columns": constant_cols,
         "near_constant_columns": near_constant,

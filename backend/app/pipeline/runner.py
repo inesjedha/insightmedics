@@ -19,6 +19,7 @@ from typing import Any
 
 import pandas as pd
 
+from .builtin_rules import severity_score_rules
 from .ingest import ingest
 from .issues import detect_issues
 from .llm1 import run_llm1
@@ -71,13 +72,16 @@ def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: st
 
     id_col = profiling["structure"]["id_column"]
     ids = df[id_col] if id_col else df.index.to_series()
-    rules = [r.model_dump() for r in llm_out.coherence_rules]
+    dictionary = [e.model_dump() for e in llm_out.dictionary]
+    # Contrôles intégrés (Glasgow ↔ IGS II / APACHE II…) avant ceux du modèle.
+    rules = (severity_score_rules(df, profiling["columns"], dictionary)
+             + [r.model_dump() for r in llm_out.coherence_rules])
     log("info", f"Vérification de {len(rules)} règle(s) de cohérence sur toute la base…")
     violations = execute_rules(rules, df, ids)
     scoring_inputs["rule_violations"] = violations
     ai_audit: dict[str, Any] = {
         "study": llm_out.study.model_dump() if llm_out.study else None,
-        "dictionary": [e.model_dump() for e in llm_out.dictionary],
+        "dictionary": dictionary,
         "rules": rules,
         "violations": violations,
         "derived_variables": [d.model_dump() for d in llm_out.derived_variables],
@@ -116,11 +120,7 @@ def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: st
         "pii_assessment": [p.model_dump() for p in llm2_out.pii_assessment],
         "notes": llm2_notes,
     }
-    # Filet de cohérence verdict ↔ score : un verdict « non exploitable » (4) ou
-    # « absence de données » (5) ne peut pas coexister avec un score élevé.
     verdict = llm2_out.exploitability_verdict
-    if verdict is not None:
-        scoring_inputs["global_verdict_level"] = verdict.level
     log("success", f"Jugement IA : {len(llm2_out.findings)} anomalie(s) classée(s)"
                    + (f", verdict « {verdict.label} »" if verdict else ""))
     return ai_audit
@@ -193,7 +193,8 @@ def run_audit(path: str | Path, original_name: str,
     ai_audit = _run_ai_audit(profiling, df, protocol_text, scoring_inputs, log)
 
     # Backstop déterministe : sans protocole, le critère de jugement principal ne peut pas
-    # être figé opérationnellement (variable/temps/contraste/méthode non préspécifiés) → 49.
+    # être figé opérationnellement (variable/temps/contraste/méthode non préspécifiés). Il
+    # perd alors des points et abaisse la confiance (grille v2.1 : pas de plafond à 49).
     if not protocol_text:
         scoring_inputs["primary_endpoint_operationally_defined"] = False
 

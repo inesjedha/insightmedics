@@ -112,10 +112,13 @@ L'orchestrateur `app/pipeline/runner.py` enchaîne les étapes :
   cohérence DSL, variables dérivées. L'IA propose ; elle ne calcule ni ne modifie rien.
 - **Moteur de règles** (`rules_engine.py`) : interpréteur DSL sûr (AST fermé, jamais `eval`)
   qui exécute les règles sur toute la base.
+- **Règles intégrées** (`builtin_rules.py`) : contrôles certains ajoutés par le programme aux
+  règles de LLM-1 (Glasgow ↔ IGS II et APACHE II), exécutés par le même moteur.
 - **LLM-2** (`llm2.py`) : classification des anomalies (A/B/C/D), verdict d'exploitabilité,
   entrées de score (enums), rédaction française.
 - **Score** (`score_engine.py`) : grille déterministe en 8 domaines + plafonds + niveau de
-  confiance. **Seule source du /100.** (`issues.py` ne produit que les libellés d'anomalies
+  confiance, alignée sur la grille v2.1 de Hamza (plafonds 10 / 49 / 59 uniquement ; un
+  critère principal présent mais non défini perd des points sans plafond). **Seule source du /100.** (`issues.py` ne produit que les libellés d'anomalies
   pour le front, aucun score.)
 - **Livrables** (`report_xlsx.py`, `report_docx.py`) : classeur 10 onglets + rapport Word.
 - **Nettoyage** (`cleaning.py`) : copie nettoyée et anonymisée (`id_anonyme` + `ligne_source`,

@@ -72,10 +72,18 @@ def test_sans_jugements_ia_confiance_faible_et_criteres_partiels():
 
 
 def test_plafond_critere_principal_absent():
-    si = {**FULL_SI, "primary_endpoint_status": "non_exploitable"}
+    si = {**FULL_SI, "primary_endpoint_status": "absent"}
     r = compute_score(CLEAN, si)
     assert r["score_final"] <= 49
     assert any("Critère principal" in c["defaut"] for c in r["plafonds_appliques"])
+
+
+def test_critere_non_exploitable_mais_present_ne_plafonne_pas_a_49():
+    """Grille v2.1 : le 49 est réservé au critère totalement absent."""
+    si = {**FULL_SI, "primary_endpoint_status": "non_exploitable"}
+    r = compute_score(CLEAN, si)
+    assert not any(c["plafond"] == 49 for c in r["plafonds_detectes"])
+    assert r["score_final"] < compute_score(CLEAN, FULL_SI)["score_final"]
 
 
 def test_plafond_identifiant_absent_seulement_si_lignes_indistinctes():
@@ -120,41 +128,48 @@ def test_determinisme():
     assert compute_score(CLEAN, FULL_SI) == compute_score(CLEAN, FULL_SI)
 
 
-def test_plafond_critere_principal_non_operationnel():
-    """Hamza : CJP identifié mais non opérationnalisé → plafond 49 (3 bases /4)."""
+def _crit(r, domain, label_start):
+    d = next(d for d in r["domaines"] if d["domaine"] == domain)
+    return next(c for c in d["criteres"] if c["critere"].startswith(label_start))
+
+
+def test_critere_non_operationnel_perd_des_points_sans_plafond():
+    """Hamza (26/10/2026) : critère présent mais non défini opérationnellement → pas de
+    plafond à 49 ; 1/4 au domaine 5, 1/3 au domaine 6, confiance faible."""
     si = {**FULL_SI, "primary_endpoint_operationally_defined": False}
     r = compute_score(CLEAN, si)
-    assert r["score_final"] <= 49
-    assert any("non défini opérationnellement" in c["defaut"] for c in r["plafonds_appliques"])
+    assert not r["plafonds_detectes"]
+    assert _crit(r, 5, "Critère principal")["obtenu"] == 1
+    assert _crit(r, 6, "Critère principal")["obtenu"] == 1
+    assert r["confiance"]["niveau"] == "faible"
+    assert r["score_final"] == compute_score(CLEAN, FULL_SI)["score_final"] - 5
 
 
-def test_pas_de_plafond_si_critere_operationnel():
+def test_pas_de_perte_si_critere_operationnel():
     si = {**FULL_SI, "primary_endpoint_operationally_defined": True}
-    r = compute_score(CLEAN, si)
-    assert r["score_final"] > 49
+    assert compute_score(CLEAN, si)["score_final"] == compute_score(CLEAN, FULL_SI)["score_final"]
 
 
-def test_verdict_niveau_4_plafonne_a_49():
-    """Filet de cohérence : un verdict IA « non exploitable » (4) plafonne le score à 49,
-    même si les autres jugements sont bons (cas Eya)."""
-    si = copy.deepcopy(FULL_SI)
-    si["global_verdict_level"] = 4
-    r = compute_score(CLEAN, si)
-    assert r["score_final"] <= 49
-    assert any("verdict" in c["defaut"].lower() for c in r["plafonds_appliques"])
+def test_le_verdict_ia_ne_plafonne_plus_le_score():
+    """Les plafonds « verdict IA » (4 → 49, 5 → 20) ne font pas partie de la grille."""
+    for level in (3, 4, 5):
+        si = {**copy.deepcopy(FULL_SI), "global_verdict_level": level}
+        assert not compute_score(CLEAN, si)["plafonds_detectes"]
 
 
-def test_verdict_niveau_5_plafonne_a_20():
-    si = copy.deepcopy(FULL_SI)
-    si["global_verdict_level"] = 5
-    r = compute_score(CLEAN, si)
-    assert r["score_final"] <= 20
+def test_lignes_vides_seules_plafond_a_10():
+    prof = copy.deepcopy(CLEAN)
+    prof["structure"]["empty_rows"] = {"n": 100, "lines": []}
+    r = compute_score(prof, FULL_SI)
+    assert r["score_final"] <= 10
 
 
-def test_verdict_niveau_3_ne_plafonne_pas_seul():
-    """Niveau 3 ne déclenche PAS le filet verdict (le plafond vient alors de l'état du
-    critère principal, pas du niveau de verdict)."""
-    si = copy.deepcopy(FULL_SI)
-    si["global_verdict_level"] = 3
-    r = compute_score(CLEAN, si)
-    assert not any("verdict IA" in c["defaut"] for c in r["plafonds_appliques"])
+def test_lignes_recopiees_comptent_comme_doublons_et_plafonnent_a_59():
+    """Audit v2 d'Amine : 10 lignes recopiées sur 51 → « pas de doublon injustifié » 0/2,
+    et l'effectif réel ne peut plus être établi (plafond 59)."""
+    prof = copy.deepcopy(CLEAN)
+    prof["structure"]["duplicates"]["n_suspect_copy_rows"] = 20  # 20 % de 100
+    r = compute_score(prof, FULL_SI)
+    assert _crit(r, 1, "Absence de doublons")["obtenu"] == 0
+    assert r["score_final"] <= 59
+    assert any("effectif réel" in c["defaut"] for c in r["plafonds_appliques"])

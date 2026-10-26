@@ -18,6 +18,8 @@ from docx import Document
 from docx.document import Document as DocxDocument
 from docx.shared import Inches, Pt, RGBColor
 
+from .llm2 import PRIORITY_LABELS
+
 
 def _fig_scores(score: dict) -> io.BytesIO:
     """Diagramme en barres des 8 sous-scores (PNG en mémoire)."""
@@ -82,12 +84,12 @@ def build_report(profiling: dict, score: dict, ai_audit: dict | None) -> bytes:
         _p(doc, assess["executive_summary_fr"])
     else:
         n_empty = len(s["empty_columns"])
+        n_dup = s["duplicates"]["exact_rows"]
+        dup_sentence = ("Aucun doublon strict de ligne détecté." if n_dup == 0
+                        else f"{n_dup} doublon(s) strict(s) détecté(s).")
         _p(doc, f"La base contient {s['n_rows']} observations et {s['n_cols']} variables. "
                 f"Le taux global de données manquantes est de {m['pct_global']} %. "
-                f"{n_empty} colonne(s) sont entièrement vides. "
-                f"Aucun doublon strict de ligne détecté."
-                if s["duplicates"]["exact_rows"] == 0 else
-                f"{s['duplicates']['exact_rows']} doublon(s) strict(s) détecté(s).")
+                f"{n_empty} colonne(s) sont entièrement vides. {dup_sentence}")
     n_find = len(assess.get("findings", []))
     if n_find:
         n_crit = sum(1 for f in assess["findings"] if f.get("severity") == "critique")
@@ -203,8 +205,10 @@ def build_report(profiling: dict, score: dict, ai_audit: dict | None) -> bytes:
     decs = assess.get("client_decisions", [])
     if decs:
         for d in decs:
+            prio = PRIORITY_LABELS.get(d.get("priority") or "importante", "Importante")
             doc.add_paragraph(
-                f"{d.get('question_fr')} → {d.get('recommendation_fr')}", style="List Bullet")
+                f"[{prio}] {d.get('question_fr')} → {d.get('recommendation_fr')}",
+                style="List Bullet")
     else:
         _p(doc, "Aucune décision bloquante identifiée à ce stade, ou audit IA non exécuté.")
 
