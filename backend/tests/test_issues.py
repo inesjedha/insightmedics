@@ -134,3 +134,12 @@ def test_profiling_ancien_format_sans_les_nouveaux_champs():
     p = _prof()
     p["structure"]["duplicates"]["duplicate_ids"] = 1
     assert any(i["label"] == "1 identifiant(s) dupliqué(s)" for i in detect_issues(p))
+
+
+def test_lignes_quasi_identiques_critique_avec_contexte():
+    p = _prof()
+    p["structure"]["duplicates"]["near_identical_rows"] = {
+        "n_pairs": 10, "threshold": 0.9, "median_similarity": 0.53}
+    issue = next(i for i in detect_issues(p) if "quasi identiques" in i["label"])
+    assert issue["level"] == "critical"
+    assert "10 paire(s)" in issue["label"] and "53 % en médiane" in issue["label"]

@@ -45,9 +45,13 @@ client.
 - id_conflicts : un même identifiant porté par des lignes aux profils différents, donc
   probablement deux patients sous un même numéro → classe B, gravité critique (l'effectif
   réel en dépend), certitude probable, vérification au dossier source.
-- identical_except_id et copied_blocks : lignes identiques sauf l'identifiant, ou suite de
-  lignes consécutives recopiée plus bas (numéros de ligne de données) → copier-coller
-  probable : classe B, gravité critique, certitude probable, vérification au dossier source.
+- identical_except_id, near_identical_rows et copied_blocks : lignes identiques ou quasi
+  identiques sauf l'identifiant (similarity = part des variables renseignées des deux
+  côtés qui sont égales, à comparer à median_similarity, la ressemblance ordinaire entre
+  deux patients de la base), ou suite de lignes consécutives recopiée plus bas (numéros
+  de ligne de données) → copier-coller probable : classe B, gravité critique, certitude
+  probable, vérification au dossier source. L'effectif réel devient incertain
+  (n_suspect_copy_rows lignes en cause) : dites-le dans le résumé et le verdict.
 - same_profile_different_ids : identifiants différents mais même date de naissance, même
   sexe et mêmes dates (key_columns) → doublon possible, non vérifiable sans le dossier :
   classe D, gravité majeure, certitude possible.
@@ -83,7 +87,11 @@ EXACTES ci-dessous (jamais de texte libre). En l'absence d'information suffisant
   est-elle clairement définie ?)
 - structure_fits_study : true|false|null
 - primary_endpoint_status : "exploitable"|"exploitable_reserves"|"partiel"|
-  "non_exploitable"|"inevaluable" (état du critère de jugement principal).
+  "non_exploitable"|"absent"|"inevaluable" (état du critère de jugement principal).
+  "absent" est réservé au cas où AUCUNE variable de la base ne permet de mesurer le critère
+  principal, même indirectement : c'est le seul statut qui plafonne le score à 49. Un
+  critère calculable à partir des colonnes présentes (ex. une perte musculaire entre deux
+  mesures) n'est jamais "absent", même s'il n'est ni désigné ni défini.
   IMPÉRATIF DE COHÉRENCE : cette valeur DOIT refléter votre jugement réel sur le critère
   PRINCIPAL, indépendamment du sort des objectifs secondaires. Si le critère de jugement
   principal ne peut pas être mesuré/analysé tel quel (variable(s) absente(s), mal définie(s),
@@ -98,8 +106,11 @@ EXACTES ci-dessous (jamais de texte libre). En l'absence d'information suffisant
   méthode de calcul/définition (ex. « récidive = oui/non à 24 mois »). Mettez false si l'un
   de ces éléments manque, si le critère reste vague, si la variable de suivi temporel est
   vide/absente, OU s'il n'y a AUCUN protocole permettant de le figer. null seulement si non
-  évaluable. IMPORTANT : un critère principal non opérationnalisé plafonne le
-  score à 49 — soyez exigeant, ne mettez true que si les 4 éléments sont réellement réunis.
+  évaluable. Soyez exigeant : ne mettez true que si les 4 éléments sont réellement réunis.
+  Un critère présent mais non opérationnalisé ne plafonne pas le score (grille de Hamza
+  v2.1) : il perd des points et abaisse la confiance. Il fait l'objet d'une anomalie de
+  classe D (définition ambiguë), de gravité critique, et de la première décision client
+  (priorité "avant_analyse") demandant la variable, le temps, la comparaison et la méthode.
 - primary_objective_vars_available : "complet"|"partiel"|"absent"|"inevaluable"
 - secondary_objectives_vars_available : "complet"|"partiel"|"absent"|"inevaluable"
 - inclusion_criteria_verifiable : true|false|null
@@ -166,8 +177,9 @@ l'absence quasi totale de données analysables.
 COHÉRENCE OBLIGATOIRE verdict ↔ scoring_inputs : le niveau du verdict et
 primary_endpoint_status doivent concorder. Il est INTERDIT de rendre un verdict de niveau
 3 ou 4 fondé sur l'échec du critère principal tout en laissant primary_endpoint_status à
-"exploitable"/"exploitable_reserves". Le score (plafonné par le code quand le principal est
-non exploitable) et le verdict doivent aboutir à la même conclusion.
+"exploitable"/"exploitable_reserves". Le score est calculé par le code, qui ne plafonne à 49
+que si le critère principal est absent : votre verdict porte sur l'exploitabilité, il peut
+être sévère même quand le score reste moyen, mais il doit être justifié par les faits.
 
 ================================================================================
 6. RÉDACTION FRANÇAISE — factuelle, chiffrée, vérifiable

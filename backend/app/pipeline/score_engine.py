@@ -59,6 +59,8 @@ QUALITY_LEVELS = [
     (0, "Critique", "Base non exploitable ou absence de données analysables"),
 ]
 
+CJP_UNDEFINED = ("critère principal présent mais non défini opérationnellement "
+                 "(variable, temps, comparaison, méthode)")
 INEV = "inévaluable sans documents méthodologiques ni audit IA (jalon M5) — points partiels"
 
 
@@ -107,10 +109,17 @@ def compute_score(profiling: dict[str, Any],
                "aucune colonne identifiant détectée")
         d1.add("Identifiants uniques ou répétitions documentées", 3, 0,
                "aucun identifiant à évaluer")
-    dup_rows = s["duplicates"]["exact_rows"]
+    exact_rows = s["duplicates"]["exact_rows"]
+    # Lignes recopiées d'une autre sauf l'identifiant (identiques ou à ≥ 90 %) : doublons
+    # injustifiés au sens de Hamza (audit v2 d'Amine : 0/2). .get : audits antérieurs.
+    copy_rows = s["duplicates"].get("n_suspect_copy_rows", 0)
+    dup_rows = exact_rows + copy_rows
     dup_rate = dup_rows / max(n_rows, 1)
+    dup_reasons = [txt for n, txt in ((exact_rows, f"{exact_rows} ligne(s) strictement dupliquée(s)"),
+                                      (copy_rows, f"{copy_rows} ligne(s) recopiée(s) d'une autre "
+                                                  "sauf l'identifiant")) if n]
     d1.add("Absence de doublons injustifiés", 2, 2 * (1 - min(1, dup_rate * 5)),
-           "" if dup_rows == 0 else f"{dup_rows} ligne(s) strictement dupliquée(s)")
+           " ; ".join(dup_reasons))
     structure_ok = si.get("structure_fits_study")
     if structure_ok is None:
         d1.add("Structure adaptée à l'étude", 2, 1, INEV, True)
@@ -128,8 +137,10 @@ def compute_score(profiling: dict[str, Any],
            f"{completeness:.1f}% de données disponibles")
     cjp_missing = si.get("primary_endpoint_missing_pct")
     cjp_status = si.get("primary_endpoint_status")
-    if cjp_status in ("non_exploitable",) or cjp_status == "absent":
-        d2.add("Complétude du critère principal", 5, 0, "critère principal absent")
+    if cjp_status in ("non_exploitable", "absent"):
+        d2.add("Complétude du critère principal", 5, 0,
+               "critère principal absent" if cjp_status == "absent"
+               else "critère principal non exploitable")
     elif cjp_missing is not None:
         avail = 100 - cjp_missing
         pts = _grid(avail, [(99, 5), (95, 4), (90, 3), (80, 2), (60, 1)], 0)
@@ -225,12 +236,18 @@ def compute_score(profiling: dict[str, Any],
     # ---- Domaine 5 — Concordance protocole / objectifs (15) ----
     d5 = Domain(5, "Concordance avec le protocole et les objectifs", 15)
     cjp_pts = {"exploitable": 4, "exploitable_reserves": 3, "partiel": 2,
-               "non_exploitable": 0, "inevaluable": 2}
+               "non_exploitable": 0, "absent": 0, "inevaluable": 2}
+    # Grille v2.1 de Hamza : un critère présent mais non défini opérationnellement (variable,
+    # temps, comparaison, méthode) ne plafonne pas le score ; il perd des points ici et au
+    # domaine 6 (1/4 et 1/3 dans l'audit v2 d'Amine) et abaisse la confiance.
+    cjp_undefined = si.get("primary_endpoint_operationally_defined") is False
     if cjp_status is None:
         d5.add("Critère principal disponible et correctement défini", 4, 2, INEV, True)
     else:
+        pts = cjp_pts.get(cjp_status, 2)
         d5.add("Critère principal disponible et correctement défini", 4,
-               cjp_pts.get(cjp_status, 2), f"statut : {cjp_status}")
+               min(pts, 1) if cjp_undefined else pts,
+               f"statut : {cjp_status}" + (f" ; {CJP_UNDEFINED}" if cjp_undefined else ""))
     d5_rows: list[tuple[str, int, str, dict[str, float]]] = [
         ("Variables de l'objectif principal disponibles", 3, "primary_objective_vars_available",
          {"complet": 3, "partiel": 1.5, "absent": 0, "inevaluable": 1.5}),
@@ -260,9 +277,11 @@ def compute_score(profiling: dict[str, Any],
     if cjp_status is None:
         d6.add("Critère principal correctement calculé ou codé", 3, 1.5, INEV, True)
     else:
+        pts = {"exploitable": 3, "exploitable_reserves": 2, "partiel": 1,
+               "non_exploitable": 0, "absent": 0}.get(cjp_status, 1.5)
         d6.add("Critère principal correctement calculé ou codé", 3,
-               {"exploitable": 3, "exploitable_reserves": 2, "partiel": 1,
-                "non_exploitable": 0}.get(cjp_status, 1.5), f"statut : {cjp_status}")
+               min(pts, 1) if cjp_undefined else pts,
+               f"statut : {cjp_status}" + (f" ; {CJP_UNDEFINED}" if cjp_undefined else ""))
     rel = si.get("derived_vars_reliability")
     if rel is None:
         d6.add("Scores cliniques vérifiables et conformes", 2, 1,
@@ -335,12 +354,12 @@ def compute_score(profiling: dict[str, Any],
         if condition:
             caps.append({"defaut": label, "plafond": value})
 
-    cap(n_rows == 0, "Absence de véritables observations / table vide", 10)
-    cap(cjp_status in ("non_exploitable", "absent"), "Critère principal totalement absent", 49)
-    # Hamza : un critère principal identifié mais non opérationnalisé (variable/temps/
-    # contraste/méthode non préspécifiés) plafonne aussi à 49 — 3 bases sur 4 concernées.
-    cap(si.get("primary_endpoint_operationally_defined") is False,
-        "Critère de jugement principal non défini opérationnellement", 49)
+    # Plafonds de la grille de Hamza (v2.1, 26/10/2026), et eux seuls. Le 49 est réservé au
+    # critère principal totalement absent et aux patients non individualisables ; un
+    # critère présent mais mal défini perd des points (domaines 5 et 6), sans plafond.
+    n_real_rows = n_rows - (s.get("empty_rows") or {}).get("n", 0)
+    cap(n_real_rows <= 0, "Absence de véritables observations / table vide", 10)
+    cap(cjp_status == "absent", "Critère principal totalement absent", 49)
     # Hamza plafonne pour l'identité UNIQUEMENT si les patients ne sont pas
     # individualisables : pas d'ID ET des lignes strictement dupliquées. Sans ID mais
     # avec des lignes toutes distinctes, les patients restent identifiables → pas de plafond
@@ -355,15 +374,8 @@ def compute_score(profiling: dict[str, Any],
         "Erreurs majeures affectant directement le critère principal", 59)
     cap(si.get("primary_objective_vars_available") == "absent",
         "Variables indispensables à l'objectif principal absentes", 59)
-    cap(s["duplicates"]["duplicate_ids"] > 0.1 * n_rows,
+    cap(s["duplicates"]["duplicate_ids"] + copy_rows > 0.1 * n_rows,
         "Doublons majeurs empêchant de déterminer l'effectif réel", 59)
-    # Filet de cohérence verdict ↔ score : le verdict d'exploitabilité de l'IA (1-5) ne peut
-    # pas contredire le score. Un verdict « non exploitable actuellement » (4) plafonne à 49,
-    # « absence de données analysables » (5) à 20. Évite qu'un verdict dur coexiste avec un
-    # score élevé (cas Eya : verdict 4 mais brut 69,5 non plafonné).
-    verdict_level = si.get("global_verdict_level")
-    cap(verdict_level == 4, "Base jugée non exploitable en l'état (verdict IA)", 49)
-    cap(verdict_level == 5, "Absence de données analysables (verdict IA)", 20)
 
     score_final = score_brut
     applied = []
@@ -390,9 +402,12 @@ def compute_score(profiling: dict[str, Any],
     else:
         confidence = "élevée"
         reasons.append("protocole et dictionnaire exploités, jugements complets")
+    if cjp_undefined and confidence != "faible":
+        confidence = "faible"
+        reasons.append(CJP_UNDEFINED)
 
     return {
-        "version_grille": "hamza-v1",
+        "version_grille": "hamza-v2.1",
         "score_brut": score_brut,
         "plafonds_detectes": caps,
         "plafonds_appliques": applied,

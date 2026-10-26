@@ -94,6 +94,10 @@ Construisez toutes celles qui sont pertinentes au vu des colonnes réellement pr
   de naissance ; durée cohérente avec deux dates (formula_match).
 N'utilisez QUE les noms de colonnes réellement fournis. Ne créez pas de règle reposant
 sur une colonne absente, ni sur une signification que vous n'êtes pas sûr d'avoir comprise.
+Ne générez pas les contrôles Glasgow ↔ IGS II et Glasgow ↔ APACHE II : le programme les
+ajoute lui-même à partir de votre dictionnaire. Pour qu'il les trouve, donnez à chaque
+score de gravité une signification explicite (« Score de Glasgow », « IGS II (SAPS II) »,
+« APACHE II »), même si le nom de la colonne est abrégé ou mal orthographié.
 
 Chaque règle : un id (R001…), une description française précise, une "severity"
 (critical|major|moderate|minor) et une "category" (chrono|clinical|synthetic|totals|derived).
@@ -103,6 +107,7 @@ DSL AUTORISÉ (toute règle hors DSL sera rejetée) :
 - {"op":"not_null","col":X}
 - {"op":"in_set","left":{"col":X},"values":[...]}
 - {"op":"implies","if":<règle>,"then":<règle>}
+- {"op":"all","rules":[<règle>, ...]}   (toutes les sous-règles doivent être respectées)
 - {"op":"bounds","col":X,"min":m,"max":M}   (uniquement bornes THÉORIQUES ; min ou max peut être omis)
 - {"op":"formula_match","target":{"col":X},"formula":"poids/(taille/100)**2","tolerance":0.5}
 - {"op":"chrono_order","cols":[date1,date2,...]}  (ordre croissant attendu)

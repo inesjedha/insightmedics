@@ -65,3 +65,16 @@ def test_formules_sures():
         eval_formula("__import__('os')", DF)
     with pytest.raises(ValueError):
         eval_formula("colonne_inconnue + 1", DF)
+
+
+def test_op_all_toutes_les_sous_regles():
+    df = pd.DataFrame({"a": [1, 5, 9, None], "b": [10, 1, 20, 3]})
+    rule = {"op": "all", "rules": [
+        {"op": "implies", "if": {"op": "lt", "left": {"col": "a"}, "right": {"value": 6}},
+         "then": {"op": "gte", "left": {"col": "b"}, "right": {"value": 5}}},
+        {"op": "gte", "left": {"col": "b"}, "right": {"value": 2}}]}
+    res = execute_rules([{"id": "R1", "description": "", "severity": "major",
+                          "category": "clinical", "rule": rule}], df, df.index.to_series())
+    r = res["results"][0]
+    assert r["n_tested"] == 3          # la ligne sans « a » n'est pas testable
+    assert r["n_violations"] == 1 and r["row_ids"] == ["1"]

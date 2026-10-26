@@ -45,6 +45,15 @@ def detect_issues(p: dict[str, Any]) -> list[dict]:
         issues.append({"level": "warn",
                        "label": f"{same_but_id} groupe(s) de lignes identiques sauf l'identifiant "
                                 "— copie probable, à vérifier"})
+    near = dups.get("near_identical_rows") or {}
+    if near.get("n_pairs"):
+        median = near.get("median_similarity")
+        context = f" ; deux patients de la base se ressemblent à {round(median * 100)} % en médiane" \
+            if median is not None else ""
+        issues.append({"level": "critical",
+                       "label": f"{near['n_pairs']} paire(s) de lignes quasi identiques "
+                                f"(au moins {round(near['threshold'] * 100)} % des variables "
+                                f"égales{context}) — copie probable, à vérifier"})
     for block in (dups.get("copied_blocks") or [])[:2]:
         a, b = block["source_lines"]
         c, d = block["copy_lines"]

@@ -67,6 +67,9 @@ def _testable(node: dict, df: pd.DataFrame) -> pd.Series:
         mask &= df[node["left"]["col"]].notna()
     elif op == "implies":
         mask &= _testable(node["if"], df) & _testable(node["then"], df)
+    elif op == "all":
+        for sub in node["rules"]:
+            mask &= _testable(sub, df)
     elif op == "bounds":
         mask &= df[node["col"]].notna()
     elif op == "formula_match":
@@ -104,6 +107,11 @@ def _satisfied(node: dict, df: pd.DataFrame) -> pd.Series:
         cond = _satisfied(node["if"], df)
         then = _satisfied(node["then"], df)
         return ~cond | then
+    if op == "all":
+        ok = pd.Series(True, index=df.index)
+        for sub in node["rules"]:
+            ok &= _satisfied(sub, df).fillna(False)
+        return ok
     if op == "bounds":
         s = pd.to_numeric(df[node["col"]], errors="coerce")
         ok = pd.Series(True, index=df.index)

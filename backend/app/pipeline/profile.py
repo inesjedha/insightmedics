@@ -36,6 +36,12 @@ EMAIL_CONTENT_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[a-z]{2,}$", re.I)
 # passeraient pour des copies.
 MIN_FILLED_FOR_COPY = 5
 MAX_EXAMPLES = 10
+# Lignes quasi identiques (proposition de Hamza, 26/10/2026) : part des variables
+# renseignées des deux côtés qui sont égales, signalée au-delà de 90 % sur au moins 30
+# variables. Comparaison de toutes les paires : bornée en nombre de lignes.
+NEAR_DUP_THRESHOLD = 0.90
+NEAR_DUP_MIN_SHARED = 30
+NEAR_DUP_MAX_ROWS = 3000
 
 # Fonction qui traduit un masque ou un index de lignes en identifiants (au plus 20).
 RowIds = Callable[[Any], list]
@@ -180,42 +186,104 @@ def _same_profile_different_ids(df: pd.DataFrame, id_col: str | None,
             "examples": [{"row_ids": row_ids(g)} for g in groups[:MAX_EXAMPLES]]}
 
 
-def _copies(df: pd.DataFrame, id_col: str | None, row_ids: RowIds) -> dict[str, Any]:
-    """Lignes identiques sauf l'identifiant, et blocs de lignes consécutives recopiés."""
-    body = df.drop(columns=[id_col]) if id_col else df
-    filled = body.notna().sum(axis=1) >= MIN_FILLED_FOR_COPY
-    hashes = _row_hash(body)[filled]
-    hashes = hashes[hashes.duplicated(keep=False)]
+def _near_identical_pairs(body: pd.DataFrame) -> dict[str, Any]:
+    """Paires de lignes quasi identiques, par position (définition de Hamza : part des
+    variables renseignées des deux côtés qui sont égales).
 
-    identical: list[pd.Index] = []
-    pairs: set[tuple[int, int]] = set()
-    pos = {label: i for i, label in enumerate(df.index)}
-    for _, idx in hashes.groupby(hashes).groups.items():
-        if id_col and df.loc[idx, id_col].nunique(dropna=True) >= 2:
-            identical.append(idx)
-        p = sorted(pos[i] for i in idx)[:50]
-        pairs.update((a, b - a) for k, a in enumerate(p) for b in p[k + 1:])
+    Retourne aussi la ressemblance médiane entre deux lignes de la base : c'est le point
+    de comparaison qui montre qu'une paire à 95 % n'est pas une ressemblance ordinaire.
+    """
+    n = len(body)
+    if n < 2 or n > NEAR_DUP_MAX_ROWS or body.shape[1] < NEAR_DUP_MIN_SHARED:
+        return {"evaluated": False, "pairs": [], "median_similarity": None}
+    codes = np.column_stack([pd.factorize(body[c])[0] for c in body.columns])  # manquant = -1
+    filled = codes >= 0
+    pairs: list[tuple[int, int, float, int]] = []
+    all_sims: list[np.ndarray] = []
+    for i in range(n - 1):
+        both = filled[i + 1:] & filled[i]
+        shared = both.sum(axis=1)
+        equal = ((codes[i + 1:] == codes[i]) & both).sum(axis=1)
+        ok = shared >= NEAR_DUP_MIN_SHARED
+        sims = np.divide(equal, shared, out=np.zeros(len(shared)), where=ok)
+        all_sims.append(sims[ok])
+        for k in np.flatnonzero(ok & (sims >= NEAR_DUP_THRESHOLD)):
+            pairs.append((i, i + 1 + int(k), float(sims[k]), int(shared[k])))
+    flat = np.concatenate(all_sims) if all_sims else np.array([])
+    return {"evaluated": True, "pairs": pairs,
+            "median_similarity": round(float(np.median(flat)), 3) if len(flat) else None}
 
-    # Bloc = au moins 2 lignes consécutives qui reproduisent, avec le même décalage,
-    # une suite de lignes consécutives située plus haut.
+
+def _blocks(pair_sims: dict[tuple[int, int], float]) -> list[dict[str, Any]]:
+    """Bloc = au moins 2 lignes consécutives qui reproduisent, avec le même décalage,
+    une suite de lignes consécutives située plus haut. Clés : (position, décalage)."""
     blocks: list[dict[str, Any]] = []
-    for a, d in sorted(pairs):
-        if (a - 1, d) in pairs:
+    for a, d in sorted(pair_sims):
+        if (a - 1, d) in pair_sims:
             continue  # pas le début d'un bloc
         length = 1
-        while (a + length, d) in pairs:
+        while (a + length, d) in pair_sims:
             length += 1
         if length >= 2:
             blocks.append({"length": length,
                            "source_lines": [a + 1, a + length],
-                           "copy_lines": [a + d + 1, a + d + length]})
+                           "copy_lines": [a + d + 1, a + d + length],
+                           "min_similarity": round(min(pair_sims[(a + k, d)]
+                                                       for k in range(length)), 3)})
     blocks.sort(key=lambda b: b["length"], reverse=True)
+    return blocks[:MAX_EXAMPLES]
+
+
+def _copies(df: pd.DataFrame, id_col: str | None, row_ids: RowIds) -> dict[str, Any]:
+    """Lignes identiques ou quasi identiques sauf l'identifiant, et blocs de lignes
+    consécutives recopiés."""
+    body = df.drop(columns=[id_col]) if id_col else df
+    filled = body.notna().sum(axis=1) >= MIN_FILLED_FOR_COPY
+    all_hashes = _row_hash(body)
+    hashes = all_hashes[filled]
+    hashes = hashes[hashes.duplicated(keep=False)]
+
+    identical: list[pd.Index] = []
+    pair_sims: dict[tuple[int, int], float] = {}   # (position, décalage) → ressemblance
+    copy_rows: set[int] = set()                     # positions des lignes « copies »
+    pos = {label: i for i, label in enumerate(df.index)}
+    for _, idx in hashes.groupby(hashes).groups.items():
+        p = sorted(pos[i] for i in idx)
+        if id_col and df.loc[idx, id_col].nunique(dropna=True) >= 2:
+            identical.append(idx)
+            copy_rows.update(p[1:])
+        for k, a in enumerate(p[:50]):
+            for b in p[k + 1:50]:
+                pair_sims[(a, b - a)] = 1.0
+
+    near = _near_identical_pairs(body)
+    hash_values = all_hashes.to_numpy()
+    near_pairs = [(a, b, sim, shared) for a, b, sim, shared in near["pairs"]
+                  if hash_values[a] != hash_values[b]]   # copies exactes : déjà comptées
+    for a, b, sim, _ in near_pairs:
+        pair_sims.setdefault((a, b - a), sim)
+        copy_rows.add(b)
+    labels = df.index
     return {
         "identical_except_id": {"n_groups": len(identical),
                                 "n_rows": sum(len(g) for g in identical),
                                 "examples": [{"row_ids": row_ids(g)}
                                              for g in identical[:MAX_EXAMPLES]]},
-        "copied_blocks": blocks[:MAX_EXAMPLES],
+        "near_identical_rows": {
+            "evaluated": near["evaluated"],
+            "threshold": NEAR_DUP_THRESHOLD, "min_shared_variables": NEAR_DUP_MIN_SHARED,
+            "median_similarity": near["median_similarity"],
+            "n_pairs": len(near_pairs),
+            "examples": [{"row_ids": row_ids(pd.Index([labels[a], labels[b]])),
+                          "lines": [a + 1, b + 1], "similarity": round(sim, 3),
+                          "n_compared": shared}
+                         for a, b, sim, shared in sorted(near_pairs, key=lambda p: -p[2])
+                         [:MAX_EXAMPLES]],
+        },
+        "copied_blocks": _blocks(pair_sims),
+        # Lignes probablement recopiées d'une autre (identiques ou quasi identiques sauf
+        # l'identifiant) : elles rendent l'effectif réel incertain (score, domaine 1).
+        "n_suspect_copy_rows": len(copy_rows),
     }
 
 

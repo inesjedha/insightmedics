@@ -74,6 +74,8 @@ def _sheet_resume(wb: Workbook, prof: dict, score: dict, ai: dict | None) -> Non
          (s["duplicates"].get("id_conflicts") or {}).get("n_ids", 0)),
         ("Groupes de lignes identiques sauf l'identifiant",
          (s["duplicates"].get("identical_except_id") or {}).get("n_groups", 0)),
+        ("Paires de lignes quasi identiques (≥ 90 % des variables)",
+         (s["duplicates"].get("near_identical_rows") or {}).get("n_pairs", 0)),
         ("Groupes de doublons possibles (identifiants différents)",
          (s["duplicates"].get("same_profile_different_ids") or {}).get("n_groups", 0)),
         ("Lignes sans aucune donnée", (s.get("empty_rows") or {}).get("n", 0)),

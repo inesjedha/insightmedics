@@ -4,6 +4,7 @@ Même identifiant pour deux profils, lignes identiques sauf l'identifiant, blocs
 identifiants différents pour un même profil, lignes vides. Déterministe, sans API.
 """
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -80,7 +81,8 @@ def test_bloc_de_lignes_recopie():
     _copy_row(df, 1, 9)
     _copy_row(df, 2, 10)
     blocks = _dups(df)["copied_blocks"]
-    assert blocks == [{"length": 3, "source_lines": [1, 3], "copy_lines": [9, 11]}]
+    assert blocks == [{"length": 3, "source_lines": [1, 3], "copy_lines": [9, 11],
+                       "min_similarity": 1.0}]
 
 
 def test_une_seule_ligne_recopiee_nest_pas_un_bloc():
@@ -118,21 +120,88 @@ def test_lignes_vides_comptees_avec_leur_numero():
     assert s["empty_rows"] == {"n": 2, "lines": [N + 1, N + 2]}
 
 
-@pytest.mark.parametrize("mutate", ["conflict", "copy", "block"])
-def test_les_nouveaux_controles_ne_changent_pas_le_score(mutate):
-    """Les nouveaux champs informent le registre et le client ; la grille de score
-    calibrée sur les audits de Hamza n'en dépend pas."""
+def _wide(n_rows: int = 40, n_cols: int = 35) -> pd.DataFrame:
+    """Base large (≥ 30 variables) aux lignes toutes différentes."""
+    rng = np.random.default_rng(42)
+    data = {f"v{j}": rng.integers(0, 50, n_rows) for j in range(n_cols)}
+    return pd.DataFrame({"num_patient": [f"P{i}" for i in range(n_rows)], **data})
+
+
+def _near_copy(df: pd.DataFrame, src: int, dst: int, n_changed: int) -> None:
+    """Recopie `src` dans `dst` (hors identifiant) puis modifie `n_changed` variables."""
+    _copy_row(df, src, dst)
+    for j in range(n_changed):
+        df.loc[dst, f"v{j}"] = 1000 + j
+
+
+def test_lignes_quasi_identiques_signalees_avec_la_ressemblance_ordinaire():
+    df = _wide()
+    _near_copy(df, 3, 30, n_changed=2)        # 33/35 = 94 %
+    near = _dups(df)["near_identical_rows"]
+    assert near["evaluated"] and near["n_pairs"] == 1
+    ex = near["examples"][0]
+    assert ex["row_ids"] == ["P3", "P30"] and ex["lines"] == [4, 31]
+    assert ex["similarity"] == pytest.approx(33 / 35, abs=1e-3) and ex["n_compared"] == 35
+    assert near["median_similarity"] < 0.2      # deux lignes au hasard se ressemblent peu
+
+
+def test_ressemblance_sous_le_seuil_non_signalee():
+    df = _wide()
+    _near_copy(df, 3, 30, n_changed=6)        # 29/35 = 83 %
+    assert _dups(df)["near_identical_rows"]["n_pairs"] == 0
+
+
+def test_bloc_de_lignes_quasi_recopie():
+    """Cas Amine : des lignes consécutives reproduisent un bloc plus haut à 90-97 %."""
+    df = _wide()
+    for k in range(4):
+        _near_copy(df, 10 + k, 30 + k, n_changed=1)
+    d = _dups(df)
+    assert d["copied_blocks"][0]["length"] == 4
+    assert d["copied_blocks"][0]["source_lines"] == [11, 14]
+    assert d["copied_blocks"][0]["copy_lines"] == [31, 34]
+    assert d["copied_blocks"][0]["min_similarity"] == pytest.approx(34 / 35, abs=1e-3)
+    assert d["n_suspect_copy_rows"] == 4
+
+
+def test_quasi_identiques_non_evalue_sous_30_variables():
+    near = _dups(_base())["near_identical_rows"]
+    assert near["evaluated"] is False and near["n_pairs"] == 0
+
+
+def test_copie_exacte_pas_comptee_deux_fois():
+    df = _wide()
+    _copy_row(df, 3, 30)
+    d = _dups(df)
+    assert d["identical_except_id"]["n_groups"] == 1
+    assert d["near_identical_rows"]["n_pairs"] == 0
+    assert d["n_suspect_copy_rows"] == 1
+
+
+def _without_new_fields(p: dict) -> dict:
+    dups = p["structure"]["duplicates"]
+    return {**p, "structure": {**p["structure"], "empty_rows": None,
+                               "duplicates": {k: dups[k] for k in
+                                              ("exact_rows", "duplicate_ids", "example_row_ids")}}}
+
+
+@pytest.mark.parametrize("mutate", ["conflict", "same_profile"])
+def test_conflits_et_doublons_possibles_ne_changent_pas_le_score(mutate):
+    """Un doublon seulement possible (à vérifier au dossier) n'enlève pas de points ;
+    un identifiant répété était déjà compté avant ces contrôles."""
     df = _base()
     if mutate == "conflict":
         df.loc[3, "num_patient"] = "P1"
-    elif mutate == "copy":
-        _copy_row(df, 4, 5)
     else:
-        _copy_row(df, 0, 8)
-        _copy_row(df, 1, 9)
+        cols = ["sexe", "date_naissance", "date_admission"]
+        df.loc[11, cols] = df.loc[10, cols].to_numpy()
     p = profile(df, {"file_name": "t.csv", "format": "csv"})
-    stripped = {**p, "structure": {**p["structure"], "empty_rows": None,
-                                   "duplicates": {k: p["structure"]["duplicates"][k]
-                                                  for k in ("exact_rows", "duplicate_ids",
-                                                            "example_row_ids")}}}
-    assert compute_score(p)["score_final"] == compute_score(stripped)["score_final"]
+    assert compute_score(p)["score_final"] == compute_score(_without_new_fields(p))["score_final"]
+
+
+def test_lignes_recopiees_font_perdre_des_points():
+    df = _wide()
+    for k in range(4):
+        _near_copy(df, 10 + k, 30 + k, n_changed=1)
+    p = profile(df, {"file_name": "t.csv", "format": "csv"})
+    assert compute_score(p)["score_final"] < compute_score(_without_new_fields(p))["score_final"]
