@@ -150,7 +150,7 @@ export function SuccessState({ onReset }: { onReset: () => void }) {
   const steps = [
     "Nous vous appelons sous 48 h ouvrées pour comprendre votre projet.",
     "Nous fixons ensemble le travail à faire, le délai et le prix.",
-    "Nous démarrons dès votre accord. Vous payez à la livraison.",
+    "Nous démarrons dès votre accord et le règlement.",
   ];
   return (
     <div role="status" className="flex flex-col items-start gap-5">

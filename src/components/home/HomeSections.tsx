@@ -55,7 +55,7 @@ export function Hero() {
             </Button>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Gratuit et sans inscription · Paiement à la livraison, sans acompte
+            Test gratuit et sans inscription · Prix fixé avant de commencer
           </p>
         </div>
 
@@ -406,7 +406,7 @@ export function ServicesTeaser() {
       <ul className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-[15px] text-muted-foreground">
         <li className="flex items-center gap-2">
           <Check className="h-4 w-4 text-brand" aria-hidden />
-          Paiement à la livraison, sans acompte
+          Prix fixé avant de commencer
         </li>
         <li className="flex items-center gap-2">
           <Check className="h-4 w-4 text-brand" aria-hidden />

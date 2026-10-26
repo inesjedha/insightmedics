@@ -32,7 +32,7 @@ export const FAQ: FaqItem[] = [
   },
   {
     question: "Quand est-ce que je paie ?",
-    answer: `Les formules se paient à la livraison, sans acompte. Le test de votre base est gratuit. L'audit complet (${FULL_AUDIT_PRICE_LABEL}) se règle après un appel avec nous, avant son lancement.`,
+    answer: `Au lancement du travail, au prix convenu lors de notre appel. Le test de votre base est gratuit. L'audit complet (${FULL_AUDIT_PRICE_LABEL}) se règle après un appel avec nous, avant son lancement.`,
   },
   {
     question: "Vais-je comprendre ce qui a été fait ?",

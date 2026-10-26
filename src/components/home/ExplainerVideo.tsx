@@ -57,7 +57,7 @@ const SCENES: Scene[] = [
   },
   {
     title: "Vous soutenez sereinement.",
-    note: frTypo(`dès ${LOWEST_PRICE_LABEL} · payé à la livraison`),
+    note: frTypo(`dès ${LOWEST_PRICE_LABEL} · prix fixé dès le départ`),
     duration: 5000,
     render: () => <EndScene />,
   },

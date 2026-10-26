@@ -48,7 +48,7 @@ function ServicesPage() {
         <SectionHeader
           eyebrow="Formules"
           title="Trois formules, selon ce qui vous manque."
-          description="Toutes payées à la livraison, sans acompte."
+          description="Le prix est fixé avec vous avant de commencer."
         />
         <div className={`mt-10 ${OFFER_GRID}`}>
           {OFFERS.map((o) => (

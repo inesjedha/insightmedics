@@ -14,8 +14,8 @@ const STEPS = [
     text: "Pour cadrer ensemble le travail, le délai et le prix.",
   },
   {
-    title: "On livre, vous payez",
-    text: "Paiement à la livraison, sans acompte. Allers-retours de relecture inclus.",
+    title: "Vous réglez, on démarre",
+    text: "Paiement au lancement, au prix convenu. Allers-retours de relecture inclus jusqu'à la livraison.",
   },
 ];
 

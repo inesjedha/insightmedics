@@ -13,12 +13,12 @@ export const Route = createFileRoute("/cgv")({
       {
         name: "description",
         content:
-          "Conditions générales de vente d'Insight Medics : offres, tarifs en DT, modalités de paiement à la livraison, révisions, propriété des livrables.",
+          "Conditions générales de vente d'Insight Medics : offres, tarifs en DT, modalités de paiement, révisions, propriété des livrables.",
       },
       { property: "og:title", content: "CGV — Insight Medics" },
       {
         property: "og:description",
-        content: "Tarifs en dinars tunisiens, paiement à la livraison, délais et révisions.",
+        content: "Tarifs en dinars tunisiens, paiement, délais et révisions.",
       },
     ],
   }),
@@ -99,9 +99,9 @@ function CgvPage() {
 
           <LegalBlock title="5. Paiement">
             <p>
-              Aucun acompte n'est demandé pour les formules ci-dessus : le règlement intervient à la
-              livraison du livrable validé, par virement bancaire ou tout moyen convenu d'un commun
-              accord. L'audit complet se règle après un échange avec nous, avant son lancement.
+              Le règlement des formules intervient au lancement de la prestation, au prix convenu
+              lors de l'échange préalable, par virement bancaire ou tout moyen convenu d'un commun
+              accord. L'audit complet se règle de la même façon, avant son lancement.
             </p>
           </LegalBlock>
 
