@@ -12,7 +12,7 @@ jamais par l'IA. Code : `backend/app/pipeline/llm_client.py`.
 | `ANTHROPIC_API_KEY`   | (vide)            | Clé API. Vide = audit IA sauté (dev, tests). Jamais versionnée.       |
 | `LLM_MODEL`           | `claude-opus-5-5` | Modèle. Identifiant fixe, sans suffixe de date.                       |
 | `LLM_EFFORT`          | `xhigh`           | Profondeur de raisonnement : `low`, `medium`, `high`, `xhigh`, `max`. |
-| `LLM_MAX_TOKENS`      | `64000`           | Plafond de sortie par appel (réflexion + réponse).                    |
+| `LLM_MAX_TOKENS`      | `128000`          | Plafond de sortie par appel (réflexion + réponse).                    |
 | `LLM_TIMEOUT_SECONDS` | `1200`            | Inactivité max entre deux lectures du flux (pas une durée totale).    |
 | `LLM_MAX_RETRIES`     | `4`               | Relances du SDK avant le début de la réponse (réseau, 429, 5xx).      |
 
@@ -22,7 +22,8 @@ jamais par l'IA. Code : `backend/app/pipeline/llm_client.py`.
    `output_config.effort` est le seul réglage de profondeur et de coût. `temperature`,
    `top_p`, `top_k` et tout bloc `thinking` sont refusés (erreur 400) : on n'en envoie pas.
 2. **`max_tokens` généreux.** Il couvre la réflexion _et_ le JSON. Trop bas, la réponse est
-   tronquée au milieu de l'objet : la doc recommande au moins 64k aux niveaux `xhigh`/`max`.
+   tronquée au milieu de l'objet : la doc recommande au moins 64k aux niveaux `xhigh`/`max`,
+   et 64k n'ont pas suffi pour une base de 71 variables : on prend le maximum d'Opus 5.5 (128k).
    Une réponse tronquée (`stop_reason: max_tokens`) est une erreur explicite.
 3. **Streaming et erreurs passagères.** Le streaming est obligatoire dans le SDK au-delà
    d'environ 21k jetons de sortie. Le SDK retente seul les erreurs qui surviennent avant

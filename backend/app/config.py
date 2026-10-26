@@ -27,9 +27,11 @@ class Settings(BaseSettings):
     # Profondeur de raisonnement : low | medium | high | xhigh | max (seul réglage de la
     # réflexion sur Opus 5.5, toujours active). Plus haut = plus fin, plus lent, plus cher.
     llm_effort: Literal["low", "medium", "high", "xhigh", "max"] = "xhigh"
-    # Plafond de sortie par appel : couvre la réflexion ET la réponse JSON. La doc conseille
-    # au moins 64k aux niveaux xhigh/max, sinon la réponse risque d'être tronquée.
-    llm_max_tokens: int = 64000
+    # Plafond de sortie par appel : couvre la réflexion ET la réponse JSON. On prend le
+    # maximum d'Opus 5.5 (128k) : à l'effort xhigh, 64k ne suffisaient pas pour une base de
+    # 71 variables (dictionnaire tronqué, audit du 27/10/2026). Seuls les jetons réellement
+    # produits sont facturés : le plafond ne coûte rien tant qu'il n'est pas atteint.
+    llm_max_tokens: int = 128000
     # Délai d'inactivité max entre deux lectures du flux (secondes) ; nombre de relances
     # automatiques du SDK pour les erreurs passagères avant le début de la réponse.
     llm_timeout_seconds: float = 1200
