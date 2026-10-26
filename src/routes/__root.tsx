@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { siteConfig } from "@/lib/site-config";
 
 import appCss from "../styles.css?url";
 
@@ -91,8 +92,23 @@ export const Route = createRootRoute({
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "fr_FR" },
       { name: "twitter:card", content: "summary_large_image" },
+      // Image d'aperçu des partages (Facebook, WhatsApp, LinkedIn) : URL absolue exigée.
+      { property: "og:image", content: `${siteConfig.url}/og-image.jpg` },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      {
+        property: "og:image:alt",
+        content: "Insight Medics — Votre thèse de médecine, des statistiques à la soutenance.",
+      },
+      { name: "twitter:image", content: `${siteConfig.url}/og-image.jpg` },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/site.webmanifest" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
