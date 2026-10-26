@@ -3,6 +3,7 @@ import { ArrowRight, Check, ChevronLeft, ChevronRight, ShieldCheck, X } from "lu
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ExplainerVideo } from "@/components/home/ExplainerVideo";
+import { FilmButton } from "@/components/home/FilmButton";
 import { FinalCTA } from "@/components/site/FinalCTA";
 import { OFFER_GRID, OfferCard } from "@/components/site/OfferCard";
 import { TestBanner } from "@/components/site/TestBanner";
@@ -61,6 +62,7 @@ export function Hero() {
 
         <div className="mx-auto w-full max-w-[440px] lg:mr-1.5 lg:max-w-none">
           <ExplainerVideo />
+          <FilmButton />
         </div>
       </div>
     </section>
