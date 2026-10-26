@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Check, Mail, MessageCircle, Phone, Save } from "lucide-react";
 import { getLead, updateLead } from "@/lib/api/client";
 import type { Lead, LeadStatus, LeadUpdate } from "@/lib/api/types";
 import { LEAD_STATUS_LABELS } from "@/lib/leads";
@@ -30,6 +30,7 @@ function LeadDetail() {
   const [lead, setLead] = useState<Lead | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     getLead(id)
@@ -46,6 +47,8 @@ function LeadDetail() {
     setError(null);
     try {
       setLead(await updateLead(lead.id, update));
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 2500);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Échec de l'enregistrement");
     } finally {
@@ -85,7 +88,7 @@ function LeadDetail() {
 
       <div className="rounded-md border border-border bg-card p-6">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-3xl">{lead.name || "Lead sans nom"}</h1>
+          <h1 className="font-display text-4xl">{lead.name || "Prospect sans nom"}</h1>
           <Badge variant="outline" className="border-border">
             {lead.source === "audit" ? "Audit" : "Contact"}
           </Badge>
@@ -119,6 +122,33 @@ function LeadDetail() {
             />
           )}
         </dl>
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
+          {lead.phone && (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <a href={`tel:${lead.phone.replace(/\s/g, "")}`}>
+                  <Phone className="mr-2 h-4 w-4" aria-hidden /> Appeler
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <a
+                  href={`https://wa.me/${lead.phone.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" aria-hidden /> WhatsApp
+                </a>
+              </Button>
+            </>
+          )}
+          {lead.email && (
+            <Button asChild variant="outline" size="sm">
+              <a href={`mailto:${lead.email}`}>
+                <Mail className="mr-2 h-4 w-4" aria-hidden /> E-mail
+              </a>
+            </Button>
+          )}
+        </div>
       </div>
 
       <form onSubmit={onSave} className="rounded-md border border-border bg-card p-6 space-y-5">
@@ -161,6 +191,11 @@ function LeadDetail() {
         </div>
         <div className="flex items-center justify-end gap-3">
           {error && <p className="text-sm text-destructive">{error}</p>}
+          {saved && !error && (
+            <p className="inline-flex items-center gap-1 text-sm text-brand" role="status">
+              <Check className="h-4 w-4" aria-hidden /> Enregistré
+            </p>
+          )}
           <Button
             type="submit"
             disabled={saving}

@@ -22,10 +22,10 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAuditsRouteImport } from './routes/admin.audits'
-import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as GuidesIndexRouteImport } from './routes/guides.index'
 import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
 import { Route as RTokenRouteImport } from './routes/r.$token'
+import { Route as AdminLeadsIndexRouteImport } from './routes/admin.leads.index'
 import { Route as AdminLeadsIdRouteImport } from './routes/admin.leads.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -93,11 +93,6 @@ const AdminAuditsRoute = AdminAuditsRouteImport.update({
   path: '/audits',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminLeadsRoute = AdminLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => AdminRoute,
-} as any)
 const GuidesIndexRoute = GuidesIndexRouteImport.update({
   id: '/guides/',
   path: '/guides/',
@@ -113,10 +108,15 @@ const RTokenRoute = RTokenRouteImport.update({
   path: '/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLeadsIndexRoute = AdminLeadsIndexRouteImport.update({
+  id: '/leads/',
+  path: '/leads/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLeadsIdRoute = AdminLeadsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminLeadsRoute,
+  id: '/leads/$id',
+  path: '/leads/$id',
+  getParentRoute: () => AdminRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -132,12 +132,12 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/tarifs': typeof TarifsRoute
   '/admin/audits': typeof AdminAuditsRoute
-  '/admin/leads': typeof AdminLeadsRouteWithChildren
   '/guides/$slug': typeof GuidesSlugRoute
   '/r/$token': typeof RTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/admin/leads/$id': typeof AdminLeadsIdRoute
+  '/admin/leads/': typeof AdminLeadsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -151,12 +151,12 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/tarifs': typeof TarifsRoute
   '/admin/audits': typeof AdminAuditsRoute
-  '/admin/leads': typeof AdminLeadsRouteWithChildren
   '/guides/$slug': typeof GuidesSlugRoute
   '/r/$token': typeof RTokenRoute
   '/admin': typeof AdminIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/admin/leads/$id': typeof AdminLeadsIdRoute
+  '/admin/leads': typeof AdminLeadsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -172,12 +172,12 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/tarifs': typeof TarifsRoute
   '/admin/audits': typeof AdminAuditsRoute
-  '/admin/leads': typeof AdminLeadsRouteWithChildren
   '/guides/$slug': typeof GuidesSlugRoute
   '/r/$token': typeof RTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/admin/leads/$id': typeof AdminLeadsIdRoute
+  '/admin/leads/': typeof AdminLeadsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -194,12 +194,12 @@ export interface FileRouteTypes {
     | '/services'
     | '/tarifs'
     | '/admin/audits'
-    | '/admin/leads'
     | '/guides/$slug'
     | '/r/$token'
     | '/admin/'
     | '/guides/'
     | '/admin/leads/$id'
+    | '/admin/leads/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -213,12 +213,12 @@ export interface FileRouteTypes {
     | '/services'
     | '/tarifs'
     | '/admin/audits'
-    | '/admin/leads'
     | '/guides/$slug'
     | '/r/$token'
     | '/admin'
     | '/guides'
     | '/admin/leads/$id'
+    | '/admin/leads'
   id:
     | '__root__'
     | '/'
@@ -233,12 +233,12 @@ export interface FileRouteTypes {
     | '/services'
     | '/tarifs'
     | '/admin/audits'
-    | '/admin/leads'
     | '/guides/$slug'
     | '/r/$token'
     | '/admin/'
     | '/guides/'
     | '/admin/leads/$id'
+    | '/admin/leads/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -351,13 +351,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/leads': {
-      id: '/admin/leads'
-      path: '/leads'
-      fullPath: '/admin/leads'
-      preLoaderRoute: typeof AdminLeadsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/guides/': {
       id: '/guides/'
       path: '/guides'
@@ -379,38 +372,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/leads/': {
+      id: '/admin/leads/'
+      path: '/leads'
+      fullPath: '/admin/leads/'
+      preLoaderRoute: typeof AdminLeadsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/leads/$id': {
       id: '/admin/leads/$id'
-      path: '/$id'
+      path: '/leads/$id'
       fullPath: '/admin/leads/$id'
       preLoaderRoute: typeof AdminLeadsIdRouteImport
-      parentRoute: typeof AdminLeadsRoute
+      parentRoute: typeof AdminRoute
     }
   }
 }
 
-interface AdminLeadsRouteChildren {
-  AdminLeadsIdRoute: typeof AdminLeadsIdRoute
-}
-
-const AdminLeadsRouteChildren: AdminLeadsRouteChildren = {
-  AdminLeadsIdRoute: AdminLeadsIdRoute,
-}
-
-const AdminLeadsRouteWithChildren = AdminLeadsRoute._addFileChildren(
-  AdminLeadsRouteChildren,
-)
-
 interface AdminRouteChildren {
   AdminAuditsRoute: typeof AdminAuditsRoute
-  AdminLeadsRoute: typeof AdminLeadsRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminLeadsIdRoute: typeof AdminLeadsIdRoute
+  AdminLeadsIndexRoute: typeof AdminLeadsIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditsRoute: AdminAuditsRoute,
-  AdminLeadsRoute: AdminLeadsRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
+  AdminLeadsIdRoute: AdminLeadsIdRoute,
+  AdminLeadsIndexRoute: AdminLeadsIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

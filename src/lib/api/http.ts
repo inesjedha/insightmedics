@@ -42,6 +42,13 @@ export function setAdminKey(key: string): void {
   window.localStorage.setItem(ADMIN_KEY_STORAGE, key.trim());
 }
 
+export function clearAdminKey(): void {
+  window.localStorage.removeItem(ADMIN_KEY_STORAGE);
+}
+
+/** Émis quand l'API refuse la clé admin : l'espace admin repasse sur l'écran de connexion. */
+export const ADMIN_UNAUTHORIZED_EVENT = "im:admin-unauthorized";
+
 // --- Requêtes ---
 
 interface RequestOptions {
@@ -75,8 +82,19 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     payload = JSON.stringify(body);
   }
 
-  const res = await fetch(apiUrl(path), { method, headers, body: payload });
-  if (res.status === 401) throw new UnauthorizedError();
+  let res: Response;
+  try {
+    res = await fetch(apiUrl(path), { method, headers, body: payload });
+  } catch {
+    // Réseau coupé, serveur injoignable ou appel refusé par le navigateur (CORS).
+    throw new ApiError(0, "Serveur injoignable. Vérifiez votre connexion puis réessayez.");
+  }
+  if (res.status === 401) {
+    if (admin && typeof window !== "undefined") {
+      window.dispatchEvent(new Event(ADMIN_UNAUTHORIZED_EVENT));
+    }
+    throw new UnauthorizedError();
+  }
   if (!res.ok) throw new ApiError(res.status, await errorDetail(res));
   return (await res.json()) as T;
 }
