@@ -65,3 +65,28 @@ def test_build_user_message_ne_contient_pas_toute_la_base():
     ai_audit = {"study": None, "dictionary": [], "violations": None, "derived_variables": []}
     msg = build_user_message(profiling, ai_audit)
     assert "FAITS D'AUDIT" in msg and "structure" in msg
+
+
+def _decision(q, priority):
+    return {"question_fr": q, "priority": priority}
+
+
+def test_priorite_mal_orthographiee_ramenee_a_l_enum():
+    from app.pipeline.llm2 import ClientDecision
+    assert ClientDecision(question_fr="q", priority="Avant toute analyse").priority == "avant_analyse"
+    assert ClientDecision(question_fr="q", priority="optionnelle").priority == "facultative"
+    assert ClientDecision(question_fr="q", priority="n'importe quoi").priority == "importante"
+    assert ClientDecision(question_fr="q").priority == "importante"
+
+
+def test_questions_triees_par_priorite_et_limitees_a_dix():
+    from app.pipeline.llm2 import MAX_CLIENT_DECISIONS, prioritize_decisions
+    raw = ([_decision(f"fac{i}", "facultative") for i in range(4)]
+           + [_decision(f"imp{i}", "importante") for i in range(5)]
+           + [_decision(f"avant{i}", "avant_analyse") for i in range(3)])
+    out = Llm2Output.model_validate({**VALID, "client_decisions": raw})
+    kept, n_cut = prioritize_decisions(out.client_decisions)
+    assert len(kept) == MAX_CLIENT_DECISIONS == 10 and n_cut == 2
+    assert [d.question_fr for d in kept[:3]] == ["avant0", "avant1", "avant2"]
+    assert [d.question_fr for d in kept[3:8]] == [f"imp{i}" for i in range(5)]
+    assert [d.question_fr for d in kept[8:]] == ["fac0", "fac1"]  # les 2 dernières écartées

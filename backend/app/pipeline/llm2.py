@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from .llm_client import call_and_validate
 
@@ -55,6 +55,13 @@ class ScoringInputs(BaseModel):
     major_errors_on_primary_endpoint: bool | None = None
 
 
+Priority = Literal["avant_analyse", "importante", "facultative"]
+PRIORITY_ORDER: dict[str, int] = {"avant_analyse": 0, "importante": 1, "facultative": 2}
+PRIORITY_LABELS: dict[str, str] = {"avant_analyse": "Avant toute analyse",
+                                   "importante": "Importante", "facultative": "Facultative"}
+MAX_CLIENT_DECISIONS = 10  # prompt d'audit v2 de Hamza (25/10/2026) : dix questions au plus
+
+
 class ClientDecision(BaseModel):
     question_fr: str
     column: str | None = None
@@ -62,6 +69,26 @@ class ClientDecision(BaseModel):
     options: list[str] = []
     consequence_fr: str = ""
     recommendation_fr: str = ""
+    priority: Priority = "importante"
+
+    @field_validator("priority", mode="before")
+    @classmethod
+    def _normalize_priority(cls, v: object) -> str:
+        """Une priorité mal orthographiée par le modèle ne doit pas faire échouer tout
+        l'audit : on la ramène à l'enum, « importante » par défaut."""
+        key = str(v or "").strip().lower().replace(" ", "_").replace("-", "_")
+        if key.startswith("avant") or key in {"bloquante", "critique"}:
+            return "avant_analyse"
+        if key in {"facultative", "optionnelle", "mineure"}:
+            return "facultative"
+        return "importante"
+
+
+def prioritize_decisions(decisions: list[ClientDecision]) -> tuple[list[ClientDecision], int]:
+    """Trie par priorité (ordre du modèle conservé à priorité égale) et garde les
+    MAX_CLIENT_DECISIONS premières. Retourne (liste, nombre de questions écartées)."""
+    ranked = sorted(decisions, key=lambda d: PRIORITY_ORDER[d.priority])
+    return ranked[:MAX_CLIENT_DECISIONS], max(0, len(ranked) - MAX_CLIENT_DECISIONS)
 
 
 class CleaningOp(BaseModel):
@@ -145,11 +172,15 @@ def run_llm2(profiling: dict, ai_audit: dict) -> tuple[Llm2Output | None, list[s
         before = len(out.cleaning_plan)
         out.cleaning_plan = [op for op in out.cleaning_plan if op.operation in CLEANING_OPS]
         dropped = before - len(out.cleaning_plan)
+        out.client_decisions, n_cut = prioritize_decisions(out.client_decisions)
         n_crit = sum(1 for f in out.findings if f.severity == "critique")
         extra = [f"{len(out.findings)} anomalie(s) classée(s) dont {n_crit} critique(s), "
                  f"verdict niveau {out.exploitability_verdict.level if out.exploitability_verdict else '?'}"]
         if dropped:
             extra.append(f"{dropped} opération(s) de nettoyage hors enum rejetée(s)")
+        if n_cut:
+            extra.append(f"{n_cut} question(s) client au-delà de {MAX_CLIENT_DECISIONS} écartée(s) "
+                         "(les moins prioritaires)")
         return out, extra
 
     out, notes = call_and_validate(system, user, Llm2Output, post=_post)

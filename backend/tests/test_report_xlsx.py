@@ -113,3 +113,16 @@ def test_classeur_sans_audit_ia_reste_coherent():
     assert wb.sheetnames == EXPECTED_SHEETS
     # Le registre indique que l'audit IA est requis
     assert "IA" in (wb["Registre anomalies"]["A2"].value or "")
+
+
+def test_decisions_affichent_la_priorite():
+    prof = _profiling_min()
+    score = compute_score(CLEAN, FULL_SI)
+    ai = {**SYNTH_AI, "assessment": {**SYNTH_AI["assessment"], "client_decisions": [
+        {"question_fr": "Deux patients ou un seul sous le n° 12 ?", "priority": "avant_analyse"}]}}
+    ws = load_workbook(io.BytesIO(build_workbook(prof, score, ai)))["Décisions à valider"]
+    assert ws["A1"].value == "priorité"
+    assert ws["A2"].value == "Avant toute analyse"
+    # ancien audit sans priorité : affiché « Importante »
+    ws_old = load_workbook(io.BytesIO(build_workbook(prof, score, SYNTH_AI)))["Décisions à valider"]
+    assert ws_old["A2"].value == "Importante"

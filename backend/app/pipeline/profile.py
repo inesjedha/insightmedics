@@ -8,6 +8,7 @@ Aucune modification des données : tout est calculé sur des copies.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -26,8 +27,18 @@ PII_NAME_RE = {
     "national_id": re.compile(r"\b(cin|cnss|passeport)\b", re.I),
     "birth_date": re.compile(r"\b(date.{0,3}naissance|ddn)\b", re.I),
 }
+SEX_NAME_RE = re.compile(r"(?:^|_)(sexe?|genre|gender)(?:_|$)", re.I)
 PHONE_CONTENT_RE = re.compile(r"^\+?\d[\d\s.-]{7,14}$")
 EMAIL_CONTENT_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[a-z]{2,}$", re.I)
+
+# Doublons avancés (phase 2 du prompt d'audit v2) : une ligne doit porter au moins ce
+# nombre de valeurs hors identifiant pour être comparée, sinon deux lignes presque vides
+# passeraient pour des copies.
+MIN_FILLED_FOR_COPY = 5
+MAX_EXAMPLES = 10
+
+# Fonction qui traduit un masque ou un index de lignes en identifiants (au plus 20).
+RowIds = Callable[[Any], list]
 
 
 def _py(v: Any) -> Any:
@@ -113,6 +124,101 @@ def _numeric_flags(s: pd.Series) -> list[str]:
     return flags
 
 
+def _row_hash(frame: pd.DataFrame) -> pd.Series:
+    """Empreinte de chaque ligne (valeurs manquantes comprises), pour comparer des lignes."""
+    as_text = frame.astype(object).where(frame.notna(), "__na__").astype(str)
+    return pd.util.hash_pandas_object(as_text, index=False)
+
+
+def _id_conflicts(df: pd.DataFrame, id_col: str) -> dict[str, Any]:
+    """Identifiants répétés : lignes identiques (vrai doublon) ou profils différents
+    (probablement deux patients sous un même numéro)."""
+    repeated = df[df[id_col].notna() & df[id_col].duplicated(keep=False)]
+    n_identical, n_conflicts = 0, 0
+    examples: list[dict[str, Any]] = []
+    for id_value, group in repeated.groupby(id_col, sort=False):
+        others = group.drop(columns=[id_col])
+        differing = [str(c) for c in others.columns if others[c].nunique(dropna=False) > 1]
+        if not differing:
+            n_identical += 1
+            continue
+        n_conflicts += 1
+        if len(examples) < MAX_EXAMPLES:
+            examples.append({"id": _py(id_value), "n_rows": len(group),
+                             "n_differing_columns": len(differing),
+                             "differing_columns": differing[:8]})
+    return {"id_conflicts": {"n_ids": n_conflicts, "examples": examples},
+            "same_id_identical_rows": n_identical}
+
+
+def _same_profile_different_ids(df: pd.DataFrame, id_col: str | None,
+                                row_ids: RowIds) -> dict[str, Any]:
+    """Identifiants différents mais même date de naissance, même sexe et mêmes dates :
+    doublon possible, à vérifier au dossier. Non évaluable sans date de naissance ni au
+    moins deux autres dates."""
+    dob = [c for c in df.columns if PII_NAME_RE["birth_date"].search(str(c))][:1]
+    sex = [c for c in df.columns if SEX_NAME_RE.search(str(c))][:1]
+    dates = [c for c in df.columns
+             if pd.api.types.is_datetime64_any_dtype(df[c]) and c not in dob]
+    if not dob and len(dates) < 2:
+        return {"key_columns": [], "n_groups": 0, "n_rows": 0, "examples": []}
+    key = dob + sex + dates
+    usable = df[dob[0]].notna() if dob else df[dates].notna().sum(axis=1) >= 2
+    hashes = _row_hash(df[key])[usable]
+    body = df.drop(columns=[id_col]) if id_col else df
+    groups = []
+    for _, idx in hashes.groupby(hashes).groups.items():
+        if len(idx) < 2:
+            continue
+        if id_col and df.loc[idx, id_col].nunique(dropna=True) < 2:
+            continue  # même identifiant : déjà couvert par id_conflicts
+        if body.loc[idx].duplicated(keep=False).all():
+            continue  # lignes identiques (hors identifiant) : déjà couvertes par _copies
+        groups.append(idx)
+    return {"key_columns": [str(c) for c in key], "n_groups": len(groups),
+            "n_rows": sum(len(g) for g in groups),
+            "examples": [{"row_ids": row_ids(g)} for g in groups[:MAX_EXAMPLES]]}
+
+
+def _copies(df: pd.DataFrame, id_col: str | None, row_ids: RowIds) -> dict[str, Any]:
+    """Lignes identiques sauf l'identifiant, et blocs de lignes consécutives recopiés."""
+    body = df.drop(columns=[id_col]) if id_col else df
+    filled = body.notna().sum(axis=1) >= MIN_FILLED_FOR_COPY
+    hashes = _row_hash(body)[filled]
+    hashes = hashes[hashes.duplicated(keep=False)]
+
+    identical: list[pd.Index] = []
+    pairs: set[tuple[int, int]] = set()
+    pos = {label: i for i, label in enumerate(df.index)}
+    for _, idx in hashes.groupby(hashes).groups.items():
+        if id_col and df.loc[idx, id_col].nunique(dropna=True) >= 2:
+            identical.append(idx)
+        p = sorted(pos[i] for i in idx)[:50]
+        pairs.update((a, b - a) for k, a in enumerate(p) for b in p[k + 1:])
+
+    # Bloc = au moins 2 lignes consécutives qui reproduisent, avec le même décalage,
+    # une suite de lignes consécutives située plus haut.
+    blocks: list[dict[str, Any]] = []
+    for a, d in sorted(pairs):
+        if (a - 1, d) in pairs:
+            continue  # pas le début d'un bloc
+        length = 1
+        while (a + length, d) in pairs:
+            length += 1
+        if length >= 2:
+            blocks.append({"length": length,
+                           "source_lines": [a + 1, a + length],
+                           "copy_lines": [a + d + 1, a + d + length]})
+    blocks.sort(key=lambda b: b["length"], reverse=True)
+    return {
+        "identical_except_id": {"n_groups": len(identical),
+                                "n_rows": sum(len(g) for g in identical),
+                                "examples": [{"row_ids": row_ids(g)}
+                                             for g in identical[:MAX_EXAMPLES]]},
+        "copied_blocks": blocks[:MAX_EXAMPLES],
+    }
+
+
 def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
     n_rows, n_cols = len(df), len(df.columns)
     labels = meta.get("spss_column_labels", {})
@@ -152,6 +258,16 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
             groups.setdefault(key, []).append(str(c))
         duplicated_columns = [g for g in groups.values() if len(g) >= 2]
 
+    # Lignes vides (aucune valeur hors identifiant), fréquentes en fin de .sav ou d'Excel.
+    body = df.drop(columns=[id_col]) if id_col else df
+    empty_row_pos = [i + 1 for i, empty in enumerate(body.isna().all(axis=1)) if empty]
+
+    advanced_dups: dict[str, Any] = {}
+    if id_col:
+        advanced_dups.update(_id_conflicts(df, id_col))
+    advanced_dups["same_profile_different_ids"] = _same_profile_different_ids(df, id_col, row_ids)
+    advanced_dups.update(_copies(df, id_col, row_ids))
+
     structure = {
         "n_rows": n_rows,
         "n_cols": n_cols,
@@ -161,7 +277,9 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
             "exact_rows": int(df.duplicated().sum()),
             "duplicate_ids": dup_ids,
             "example_row_ids": row_ids(exact_dup_mask),
+            **advanced_dups,
         },
+        "empty_rows": {"n": len(empty_row_pos), "lines": empty_row_pos[:20]},
         "empty_columns": empty_cols,
         "constant_columns": constant_cols,
         "near_constant_columns": near_constant,

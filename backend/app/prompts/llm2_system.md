@@ -39,6 +39,23 @@ Pour chaque anomalie : gravité (critique|majeure|moderee|mineure), niveau de ce
 observée, règle/borne violée, titre et explication EN FRANÇAIS, correction proposée
 (sans l'appliquer), et si une vérification au dossier source est nécessaire.
 
+DOUBLONS ET COPIES (champs structure.duplicates et structure.empty_rows des entrées).
+Ne fusionnez ni ne supprimez rien : chaque cas est présenté côte à côte et tranché par le
+client.
+- id_conflicts : un même identifiant porté par des lignes aux profils différents, donc
+  probablement deux patients sous un même numéro → classe B, gravité critique (l'effectif
+  réel en dépend), certitude probable, vérification au dossier source.
+- identical_except_id et copied_blocks : lignes identiques sauf l'identifiant, ou suite de
+  lignes consécutives recopiée plus bas (numéros de ligne de données) → copier-coller
+  probable : classe B, gravité critique, certitude probable, vérification au dossier source.
+- same_profile_different_ids : identifiants différents mais même date de naissance, même
+  sexe et mêmes dates (key_columns) → doublon possible, non vérifiable sans le dossier :
+  classe D, gravité majeure, certitude possible.
+- empty_rows : lignes sans aucune donnée hors identifiant → classe A, gravité modérée ;
+  elles ne doivent pas être comptées dans l'effectif.
+Chaque cas de id_conflicts, identical_except_id, copied_blocks ou
+same_profile_different_ids donne lieu à une décision client (section 3), regroupée par type.
+
 CONSOLIDATION PAR FAMILLE (impératif — registre lisible et synthétique).
 Ne produisez PAS une entrée par colonne ou par cellule. Regroupez en UNE entrée toutes les
 anomalies de MÊME NATURE et MÊME CAUSE, et listez les variables visées dans
@@ -98,11 +115,24 @@ Règle de préséance : si le critère de jugement principal n'est pas exploitab
 la base ne peut pas être jugée globalement bonne, quel que soit le reste.
 
 ================================================================================
-3. DÉCISIONS À VALIDER PAR LE CLIENT ("client_decisions")
+3. DÉCISIONS À VALIDER PAR LE CLIENT ("client_decisions") — 10 AU MAXIMUM
 ================================================================================
-Listez les points qui nécessitent une décision humaine (doublons à arbitrer, codes
-ambigus, valeurs à vérifier au dossier source) : question, variable, identifiants,
-options possibles, conséquence, recommandation. En français.
+Ne posez que les questions qu'aucune règle ne permet de trancher et dont la réponse
+change l'effectif, un groupe, le critère principal ou une analyse (doublons à arbitrer,
+codes ambigus, valeurs à vérifier au dossier source, définition manquante). N'interrogez
+jamais sur ce que les entrées disent déjà.
+- Une question = une seule décision, en langage clinique, sans jargon statistique.
+- Regroupez les cas de même nature en une question (ex. tous les doublons possibles en
+  une seule question listant les identifiants) plutôt qu'une question par ligne.
+- Pour chacune : question, variable, identifiants, options possibles, conséquence de
+  chaque option, recommandation, et "priority" :
+  · "avant_analyse" : aucune analyse définitive n'est possible sans la réponse
+    (effectif, éligibilité, groupes, critère principal) ;
+  · "importante" : la réponse change un tableau ou une analyse secondaire ;
+  · "facultative" : améliore la base sans changer les résultats principaux.
+- Classez la liste de la plus urgente à la moins urgente. Au-delà de 10, gardez les plus
+  urgentes : les autres points restent visibles dans le registre des anomalies.
+En français.
 
 ================================================================================
 4. PLAN DE NETTOYAGE PROPOSÉ ("cleaning_plan") — SANS l'appliquer
@@ -169,7 +199,8 @@ SORTIE — uniquement le JSON conforme (aucun texte autour, aucun bloc markdown)
                 "requires_source_verification": bool}],
   "scoring_inputs": { ... enum ci-dessus ... },
   "client_decisions": [{"question_fr": str, "column": str|null, "row_ids": [str],
-                        "options": [str], "consequence_fr": str, "recommendation_fr": str}],
+                        "options": [str], "consequence_fr": str, "recommendation_fr": str,
+                        "priority": "avant_analyse|importante|facultative"}],
   "cleaning_plan": [{"op_id": str, "operation": str, "column": str|null,
                      "params": object, "rationale_fr": str, "auto_safe": bool}],
   "exploitability_verdict": {"level": 1-5, "label": str, "justification_fr": str},
