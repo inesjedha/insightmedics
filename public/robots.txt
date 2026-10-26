@@ -1,0 +1,22 @@
+# Insight Medics — https://www.insightmedics.tn
+# Moteurs de recherche et assistants IA bienvenus sur les pages publiques.
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /r/
+
+# Moteurs IA (recherche et citation)
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: GPTBot
+User-agent: PerplexityBot
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin
+Disallow: /r/
+
+Sitemap: https://www.insightmedics.tn/sitemap.xml

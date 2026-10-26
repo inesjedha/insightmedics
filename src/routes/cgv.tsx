@@ -1,3 +1,4 @@
+import { breadcrumbLd, pageHead } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
@@ -7,21 +8,14 @@ import { siteConfig } from "@/lib/site-config";
 import { LegalBlock } from "@/components/site/LegalBlock";
 
 export const Route = createFileRoute("/cgv")({
-  head: () => ({
-    meta: [
-      { title: "CGV — Insight Medics" },
-      {
-        name: "description",
-        content:
-          "Conditions générales de vente d'Insight Medics : offres, tarifs en DT, modalités de paiement, révisions, propriété des livrables.",
-      },
-      { property: "og:title", content: "CGV — Insight Medics" },
-      {
-        property: "og:description",
-        content: "Tarifs en dinars tunisiens, paiement, délais et révisions.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      path: "/cgv",
+      title: "Conditions générales de vente | Insight Medics",
+      description:
+        "Conditions générales de vente d'Insight Medics : formules, tarifs en dinars, paiement, délais, révisions et propriété des livrables.",
+      jsonLd: [breadcrumbLd([["CGV", "/cgv"]])],
+    }),
   component: CgvPage,
 });
 

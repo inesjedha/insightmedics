@@ -40,7 +40,7 @@ export default tseslint.config(
   {
     // Fichiers de routes TanStack : ils exportent `Route` à côté de leurs composants, par
     // construction ; le rafraîchissement à chaud y est géré par le plugin du routeur.
-    files: ["src/routes/**"],
+    files: ["src/routes/**", "src/content/**"],
     rules: { "react-refresh/only-export-components": "off" },
   },
   eslintPluginPrettier,

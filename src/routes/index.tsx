@@ -1,3 +1,4 @@
+import { faqLd, filmLd, pageHead } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { FaqSection } from "@/components/site/Faq";
@@ -15,25 +16,15 @@ import {
 } from "@/components/home/HomeSections";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Insight Medics — Statistiques et rédaction de thèse en médecine" },
-      {
-        name: "description",
-        content:
-          "Statistiques et accompagnement à la rédaction de votre thèse de médecine, relus par un médecin et un biostatisticien. Test de votre base gratuit.",
-      },
-      {
-        property: "og:title",
-        content: "Votre thèse de médecine, des statistiques à la soutenance",
-      },
-      {
-        property: "og:description",
-        content:
-          "Envoyez votre base : analyses, résultats et discussion rédigés avec vous, relus par un médecin et un biostatisticien. Test de votre base gratuit.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      path: "/",
+      title: "Aide aux statistiques de thèse de médecine | Insight Medics",
+      ogTitle: "Votre thèse de médecine, des statistiques à la soutenance",
+      description:
+        "Analyses statistiques, résultats, discussion ou thèse complète, rédigés avec vous par des médecins et des biostatisticiens. Tunisie. Test de votre base gratuit.",
+      jsonLd: [faqLd, filmLd],
+    }),
   component: HomePage,
 });
 

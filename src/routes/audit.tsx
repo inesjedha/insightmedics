@@ -1,3 +1,4 @@
+import { breadcrumbLd, pageHead } from "@/lib/seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowRight, Loader2 } from "lucide-react";
@@ -18,20 +19,13 @@ import type { AuditEvent, AuditResult, PreviewDetail } from "@/lib/api/types";
 import { FULL_AUDIT_PRICE_LABEL } from "@/lib/offers";
 
 export const Route = createFileRoute("/audit")({
-  head: () => ({
-    meta: [
-      { title: "Test gratuit de votre base de thèse — Insight Medics" },
-      {
-        name: "description",
-        content: `Testez gratuitement votre base de thèse : score sur 100 et anomalies en quelques minutes. Audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}. SPSS, Excel, CSV.`,
-      },
-      { property: "og:title", content: "Test gratuit de votre base · Insight Medics" },
-      {
-        property: "og:description",
-        content: `Votre base vérifiée en quelques minutes. Test gratuit ; audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}.`,
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      path: "/audit",
+      title: "Testez gratuitement votre base de thèse | Insight Medics",
+      description: `Score sur 100 et anomalies de votre base SPSS, Excel ou CSV en quelques minutes, sans inscription. Audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}.`,
+      jsonLd: [breadcrumbLd([["Test gratuit", "/audit"]])],
+    }),
   component: AuditPage,
 });
 

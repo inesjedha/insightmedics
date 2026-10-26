@@ -277,7 +277,8 @@ const FOUNDERS = [
   },
 ];
 
-export function Team() {
+/** `founders` : bandeau « Fondé par » (masqué sur la page À propos, qui les présente en détail). */
+export function Team({ founders = true }: { founders?: boolean }) {
   return (
     <Section className="border-t border-border">
       <SectionHeader
@@ -303,29 +304,31 @@ export function Team() {
         ))}
       </ol>
 
-      <div className="mt-12 flex flex-col gap-6 rounded-md border border-border bg-surface p-6 sm:p-7 lg:flex-row lg:items-center lg:gap-10">
-        <p className="shrink-0 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Fondé par
-        </p>
-        <ul className="grid flex-1 gap-6 sm:grid-cols-2">
-          {FOUNDERS.map((f) => (
-            <li key={f.name} className="flex items-center gap-4">
-              <img
-                src={f.photo}
-                alt={`Portrait de ${f.name}`}
-                width={64}
-                height={64}
-                loading="lazy"
-                className="size-16 shrink-0 rounded-md border border-foreground object-cover"
-              />
-              <div className="min-w-0">
-                <p className="font-display text-2xl leading-tight">{f.name}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">{f.role}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {founders && (
+        <div className="mt-12 flex flex-col gap-6 rounded-md border border-border bg-surface p-6 sm:p-7 lg:flex-row lg:items-center lg:gap-10">
+          <p className="shrink-0 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Fondé par
+          </p>
+          <ul className="grid flex-1 gap-6 sm:grid-cols-2">
+            {FOUNDERS.map((f) => (
+              <li key={f.name} className="flex items-center gap-4">
+                <img
+                  src={f.photo}
+                  alt={`Portrait de ${f.name}`}
+                  width={64}
+                  height={64}
+                  loading="lazy"
+                  className="size-16 shrink-0 rounded-md border border-foreground object-cover"
+                />
+                <div className="min-w-0">
+                  <p className="font-display text-2xl leading-tight">{f.name}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{f.role}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Section>
   );
 }

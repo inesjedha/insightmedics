@@ -10,12 +10,14 @@ export const siteConfig = {
     { to: "/services", label: "Services" },
     { to: "/methode", label: "Méthode" },
     { to: "/tarifs", label: "Tarifs" },
+    { to: "/guides", label: "Guides" },
     { to: "/contact", label: "Contact" },
   ] as const,
   cta: {
     audit: { to: "/audit", label: "Tester ma base gratuitement", short: "Tester ma base" },
     order: { to: "/contact", label: "Confier ma thèse" },
   },
+  about: { to: "/a-propos", label: "À propos" },
   legal: [
     { to: "/mentions-legales", label: "Mentions légales" },
     { to: "/confidentialite", label: "Confidentialité" },

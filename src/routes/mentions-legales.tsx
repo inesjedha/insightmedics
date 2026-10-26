@@ -1,3 +1,4 @@
+import { breadcrumbLd, pageHead } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
@@ -6,21 +7,13 @@ import { siteConfig } from "@/lib/site-config";
 import { LegalBlock } from "@/components/site/LegalBlock";
 
 export const Route = createFileRoute("/mentions-legales")({
-  head: () => ({
-    meta: [
-      { title: "Mentions légales — Insight Medics" },
-      {
-        name: "description",
-        content:
-          "Mentions légales d'Insight Medics : éditeur, contact, hébergeur, propriété intellectuelle.",
-      },
-      { property: "og:title", content: "Mentions légales — Insight Medics" },
-      {
-        property: "og:description",
-        content: "Informations légales sur l'éditeur d'Insight Medics.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      path: "/mentions-legales",
+      title: "Mentions légales | Insight Medics",
+      description: "Informations légales sur l'éditeur et l'hébergeur du site Insight Medics.",
+      jsonLd: [breadcrumbLd([["Mentions légales", "/mentions-legales"]])],
+    }),
   component: MentionsPage,
 });
 

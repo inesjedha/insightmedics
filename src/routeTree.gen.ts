@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as CgvRouteImport } from './routes/cgv'
@@ -22,12 +23,19 @@ import { Route as TarifsRouteImport } from './routes/tarifs'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAuditsRouteImport } from './routes/admin.audits'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as GuidesIndexRouteImport } from './routes/guides.index'
+import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as AdminLeadsIdRouteImport } from './routes/admin.leads.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AProposRoute = AProposRouteImport.update({
+  id: '/a-propos',
+  path: '/a-propos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -90,6 +98,16 @@ const AdminLeadsRoute = AdminLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AdminRoute,
 } as any)
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/guides/$slug',
+  path: '/guides/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RTokenRoute = RTokenRouteImport.update({
   id: '/r/$token',
   path: '/r/$token',
@@ -103,6 +121,7 @@ const AdminLeadsIdRoute = AdminLeadsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRouteWithChildren
   '/audit': typeof AuditRoute
   '/cgv': typeof CgvRoute
@@ -114,12 +133,15 @@ export interface FileRoutesByFullPath {
   '/tarifs': typeof TarifsRoute
   '/admin/audits': typeof AdminAuditsRoute
   '/admin/leads': typeof AdminLeadsRouteWithChildren
+  '/guides/$slug': typeof GuidesSlugRoute
   '/r/$token': typeof RTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/guides/': typeof GuidesIndexRoute
   '/admin/leads/$id': typeof AdminLeadsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/audit': typeof AuditRoute
   '/cgv': typeof CgvRoute
   '/confidentialite': typeof ConfidentialiteRoute
@@ -130,13 +152,16 @@ export interface FileRoutesByTo {
   '/tarifs': typeof TarifsRoute
   '/admin/audits': typeof AdminAuditsRoute
   '/admin/leads': typeof AdminLeadsRouteWithChildren
+  '/guides/$slug': typeof GuidesSlugRoute
   '/r/$token': typeof RTokenRoute
   '/admin': typeof AdminIndexRoute
+  '/guides': typeof GuidesIndexRoute
   '/admin/leads/$id': typeof AdminLeadsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/admin': typeof AdminRouteWithChildren
   '/audit': typeof AuditRoute
   '/cgv': typeof CgvRoute
@@ -148,14 +173,17 @@ export interface FileRoutesById {
   '/tarifs': typeof TarifsRoute
   '/admin/audits': typeof AdminAuditsRoute
   '/admin/leads': typeof AdminLeadsRouteWithChildren
+  '/guides/$slug': typeof GuidesSlugRoute
   '/r/$token': typeof RTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/guides/': typeof GuidesIndexRoute
   '/admin/leads/$id': typeof AdminLeadsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/a-propos'
     | '/admin'
     | '/audit'
     | '/cgv'
@@ -167,12 +195,15 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/admin/audits'
     | '/admin/leads'
+    | '/guides/$slug'
     | '/r/$token'
     | '/admin/'
+    | '/guides/'
     | '/admin/leads/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/a-propos'
     | '/audit'
     | '/cgv'
     | '/confidentialite'
@@ -183,12 +214,15 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/admin/audits'
     | '/admin/leads'
+    | '/guides/$slug'
     | '/r/$token'
     | '/admin'
+    | '/guides'
     | '/admin/leads/$id'
   id:
     | '__root__'
     | '/'
+    | '/a-propos'
     | '/admin'
     | '/audit'
     | '/cgv'
@@ -200,13 +234,16 @@ export interface FileRouteTypes {
     | '/tarifs'
     | '/admin/audits'
     | '/admin/leads'
+    | '/guides/$slug'
     | '/r/$token'
     | '/admin/'
+    | '/guides/'
     | '/admin/leads/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AProposRoute: typeof AProposRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuditRoute: typeof AuditRoute
   CgvRoute: typeof CgvRoute
@@ -216,7 +253,9 @@ export interface RootRouteChildren {
   MethodeRoute: typeof MethodeRoute
   ServicesRoute: typeof ServicesRoute
   TarifsRoute: typeof TarifsRoute
+  GuidesSlugRoute: typeof GuidesSlugRoute
   RTokenRoute: typeof RTokenRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -226,6 +265,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/a-propos': {
+      id: '/a-propos'
+      path: '/a-propos'
+      fullPath: '/a-propos'
+      preLoaderRoute: typeof AProposRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -312,6 +358,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLeadsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/$slug': {
+      id: '/guides/$slug'
+      path: '/guides/$slug'
+      fullPath: '/guides/$slug'
+      preLoaderRoute: typeof GuidesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/r/$token': {
       id: '/r/$token'
       path: '/r/$token'
@@ -357,6 +417,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AProposRoute: AProposRoute,
   AdminRoute: AdminRouteWithChildren,
   AuditRoute: AuditRoute,
   CgvRoute: CgvRoute,
@@ -366,7 +427,9 @@ const rootRouteChildren: RootRouteChildren = {
   MethodeRoute: MethodeRoute,
   ServicesRoute: ServicesRoute,
   TarifsRoute: TarifsRoute,
+  GuidesSlugRoute: GuidesSlugRoute,
   RTokenRoute: RTokenRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
