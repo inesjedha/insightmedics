@@ -1,3 +1,4 @@
+import { breadcrumbLd, pageHead, servicesLd } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
@@ -9,21 +10,14 @@ import { TestBanner } from "@/components/site/TestBanner";
 import { OFFERS } from "@/lib/offers";
 
 export const Route = createFileRoute("/services")({
-  head: () => ({
-    meta: [
-      { title: "Services — Insight Medics" },
-      {
-        name: "description",
-        content:
-          "Test gratuit de votre base, analyses statistiques et résultats rédigés, discussion, accompagnement de thèse complète. Relu par un médecin et un biostatisticien.",
-      },
-      { property: "og:title", content: "Services — Insight Medics" },
-      {
-        property: "og:description",
-        content: "Un test gratuit, puis trois formules claires en dinars tunisiens.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      path: "/services",
+      title: "Analyses statistiques et rédaction de thèse | Insight Medics",
+      description:
+        "Test gratuit de votre base, analyses + résultats, discussion ou thèse complète : des formules claires en dinars, par des médecins et des biostatisticiens.",
+      jsonLd: [servicesLd, breadcrumbLd([["Services", "/services"]])],
+    }),
   component: ServicesPage,
 });
 

@@ -1,3 +1,4 @@
+import { breadcrumbLd, pageHead } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { MessageSquare } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -8,22 +9,14 @@ import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/methode")({
-  head: () => ({
-    meta: [
-      { title: "Méthode — Insight Medics" },
-      {
-        name: "description",
-        content:
-          "La méthode Insight Medics pour des résultats de thèse traçables et reproductibles : analyses calculées directement sur vos données, validées par un biostatisticien, données patients protégées par des mesures strictes.",
-      },
-      { property: "og:title", content: "Méthode — Insight Medics" },
-      {
-        property: "og:description",
-        content:
-          "Des résultats que vous comprenez et pouvez justifier. Calculés sur vos données, validés par un biostatisticien.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      path: "/methode",
+      title: "Notre méthode d'analyse et de relecture | Insight Medics",
+      description:
+        "Comment nous travaillons : cadrage avec vous, analyses calculées par du code sur vos données, double relecture par un biostatisticien et un médecin.",
+      jsonLd: [breadcrumbLd([["Méthode", "/methode"]])],
+    }),
   component: MethodePage,
 });
 

@@ -17,6 +17,15 @@ export const FAQ: FaqItem[] = [
       "Non, si l'accompagnement est fait comme il se doit. Faire appel à un biostatisticien est courant en recherche clinique : les CHU ont des services d'épidémiologie pour cela. Nous réalisons les analyses et rédigeons avec vous ; vous gardez la main sur la question, les choix et le texte final, et vous savez expliquer chaque résultat. Vérifiez les règles de votre faculté sur l'aide extérieure, et mentionnez-la si elles le demandent.",
   },
   {
+    question: "Combien coûte une aide statistique pour une thèse de médecine ?",
+    answer: `Chez Insight Medics, en dinars tunisiens : le test de votre base est gratuit, l'audit complet coûte ${FULL_AUDIT_PRICE_LABEL}, les analyses statistiques avec la partie « Résultats » ${analyses.priceLabel} (${weeksLabel(analyses.delayWeeks)}), la discussion ${discussion.priceLabel} (${weeksLabel(discussion.delayWeeks)}) et l'accompagnement de la thèse complète ${these.priceLabel} (${weeksLabel(these.delayWeeks)}). Le prix est fixé avant de commencer et se règle au lancement.`,
+  },
+  {
+    question: "Que fait un biostatisticien pour une thèse de médecine ?",
+    answer:
+      "Il traduit votre question de recherche en plan d'analyse, choisit les tests adaptés (comparaison de groupes, régression, survie, courbe ROC), vérifie leurs conditions d'application, réalise les calculs et vous aide à interpréter et présenter les résultats. Chez Insight Medics, chaque analyse est validée par un biostatisticien et relue par un médecin pour la cohérence clinique.",
+  },
+  {
     question: "Ma base est mal saisie : est-ce un problème ?",
     answer:
       "C'est le cas de la plupart des bases. Le test gratuit vous montre en quelques minutes ce qui bloque : données manquantes, doublons, codes « 999 » non déclarés. Nous corrigeons ensuite ce qui peut l'être et vous disons ce qui doit être complété à la source.",

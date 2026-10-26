@@ -1,3 +1,4 @@
+import { breadcrumbLd, pageHead, servicesLd } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -11,20 +12,13 @@ import { TestBanner } from "@/components/site/TestBanner";
 import { FULL_AUDIT_PRICE_LABEL, OFFERS, getOffer } from "@/lib/offers";
 
 export const Route = createFileRoute("/tarifs")({
-  head: () => ({
-    meta: [
-      { title: "Tarifs thèse de médecine — Insight Medics" },
-      {
-        name: "description",
-        content: `Test de votre base gratuit, audit complet ${FULL_AUDIT_PRICE_LABEL}. Analyses + résultats ${getOffer("analyses").priceLabel}, discussion ${getOffer("discussion").priceLabel}, thèse complète ${getOffer("these").priceLabel}. Prix fixé avant de commencer.`,
-      },
-      { property: "og:title", content: "Tarifs — Insight Medics" },
-      {
-        property: "og:description",
-        content: "Des prix clairs en dinars tunisiens, fixés avant de commencer.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      path: "/tarifs",
+      title: "Tarifs aide thèse de médecine en Tunisie | Insight Medics",
+      description: `Test gratuit, audit complet ${FULL_AUDIT_PRICE_LABEL}, analyses + résultats ${getOffer("analyses").priceLabel}, discussion ${getOffer("discussion").priceLabel}, thèse complète ${getOffer("these").priceLabel}. Prix fixé avant de commencer.`,
+      jsonLd: [servicesLd, breadcrumbLd([["Tarifs", "/tarifs"]])],
+    }),
   component: TarifsPage,
 });
 

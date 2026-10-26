@@ -29,6 +29,11 @@ export function SiteFooter() {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link to={siteConfig.about.to} className="hover:text-background">
+                {siteConfig.about.label}
+              </Link>
+            </li>
           </FooterColumn>
 
           <FooterColumn title="Contact">

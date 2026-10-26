@@ -1,3 +1,4 @@
+import { breadcrumbLd, pageHead } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
@@ -29,21 +30,14 @@ import {
 } from "@/components/contact/FormControls";
 
 export const Route = createFileRoute("/contact")({
-  head: () => ({
-    meta: [
-      { title: "Contact — parlons de votre thèse · Insight Medics" },
-      {
-        name: "description",
-        content:
-          "Décrivez votre thèse ou votre article en quelques lignes : nous vous rappelons sous 48 h ouvrées. Premier échange gratuit.",
-      },
-      { property: "og:title", content: "Contact — Insight Medics" },
-      {
-        property: "og:description",
-        content: "Décrivez votre projet : nous vous rappelons sous 48 h ouvrées, sans engagement.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      path: "/contact",
+      title: "Contact : parlons de votre thèse | Insight Medics",
+      description:
+        "Décrivez votre thèse ou votre article en quelques lignes : nous vous rappelons sous 48 h ouvrées pour cadrer le travail, le délai et le prix.",
+      jsonLd: [breadcrumbLd([["Contact", "/contact"]])],
+    }),
   // ?offre=these : formule pré-cochée quand on arrive depuis une fiche d'offre.
   validateSearch: (search: Record<string, unknown>): { offre?: OfferId } =>
     isOfferId(search.offre) ? { offre: search.offre } : {},

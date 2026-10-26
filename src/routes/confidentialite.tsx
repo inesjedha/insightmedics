@@ -1,3 +1,4 @@
+import { breadcrumbLd, pageHead } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
@@ -6,25 +7,14 @@ import { siteConfig } from "@/lib/site-config";
 import { LegalBlock } from "@/components/site/LegalBlock";
 
 export const Route = createFileRoute("/confidentialite")({
-  head: () => ({
-    meta: [
-      { title: "Politique de confidentialité — Insight Medics" },
-      {
-        name: "description",
-        content:
-          "Comment Insight Medics collecte, utilise et protège vos données personnelles et les bases médicales que vous nous confiez.",
-      },
-      {
-        property: "og:title",
-        content: "Politique de confidentialité — Insight Medics",
-      },
-      {
-        property: "og:description",
-        content:
-          "Données collectées, finalités, durée de conservation, droits — tout est expliqué.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      path: "/confidentialite",
+      title: "Politique de confidentialité | Insight Medics",
+      description:
+        "Comment Insight Medics protège les données de votre étude : anonymisation, masquage avant l'IA, suppression automatique après 30 jours.",
+      jsonLd: [breadcrumbLd([["Confidentialité", "/confidentialite"]])],
+    }),
   component: PrivacyPage,
 });
 

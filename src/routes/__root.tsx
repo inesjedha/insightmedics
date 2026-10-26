@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { ldScript, organizationLd, websiteLd } from "@/lib/seo";
 import { siteConfig } from "@/lib/site-config";
 
 import appCss from "../styles.css?url";
@@ -102,6 +103,7 @@ export const Route = createRootRoute({
       },
       { name: "twitter:image", content: `${siteConfig.url}/og-image.jpg` },
     ],
+    scripts: [ldScript(organizationLd), ldScript(websiteLd)],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", sizes: "32x32" },

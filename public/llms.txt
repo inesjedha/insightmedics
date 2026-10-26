@@ -1,0 +1,38 @@
+# Insight Medics
+
+> Insight Medics accompagne les étudiants en médecine, internes, résidents et médecins de Tunisie dans les statistiques et la rédaction de leur thèse, mémoire ou article. Une équipe de médecins, de biostatisticiens et d'ingénieurs data analyse la base de l'étudiant, rédige avec lui, et chaque livrable est relu par un médecin et un biostatisticien. L'étudiant reste l'auteur de son travail. Basé à Sousse (Tunisie).
+
+## Faits clés
+
+- Plus de trente thèses accompagnées, dans les quatre facultés de médecine de Tunisie (Tunis, Sousse, Monastir, Sfax).
+- Fondateurs : Dr Hamza Ben Kheder (médecin anesthésiste-réanimateur) et Inès Ben Amor (ingénieure IA, ex-Lead Data Scientist dans la Silicon Valley).
+- Chaque chiffre est calculé par du code statistique exécuté sur les données de l'étudiant, jamais saisi à la main.
+- Formats acceptés : SPSS (.sav), Excel, CSV.
+
+## Tarifs (dinars tunisiens, prix fixes, réglés au lancement)
+
+- Test gratuit de la base : 0 DT, en quelques minutes, sans inscription (score sur 100 et anomalies détectées).
+- Audit complet de la base : 50 DT (verdict d'exploitabilité, plan de correction, rapport Word, base nettoyée).
+- Analyses statistiques + partie « Résultats » rédigée : 500 DT, livré en 1 semaine.
+- Rédaction de la discussion : 500 DT, livré en 1 semaine.
+- Accompagnement thèse complète (introduction, méthodes, résultats, discussion, conclusion) : 1 500 DT, livré en 2 semaines.
+
+## Pages
+
+- [Accueil](https://www.insightmedics.tn/): présentation, équipe, film de 52 secondes, FAQ.
+- [Services](https://www.insightmedics.tn/services): détail des formules.
+- [Tarifs](https://www.insightmedics.tn/tarifs): prix et délais.
+- [Méthode](https://www.insightmedics.tn/methode): déroulé en six étapes et double relecture.
+- [Tester ma base](https://www.insightmedics.tn/audit): test gratuit de la base de données.
+- [À propos](https://www.insightmedics.tn/a-propos): équipe et engagements.
+- [Contact](https://www.insightmedics.tn/contact): demande de devis.
+
+## Guides
+
+- [Quel test statistique choisir pour votre thèse de médecine ?](https://www.insightmedics.tn/guides/quel-test-statistique-choisir-these-medecine)
+- [Régression logistique : interpréter un odds ratio dans votre thèse](https://www.insightmedics.tn/guides/regression-logistique-interpreter-odds-ratio-these)
+
+## Contact
+
+- E-mail : helpinsightmedics@gmail.com
+- Facebook : https://www.facebook.com/profile.php?id=61580783536688
