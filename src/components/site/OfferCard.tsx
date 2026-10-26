@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowRight, Check } from "lucide-react";
+import { useId } from "react";
 import { Button } from "@/components/ui/button";
+import type { OfferId } from "@/lib/offers";
 import { cn } from "@/lib/utils";
 
 type OfferCardProps = {
-  number?: string;
-  icon: ReactNode;
+  number?: number;
   title: string;
   price: string;
   delay?: string;
@@ -15,13 +15,23 @@ type OfferCardProps = {
   features: string[];
   ctaLabel: string;
   ctaHref: "/contact" | "/audit";
+  /** Formule pré-cochée dans le formulaire de contact. */
+  offerId?: OfferId;
   highlight?: boolean;
   badge?: string;
 };
 
+/**
+ * Fiche d'offre « carnet » : filet fin, prix en grand serif. L'offre mise en avant
+ * porte l'ombre décalée et une annotation manuscrite (`badge`).
+ * Sur grand écran, la fiche occupe 5 lignes d'une sous-grille (`OFFER_GRID`) : titres,
+ * prix, listes et boutons s'alignent d'une fiche à l'autre.
+ */
+/** Grille parente des fiches : une colonne, puis trois alignées sur grand écran. */
+export const OFFER_GRID = "grid gap-6 lg:grid-cols-3";
+
 export function OfferCard({
   number,
-  icon,
   title,
   price,
   delay,
@@ -30,68 +40,62 @@ export function OfferCard({
   features,
   ctaLabel,
   ctaHref,
+  offerId,
   highlight,
   badge,
 }: OfferCardProps) {
+  const titleId = useId();
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md sm:p-7",
-        highlight && "border-l-4 border-l-brand",
+        "relative flex h-full flex-col rounded-md border bg-card p-6 sm:p-7 lg:row-span-5 lg:grid lg:grid-rows-subgrid lg:gap-y-0",
+        highlight ? "mr-1.5 border-foreground shadow-offset lg:mr-0" : "border-border",
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
-          {icon}
-        </div>
+      <div className="flex items-baseline justify-between gap-3">
         {number && (
-          <span
-            aria-hidden
-            className="font-display text-2xl font-bold leading-none text-brand/25 sm:text-3xl"
-          >
-            {number}
+          <span aria-hidden className="font-hand text-3xl leading-none text-brand">
+            {number}.
           </span>
+        )}
+        {badge && (
+          <span className="mark -rotate-2 font-hand text-2xl leading-none text-brand">{badge}</span>
         )}
       </div>
 
-      {badge && (
-        <span className="mt-4 inline-flex w-fit items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-foreground">
-          <Sparkles className="h-3 w-3" />
-          {badge}
-        </span>
-      )}
-
-      <h3 className="mt-4 font-display text-base font-semibold tracking-tight sm:mt-5 sm:text-lg">
-        {title}
-      </h3>
-      {tagline && <p className="mt-1 text-xs text-muted-foreground">{tagline}</p>}
-      {description && (
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
-      )}
-
-      <div className="mt-5 font-display text-3xl font-extrabold tracking-tight text-brand">
-        {price}
+      <div>
+        <h3 id={titleId} className="mt-4 font-display text-3xl">
+          {title}
+        </h3>
+        {tagline && <p className="mt-1 text-sm text-muted-foreground">{tagline}</p>}
+        {description && (
+          <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{description}</p>
+        )}
       </div>
-      {delay && <p className="mt-1 text-xs font-medium text-muted-foreground">{delay}</p>}
 
-      <ul className="mt-5 space-y-2.5 text-sm">
+      <div className="mt-6 border-t border-border pt-5">
+        <p className="whitespace-nowrap font-display text-5xl leading-none">{price}</p>
+        {delay && <p className="mt-2 text-sm font-medium text-muted-foreground">{delay}</p>}
+      </div>
+
+      <ul className="mt-6 space-y-3 text-[15px]">
         {features.map((f) => (
-          <li key={f} className="flex gap-2.5">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-            <span className="text-foreground/90">{f}</span>
+          <li key={f} className="flex gap-3">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
+            <span>{f}</span>
           </li>
         ))}
       </ul>
 
-      <div className="mt-auto pt-6">
-        <Button
-          asChild
-          variant={highlight ? "default" : "outline"}
-          className={cn("w-full", highlight && "bg-brand text-brand-foreground hover:bg-brand/90")}
-        >
-          <Link to={ctaHref}>
+      <div className="mt-auto pt-7 lg:mt-0 lg:self-end">
+        <Button asChild variant={highlight ? "default" : "outline"} className="w-full">
+          <Link
+            to={ctaHref}
+            search={ctaHref === "/contact" && offerId ? { offre: offerId } : undefined}
+            aria-describedby={titleId}
+          >
             {ctaLabel}
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </Button>
       </div>

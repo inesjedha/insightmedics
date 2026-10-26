@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
 import { z } from "zod";
-import { AlertTriangle, CheckCircle2, Download, Mail, User } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Field, IconInput, PhoneField } from "@/components/contact/FormControls";
+import { Field, PhoneField } from "@/components/contact/FormControls";
 import { createLead } from "@/lib/api/client";
 import type { AuditResult } from "@/lib/api/types";
 import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
@@ -84,46 +84,45 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
   return (
     <div
       id={UNLOCK_ANCHOR_ID}
-      className="mt-6 scroll-mt-24 rounded-2xl border border-brand/30 bg-card p-6 shadow-sm sm:p-8"
+      className="mt-6 scroll-mt-24 rounded-md border border-foreground bg-card p-6 sm:p-8"
     >
-      <div className="flex items-center gap-3">
-        <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
-          <Download className="h-5 w-5" />
-        </div>
-        <div>
-          <h3 className="font-display text-lg font-bold">
-            Débloquer l'audit complet — {FULL_AUDIT_PRICE_LABEL}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Laissez vos coordonnées : nous vous contactons sous 48h ouvrées (téléphone ou email)
-            pour finaliser le paiement, puis nous lançons votre audit complet et vous recevez le
-            lien privé vers vos résultats et vos livrables.
-          </p>
-        </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand">
+          Audit complet · {FULL_AUDIT_PRICE_LABEL}
+        </p>
+        <h3 className="mt-2 font-display text-3xl">Recevez le plan de correction complet.</h3>
+        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+          Laissez vos coordonnées : nous vous rappelons sous 48 h ouvrées pour régler le paiement,
+          puis nous lançons votre audit complet. Vous recevez ensuite un lien privé vers vos
+          résultats et vos livrables.
+        </p>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
         {[
-          "Validé par un expert humain",
+          "Calculé par notre code sur vos données",
           "Données anonymisées",
           "Vous ne payez qu'après nous avoir parlé",
         ].map((t) => (
           <span key={t} className="inline-flex items-center gap-1.5">
-            <CheckCircle2 className="h-3.5 w-3.5 text-brand" />
+            <CheckCircle2 className="h-4 w-4 text-brand" aria-hidden />
             {t}
           </span>
         ))}
       </div>
 
       {sent ? (
-        <div className="mt-6 flex items-start gap-3 rounded-lg border border-brand/30 bg-brand/5 p-4 text-sm text-foreground">
+        <div
+          role="status"
+          className="mt-6 flex items-start gap-3 rounded-md border border-brand/30 bg-accent p-4 text-sm text-foreground"
+        >
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
           <div>
-            <p className="font-semibold">Demande enregistrée. Merci !</p>
+            <p className="font-semibold">C'est noté, merci !</p>
             <p className="mt-1 text-muted-foreground">
-              Nous vous contactons sous 48h ouvrées (par téléphone ou email) pour finaliser le
-              paiement de {FULL_AUDIT_PRICE_LABEL}. Dès réception, votre audit complet est lancé et
-              vous recevez le lien privé vers vos résultats et vos livrables.
+              Nous vous rappelons sous 48 h ouvrées pour régler les {FULL_AUDIT_PRICE_LABEL}. Dès le
+              paiement reçu, votre audit complet est lancé et vous recevez le lien privé vers vos
+              résultats et vos livrables.
             </p>
           </div>
         </div>
@@ -141,16 +140,14 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
           />
 
           <Field id="name" label="Nom complet">
-            <IconInput icon={<User className="h-4 w-4" />}>
-              <Input
-                id="name"
-                name="name"
-                autoComplete="name"
-                maxLength={100}
-                placeholder="Ibn Sina"
-                className="h-11 pl-10"
-              />
-            </IconInput>
+            <Input
+              id="name"
+              name="name"
+              autoComplete="name"
+              maxLength={100}
+              placeholder="Ibn Sina"
+              className="h-11"
+            />
           </Field>
 
           <PhoneField required hint="Prioritaire pour vous recontacter" />
@@ -159,24 +156,22 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
 
           <div className="sm:col-span-2">
             <Field id="email" label="Email" required>
-              <IconInput icon={<Mail className="h-4 w-4" />}>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  maxLength={255}
-                  placeholder="prenom@exemple.com"
-                  className="h-11 pl-10"
-                />
-              </IconInput>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                maxLength={255}
+                placeholder="prenom@exemple.com"
+                className="h-11"
+              />
             </Field>
             {errors.email && <p className="mt-1.5 text-xs text-destructive">{errors.email}</p>}
           </div>
 
           <div className="sm:col-span-2">
-            <label className="flex items-start gap-3 rounded-lg border border-border bg-surface/40 p-3.5 text-sm">
+            <label className="flex items-start gap-3 rounded-md border border-border bg-surface/40 p-3.5 text-sm">
               <Checkbox
                 id="audit-consent"
                 checked={consent}
@@ -208,19 +203,15 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
           {submitError && (
             <div
               role="alert"
-              className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive sm:col-span-2"
+              className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive sm:col-span-2"
             >
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <span>{submitError}</span>
             </div>
           )}
 
           <div className="sm:col-span-2 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-            <Button
-              type="submit"
-              disabled={sending}
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
-            >
+            <Button type="submit" disabled={sending}>
               {sending ? "Envoi…" : `Demander l'audit complet (${FULL_AUDIT_PRICE_LABEL})`}
             </Button>
           </div>

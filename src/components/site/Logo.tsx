@@ -1,38 +1,27 @@
-import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
-// Placeholder monogramme tant que le client n'a pas uploadé son fichier.
-// Quand le logo réel est dispo : passe `src="/logo.svg"` (ou import) en prop.
-export function Logo({
-  src,
-  className,
-  showWordmark = true,
-}: {
-  src?: string;
-  className?: string;
-  showWordmark?: boolean;
-}) {
+/**
+ * Logotype « carnet » : insight en romain, medics en italique bleu stylo, et le point
+ * final comme une annotation. Purement typographique (aucune image à charger).
+ */
+export function Logo({ className, inverted = false }: { className?: string; inverted?: boolean }) {
   return (
-    <span className={cn("flex items-center gap-2", className)}>
-      {src ? (
-        <img
-          src={src}
-          alt={siteConfig.name}
-          className="h-9 w-auto"
-          loading="eager"
-          decoding="async"
-        />
-      ) : (
-        <span
-          aria-hidden
-          className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm"
-        >
-          <span className="font-display text-sm font-extrabold tracking-tight">IM</span>
-        </span>
+    <span
+      className={cn(
+        "inline-flex items-baseline font-display text-[26px] leading-none tracking-tight sm:text-[28px]",
+        inverted ? "text-background" : "text-foreground",
+        className,
       )}
-      {showWordmark && (
-        <span className="font-display text-lg font-bold tracking-tight">{siteConfig.name}</span>
-      )}
+    >
+      insight
+      <span className={cn("italic", inverted ? "text-brand-on-ink" : "text-brand")}>medics</span>
+      <span
+        aria-hidden
+        className={cn(
+          "ml-0.5 inline-block h-[7px] w-[7px] rounded-full",
+          inverted ? "bg-brand-on-ink" : "bg-brand",
+        )}
+      />
     </span>
   );
 }

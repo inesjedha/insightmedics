@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { FaqSection } from "@/components/site/Faq";
 import {
   Hero,
   ProblemApproach,
   AuditTeaser,
   AiHuman,
+  Team,
+  Authorship,
   ServicesTeaser,
   Testimonials,
   ForWho,
@@ -14,23 +17,20 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      {
-        title:
-          "Insight Medics — Analyses fiables et rédaction scientifique pour thèses de médecine",
-      },
+      { title: "Insight Medics — Statistiques et rédaction de thèse en médecine" },
       {
         name: "description",
         content:
-          "Biostatistique, rédaction IMRAD et data visualisation pour thèses, mémoires et publications. Audit de votre base offert. Chaque livrable validé par un expert humain.",
+          "Statistiques et accompagnement à la rédaction de votre thèse de médecine, relus par un médecin et un biostatisticien. Test de votre base gratuit.",
       },
       {
         property: "og:title",
-        content: "Insight Medics — La rigueur qu'attend votre jury",
+        content: "Votre thèse de médecine, des statistiques à la soutenance",
       },
       {
         property: "og:description",
         content:
-          "Analyses statistiques, rédaction IMRAD, data visualisation. Audit de base offert. Validation humaine systématique.",
+          "Envoyez votre base : analyses, résultats et discussion rédigés avec vous, relus par un médecin et un biostatisticien. Test de votre base gratuit.",
       },
     ],
   }),
@@ -44,9 +44,12 @@ function HomePage() {
       <ProblemApproach />
       <AuditTeaser />
       <AiHuman />
+      <Team />
+      <Authorship />
       <ServicesTeaser />
       <Testimonials />
       <ForWho />
+      <FaqSection className="border-t border-border" />
       <FinalCta />
     </SiteLayout>
   );

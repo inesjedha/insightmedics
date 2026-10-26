@@ -1,20 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import {
-  Mail,
-  Send,
-  Phone,
-  Clock,
-  User,
-  FileText,
-  Target,
-  HelpCircle,
-  MessageSquare,
-  Loader2,
-  Sparkles,
-  AlertCircle,
-} from "lucide-react";
+import { Send, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,7 +10,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
-import { offerPrice } from "@/lib/offers";
+import { OFFERS, isOfferId, weeksLabel, type OfferId } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
 import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
@@ -33,8 +20,6 @@ import {
   FormSection,
   InfoCard,
   Field,
-  IconInput,
-  IconTextarea,
   CharCount,
   PillsField,
   OffersField,
@@ -46,18 +31,22 @@ import {
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Insight Medics" },
+      { title: "Contact — parlons de votre thèse · Insight Medics" },
       {
         name: "description",
-        content: "Décrivez votre projet de thèse ou de publication. Réponse sous 48h.",
+        content:
+          "Décrivez votre thèse ou votre article en quelques lignes : nous vous rappelons sous 48 h ouvrées. Premier échange gratuit.",
       },
       { property: "og:title", content: "Contact — Insight Medics" },
       {
         property: "og:description",
-        content: "Réponse sous 48h. Décrivez votre projet et nous revenons vers vous.",
+        content: "Décrivez votre projet : nous vous rappelons sous 48 h ouvrées, sans engagement.",
       },
     ],
   }),
+  // ?offre=these : formule pré-cochée quand on arrive depuis une fiche d'offre.
+  validateSearch: (search: Record<string, unknown>): { offre?: OfferId } =>
+    isOfferId(search.offre) ? { offre: search.offre } : {},
   component: ContactPage,
 });
 
@@ -90,25 +79,21 @@ type ContactValues = z.infer<typeof contactSchema>;
 type FieldName = keyof ContactValues;
 type FieldErrors = Partial<Record<FieldName, string>>;
 
-// Prix lus dans lib/offers.ts (source unique) ; libellés courts propres au formulaire.
-const SERVICE_OFFERS: ServiceOffer[] = [
-  {
-    id: "analyses",
-    name: "Analyses + résultats",
-    price: offerPrice("analyses"),
-    tier: "Essentiel",
-  },
-  { id: "discussion", name: "Discussion", price: offerPrice("discussion"), tier: "Expertise" },
-  {
-    id: "these",
-    name: "Thèse complète",
-    price: offerPrice("these"),
-    tier: "Le plus choisi",
-    featured: true,
-  },
-];
+// Lues dans lib/offers.ts (source unique des prix et délais).
+const SERVICE_OFFERS: ServiceOffer[] = OFFERS.map((o) => ({
+  id: o.id,
+  number: o.number,
+  name: o.shortTitle,
+  price: o.priceLabel,
+  delay: `Livré en ${weeksLabel(o.delayWeeks)}`,
+}));
 
-const URGENCIES = ["< 2 semaines", "2-4 semaines", "> 1 mois", "Pas de deadline"] as const;
+const URGENCIES = [
+  "Moins de 2 semaines",
+  "2 à 4 semaines",
+  "Plus d'un mois",
+  "Pas encore de date",
+] as const;
 
 const SUBJECT_EXAMPLES = [
   "Thèse rétrospective en cardiologie",
@@ -127,11 +112,12 @@ const INITIAL_VALUES: Record<FieldName, string> = {
 };
 
 function ContactPage() {
+  const { offre } = Route.useSearch();
   const [values, setValues] = useState<Record<FieldName, string>>(INITIAL_VALUES);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [showErrorBanner, setShowErrorBanner] = useState(false);
-  const [selectedOffers, setSelectedOffers] = useState<string[]>([]);
-  const [urgency, setUrgency] = useState<string>("2-4 semaines");
+  const [selectedOffers, setSelectedOffers] = useState<string[]>(offre ? [offre] : []);
+  const [urgency, setUrgency] = useState<string>("2-4 semaines");
   const [dialCode, setDialCode] = useState<string>(DEFAULT_DIAL_CODE);
   const [consent, setConsent] = useState(false);
   const [consentError, setConsentError] = useState(false);
@@ -188,6 +174,7 @@ function ContactPage() {
       } else if (hasConsentError) {
         const el = formRef.current?.querySelector<HTMLElement>("#contact-consent");
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => el?.focus(), 300);
       }
       return;
     }
@@ -236,30 +223,15 @@ function ContactPage() {
         eyebrow="Contact"
         title={
           <>
-            Parlons de <span className="text-brand">votre projet</span>.
+            Parlons de <span className="italic text-brand">votre thèse.</span>
           </>
         }
-        description="Décrivez votre étude, votre problématique et votre objectif. Nous revenons vers vous sous 48h ouvrées — par téléphone en priorité."
+        description="Décrivez votre étude en quelques lignes. Nous vous rappelons sous 48 h ouvrées pour cadrer ensemble le travail, le délai et le prix. Premier échange gratuit, sans engagement."
       />
 
-      <Section className="pt-2 sm:pt-4">
-        <div className="mx-auto mb-6 flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:mb-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1.5 text-xs font-medium text-brand">
-            <Sparkles className="h-3.5 w-3.5" />
-            Réponse sous 48h ouvrées
-          </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3.5 py-1.5 text-xs font-medium text-muted-foreground">
-            <Phone className="h-3.5 w-3.5" />
-            Premier échange gratuit
-          </span>
-        </div>
-
+      <Section className="pt-10 sm:pt-12">
         <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:gap-10 xl:grid-cols-[1.6fr_1fr]">
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-brand/5 via-transparent to-transparent"
-            />
+          <div className="relative overflow-hidden rounded-md border border-foreground bg-card">
             <div className="relative p-5 sm:p-8 lg:p-10">
               {submitted ? (
                 <SuccessState onReset={() => setSubmitted(false)} />
@@ -289,7 +261,7 @@ function ContactPage() {
                   {showErrorBanner && (
                     <div
                       role="alert"
-                      className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
+                      className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
                     >
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>Merci de compléter les champs obligatoires avant l'envoi.</span>
@@ -299,32 +271,33 @@ function ContactPage() {
                   {submitError && (
                     <div
                       role="alert"
-                      className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
+                      className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
                     >
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>{submitError}</span>
                     </div>
                   )}
 
-                  <FormSection number="01" title="Vos coordonnées">
+                  <FormSection number={1} title="Vos coordonnées">
                     <div className="grid gap-5 sm:grid-cols-2">
-                      <Field id="name" label="Nom complet" required>
-                        <IconInput icon={<User className="h-4 w-4" />}>
-                          <Input
-                            id="name"
-                            name="name"
-                            autoComplete="name"
-                            required
-                            maxLength={100}
-                            value={values.name}
-                            onChange={(e) => setValue("name", e.target.value)}
-                            className="h-11 pl-10 transition-colors"
-                            placeholder="Ibn Sina"
-                          />
-                        </IconInput>
+                      <Field id="name" error={errors.name} label="Nom complet" required>
+                        <Input
+                          id="name"
+                          aria-invalid={!!errors.name || undefined}
+                          aria-describedby={errors.name ? "name-error" : undefined}
+                          name="name"
+                          autoComplete="name"
+                          required
+                          maxLength={100}
+                          value={values.name}
+                          onChange={(e) => setValue("name", e.target.value)}
+                          className="h-11"
+                          placeholder="Prénom Nom"
+                        />
                       </Field>
                       <Field
                         id="phone"
+                        error={errors.phone}
                         label="Téléphone"
                         required
                         hint="Prioritaire pour vous recontacter"
@@ -337,49 +310,50 @@ function ContactPage() {
                           onDialCodeChange={setDialCode}
                           digits={values.phone}
                           onDigitsChange={(digits) => setValue("phone", digits)}
+                          invalid={!!errors.phone}
                         />
                       </Field>
                     </div>
-                    <Field id="email" label="Email" required>
-                      <IconInput icon={<Mail className="h-4 w-4" />}>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          autoComplete="email"
-                          required
-                          maxLength={255}
-                          placeholder="vous@exemple.tn"
-                          value={values.email}
-                          onChange={(e) => setValue("email", e.target.value)}
-                          className="h-11 pl-10 transition-colors"
-                        />
-                      </IconInput>
+                    <Field id="email" error={errors.email} label="Email" required>
+                      <Input
+                        id="email"
+                        aria-invalid={!!errors.email || undefined}
+                        aria-describedby={errors.email ? "email-error" : undefined}
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        maxLength={255}
+                        placeholder="vous@exemple.tn"
+                        value={values.email}
+                        onChange={(e) => setValue("email", e.target.value)}
+                        className="h-11"
+                      />
                     </Field>
                   </FormSection>
 
-                  <FormSection number="02" title="Sujet de votre étude">
-                    <Field id="subject" label="Sujet" required>
-                      <IconInput icon={<FileText className="h-4 w-4" />}>
-                        <Input
-                          id="subject"
-                          name="subject"
-                          required
-                          maxLength={150}
-                          placeholder="Ex. Thèse sur la prise en charge de l'infarctus aux urgences"
-                          value={values.subject}
-                          onChange={(e) => setValue("subject", e.target.value)}
-                          className="h-11 pl-10 transition-colors"
-                        />
-                      </IconInput>
+                  <FormSection number={2} title="Votre étude">
+                    <Field id="subject" error={errors.subject} label="Sujet" required>
+                      <Input
+                        id="subject"
+                        aria-invalid={!!errors.subject || undefined}
+                        aria-describedby={errors.subject ? "subject-error" : undefined}
+                        name="subject"
+                        required
+                        maxLength={150}
+                        placeholder="Ex. Thèse sur la prise en charge de l'infarctus aux urgences"
+                        value={values.subject}
+                        onChange={(e) => setValue("subject", e.target.value)}
+                        className="h-11"
+                      />
                       <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Inspirations :</span>
+                        <span className="text-xs text-muted-foreground">Exemples :</span>
                         {SUBJECT_EXAMPLES.map((ex) => (
                           <button
                             key={ex}
                             type="button"
                             onClick={() => setValue("subject", ex)}
-                            className="rounded-full border border-border bg-surface/60 px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-brand/40 hover:text-brand"
+                            className="min-h-9 rounded-sm border border-input bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             {ex}
                           </button>
@@ -401,74 +375,78 @@ function ContactPage() {
                     />
                   </FormSection>
 
-                  <FormSection number="03" title="Problématique & objectif">
+                  <FormSection number={3} title="Ce dont vous avez besoin">
                     <Field
                       id="problem"
+                      error={errors.problem}
                       label="Problématique"
                       required
                       hint="Ce que vous cherchez à comprendre"
                     >
-                      <IconTextarea icon={<HelpCircle className="h-4 w-4" />}>
-                        <Textarea
-                          id="problem"
-                          name="problem"
-                          rows={4}
-                          required
-                          maxLength={1000}
-                          placeholder="Quel est le problème clinique ou scientifique abordé ?"
-                          value={values.problem}
-                          onChange={(e) => setValue("problem", e.target.value)}
-                          className="resize-none pl-10 pt-3 transition-colors"
-                        />
-                      </IconTextarea>
+                      <Textarea
+                        id="problem"
+                        aria-invalid={!!errors.problem || undefined}
+                        aria-describedby={errors.problem ? "problem-error" : undefined}
+                        name="problem"
+                        rows={4}
+                        required
+                        maxLength={1000}
+                        placeholder="Ex. Facteurs pronostiques de l'infarctus chez le diabétique"
+                        value={values.problem}
+                        onChange={(e) => setValue("problem", e.target.value)}
+                        className="resize-y"
+                      />
                       <CharCount value={values.problem} max={1000} />
                     </Field>
                     <Field
                       id="objective"
-                      label="Objectif"
+                      error={errors.objective}
+                      label="Ce que vous attendez de nous"
                       required
-                      hint="Le livrable attendu (thèse complète, chapitre stats, article…)"
+                      hint="Le livrable attendu : thèse complète, partie statistique, article…"
                     >
-                      <IconTextarea icon={<Target className="h-4 w-4" />}>
-                        <Textarea
-                          id="objective"
-                          name="objective"
-                          rows={4}
-                          required
-                          maxLength={1000}
-                          placeholder="Quel résultat / livrable cherchez-vous ?"
-                          value={values.objective}
-                          onChange={(e) => setValue("objective", e.target.value)}
-                          className="resize-none pl-10 pt-3 transition-colors"
-                        />
-                      </IconTextarea>
+                      <Textarea
+                        id="objective"
+                        aria-invalid={!!errors.objective || undefined}
+                        aria-describedby={errors.objective ? "objective-error" : undefined}
+                        name="objective"
+                        rows={4}
+                        required
+                        maxLength={1000}
+                        placeholder="Ex. Comparer la mortalité à 30 jours selon le score SAPS II"
+                        value={values.objective}
+                        onChange={(e) => setValue("objective", e.target.value)}
+                        className="resize-y"
+                      />
                       <CharCount value={values.objective} max={1000} />
                     </Field>
-                  </FormSection>
-
-                  <FormSection number="04" title="Message complémentaire">
-                    <Field id="message" label="Optionnel">
-                      <IconTextarea icon={<MessageSquare className="h-4 w-4" />}>
-                        <Textarea
-                          id="message"
-                          name="message"
-                          rows={4}
-                          maxLength={2000}
-                          placeholder="Deadline précise, état actuel de la base, points particuliers…"
-                          value={values.message}
-                          onChange={(e) => setValue("message", e.target.value)}
-                          className="resize-none pl-10 pt-3 transition-colors"
-                        />
-                      </IconTextarea>
+                    <Field
+                      id="message"
+                      error={errors.message}
+                      label="Autre chose à nous dire ?"
+                      hint="Facultatif"
+                    >
+                      <Textarea
+                        id="message"
+                        aria-invalid={!!errors.message || undefined}
+                        aria-describedby={errors.message ? "message-error" : undefined}
+                        name="message"
+                        rows={4}
+                        maxLength={2000}
+                        placeholder="Date de soutenance, état de votre base, consignes de votre directeur…"
+                        value={values.message}
+                        onChange={(e) => setValue("message", e.target.value)}
+                        className="resize-y"
+                      />
                       <CharCount value={values.message} max={2000} />
                     </Field>
                   </FormSection>
 
-                  <div className="-mx-5 space-y-5 rounded-b-3xl border-t border-border bg-surface/60 px-5 py-6 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+                  <div className="space-y-5 border-t border-foreground pt-6">
                     <label
                       className={cn(
-                        "flex items-start gap-3 rounded-xl border bg-background/60 p-3.5 text-sm transition-colors",
-                        consentError ? "border-destructive/40 bg-destructive/5" : "border-border",
+                        "flex items-start gap-3 rounded-md border p-3.5 text-sm transition-colors",
+                        consentError ? "border-destructive bg-destructive/5" : "border-border",
                       )}
                     >
                       <Checkbox
@@ -501,22 +479,26 @@ function ContactPage() {
 
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-xs text-muted-foreground sm:max-w-[60%]">
-                        Réponse sous 48h ouvrées · Premier échange gratuit, sans engagement.
+                        Rappel sous 48 h ouvrées · Premier échange gratuit, sans engagement.
                       </p>
                       <Button
                         type="submit"
                         disabled={submitting}
-                        className="group h-12 w-full bg-brand px-6 text-base text-brand-foreground hover:bg-brand/90 sm:w-auto"
+                        size="lg"
+                        className="group w-full sm:w-auto"
                       >
                         {submitting ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                             Envoi…
                           </>
                         ) : (
                           <>
-                            Envoyer
-                            <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                            Envoyer ma demande
+                            <Send
+                              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                              aria-hidden
+                            />
                           </>
                         )}
                       </Button>
@@ -527,37 +509,30 @@ function ContactPage() {
             </div>
           </div>
 
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="sm:col-span-2 lg:col-span-1">
-                <InfoCard
-                  highlight
-                  icon={<Phone className="h-4 w-4 sm:h-5 sm:w-5" />}
-                  title="Téléphone prioritaire"
-                  text="Nous rappelons par téléphone en priorité. Indiquez un numéro joignable dans le formulaire."
-                />
-              </div>
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-1">
               <InfoCard
-                icon={<Mail className="h-4 w-4 sm:h-5 sm:w-5" />}
-                title="Email direct"
+                title="On vous rappelle"
+                text="Le téléphone reste le plus rapide pour cadrer votre projet : indiquez un numéro où vous êtes joignable."
+              />
+              <InfoCard
+                title="Votre soutenance approche ?"
+                text="Indiquez sa date : nous vous dirons dès l'appel si le délai est tenable."
+              />
+              <InfoCard
+                title="Vous préférez écrire ?"
                 text={
                   <a
                     href={`mailto:${siteConfig.email}`}
-                    className="break-all text-foreground hover:text-brand"
+                    className="text-foreground underline underline-offset-4 [overflow-wrap:anywhere] hover:text-brand"
                   >
                     {siteConfig.email}
                   </a>
                 }
               />
               <InfoCard
-                icon={<Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
-                title="Délais de réponse"
-                text="Sous 48h ouvrées. Soutenance imminente ? Signalez-le, nous traitons en priorité."
-              />
-              <InfoCard
-                icon={<User className="h-4 w-4 sm:h-5 sm:w-5" />}
-                title="Basé à Sousse, Tunisie"
-                text="Équipe biostatisticien + médecin pour thèses et publications."
+                title={`Basés à ${siteConfig.location}`}
+                text="Un médecin et un biostatisticien, pour les thèses, mémoires et articles en médecine."
               />
             </div>
           </aside>
@@ -565,9 +540,9 @@ function ContactPage() {
       </Section>
 
       <FinalCTA
-        title="Vous préférez voir avant de discuter ?"
-        description="Lancez l'audit gratuit de votre base. Vous recevez un rapport clair sur l'état de vos données — et un aperçu concret de notre méthode."
-        primary={{ to: "/audit", label: "Lancer un audit gratuit" }}
+        title="Vous préférez d'abord tester votre base ?"
+        description="En quelques minutes, vous saurez si votre base est exploitable et ce qu'il reste à corriger. Gratuit, sans inscription."
+        primary={{ to: "/audit", label: "Tester ma base gratuitement" }}
         secondary={{ to: "/methode", label: "Voir notre méthode" }}
       />
     </SiteLayout>

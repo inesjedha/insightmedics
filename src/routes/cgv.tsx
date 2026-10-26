@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
+import { FULL_AUDIT_PRICE_LABEL, OFFERS, weeksLabel } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 import { LegalBlock } from "@/components/site/LegalBlock";
 
@@ -12,12 +13,12 @@ export const Route = createFileRoute("/cgv")({
       {
         name: "description",
         content:
-          "Conditions générales de vente d'Insight Medics : offres, tarifs en DT, modalités de paiement à la livraison, révisions, propriété des livrables.",
+          "Conditions générales de vente d'Insight Medics : offres, tarifs en DT, modalités de paiement, révisions, propriété des livrables.",
       },
       { property: "og:title", content: "CGV — Insight Medics" },
       {
         property: "og:description",
-        content: "Tarifs en dinars tunisiens, paiement à la livraison, délais et révisions.",
+        content: "Tarifs en dinars tunisiens, paiement, délais et révisions.",
       },
     ],
   }),
@@ -34,7 +35,7 @@ function CgvPage() {
             Conditions <span className="text-brand">générales de vente</span>.
           </>
         }
-        description="Les règles qui encadrent nos prestations : offres, tarifs, paiement, délais, révisions et propriété des livrables."
+        description="Les règles qui encadrent nos prestations : offres, tarifs, paiement, délais, révisions et propriété des livrables."
       />
 
       <Section className="pt-4 sm:pt-6">
@@ -52,17 +53,19 @@ function CgvPage() {
             <p>Les tarifs sont exprimés en dinars tunisiens (DT) :</p>
             <ul className="ml-5 list-disc space-y-1">
               <li>
-                <strong>Audit IA</strong> : gratuit, sans engagement.
+                <strong>Test gratuit de la base</strong> (aperçu automatique, sans IA) : sans frais,
+                sans engagement.
               </li>
               <li>
-                <strong>Analyse + rédaction des résultats</strong> : 500 DT.
+                <strong>Audit complet</strong> (rapport, plan de correction, base nettoyée) :{" "}
+                {FULL_AUDIT_PRICE_LABEL}, réglé avant son lancement.
               </li>
-              <li>
-                <strong>Rédaction de la discussion</strong> : 500 DT.
-              </li>
-              <li>
-                <strong>Accompagnement thèse complète</strong> : 1 200 DT.
-              </li>
+              {OFFERS.map((o) => (
+                <li key={o.id}>
+                  <strong>{o.title}</strong>
+                  {"\u00a0"}: {o.priceLabel}.
+                </li>
+              ))}
             </ul>
             <p>
               Les devis pour articles, mémoires ou périmètres spécifiques sont établis sur demande
@@ -79,17 +82,14 @@ function CgvPage() {
           </LegalBlock>
 
           <LegalBlock title="4. Délais de livraison">
-            <p>Les délais standards à compter de la réception d'une base exploitable :</p>
+            <p>Les délais standards à compter de la réception d'une base exploitable :</p>
             <ul className="ml-5 list-disc space-y-1">
-              <li>
-                <strong>Analyses + résultats</strong> : 1 semaine.
-              </li>
-              <li>
-                <strong>Discussion</strong> : 1 semaine.
-              </li>
-              <li>
-                <strong>Thèse complète</strong> : 2 semaines.
-              </li>
+              {OFFERS.map((o) => (
+                <li key={o.id}>
+                  <strong>{o.shortTitle}</strong>
+                  {"\u00a0"}: {weeksLabel(o.delayWeeks)}.
+                </li>
+              ))}
             </ul>
             <p>
               Les délais peuvent être ajustés selon la qualité initiale de la base et le volume de
@@ -97,17 +97,17 @@ function CgvPage() {
             </p>
           </LegalBlock>
 
-          <LegalBlock title="5. Paiement à la livraison">
+          <LegalBlock title="5. Paiement">
             <p>
-              Aucun acompte n'est demandé pour les prestations facturées en dinars tunisiens. Le
-              règlement intervient à la livraison du livrable validé, par virement bancaire ou tout
-              moyen convenu d'un commun accord.
+              Le règlement des formules intervient au lancement de la prestation, au prix convenu
+              lors de l'échange préalable, par virement bancaire ou tout moyen convenu d'un commun
+              accord. L'audit complet se règle de la même façon, avant son lancement.
             </p>
           </LegalBlock>
 
-          <LegalBlock title="6. Révisions et aller-retours">
+          <LegalBlock title="6. Révisions et allers-retours">
             <p>
-              Chaque offre inclut des aller-retours de relecture raisonnables, dans la limite du
+              Chaque formule inclut des allers-retours de relecture raisonnables, dans la limite du
               périmètre initialement défini. Les demandes dépassant ce cadre (changement de question
               de recherche, ajout de variables après livraison, refonte complète) font l'objet d'un
               devis complémentaire.
@@ -140,7 +140,8 @@ function CgvPage() {
             <p>
               Après règlement, le client devient pleinement propriétaire des livrables (analyses,
               tableaux, figures, textes rédigés). Il peut les intégrer librement à sa thèse, son
-              article ou tout autre support, sous sa seule signature.
+              article ou tout autre support, dans le respect des règles de sa faculté ou de la
+              revue, notamment sur la déclaration des aides extérieures.
             </p>
             <p>
               {siteConfig.name} se réserve le droit de mentionner anonymement les types de projets
@@ -169,8 +170,7 @@ function CgvPage() {
           </LegalBlock>
 
           <p className="text-xs italic text-muted-foreground">
-            Dernière mise à jour : juin 2026 — version initiale, à faire valider par un juriste
-            avant exploitation commerciale.
+            Dernière mise à jour : octobre 2026.
           </p>
         </article>
       </Section>

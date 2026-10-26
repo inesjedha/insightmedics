@@ -20,13 +20,13 @@ function LeadsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Prospects & clients</h1>
+        <h1 className="font-display text-3xl">Prospects & clients</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {leads.length} entrée(s). Cliquez sur une ligne pour gérer le suivi.
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="overflow-hidden rounded-md border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-surface/60 text-xs uppercase tracking-wider text-muted-foreground">

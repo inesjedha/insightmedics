@@ -83,9 +83,9 @@ function LeadDetail() {
         </Button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
+      <div className="rounded-md border border-border bg-card p-6">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-2xl font-bold">{lead.name || "Lead sans nom"}</h1>
+          <h1 className="font-display text-3xl">{lead.name || "Lead sans nom"}</h1>
           <Badge variant="outline" className="border-border">
             {lead.source === "audit" ? "Audit" : "Contact"}
           </Badge>
@@ -121,8 +121,8 @@ function LeadDetail() {
         </dl>
       </div>
 
-      <form onSubmit={onSave} className="rounded-2xl border border-border bg-card p-6 space-y-5">
-        <h2 className="font-display text-lg font-semibold">Suivi CRM</h2>
+      <form onSubmit={onSave} className="rounded-md border border-border bg-card p-6 space-y-5">
+        <h2 className="font-sans text-lg font-semibold">Suivi CRM</h2>
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="status">Statut</Label>

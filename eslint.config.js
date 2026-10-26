@@ -21,6 +21,11 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      // Typographie française : espaces insécables (U+00A0, U+202F) voulues dans les textes.
+      "no-irregular-whitespace": [
+        "error",
+        { skipStrings: true, skipTemplates: true, skipJSXText: true, skipComments: true },
+      ],
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },

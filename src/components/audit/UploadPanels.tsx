@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FileBarChart2, FileText, Upload } from "lucide-react";
+import { FileBarChart2, FileText, ShieldCheck, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -34,17 +34,15 @@ export function AuditUploader({
         if (f) onFile(f);
       }}
       className={cn(
-        "rounded-2xl border-2 border-dashed bg-card p-8 text-center transition-colors",
-        drag ? "border-brand bg-brand/5" : "border-border",
+        "rounded-md border-2 border-dashed bg-card p-8 text-center transition-colors",
+        drag ? "border-brand bg-accent" : "border-foreground/30",
         disabled && "opacity-60",
       )}
     >
-      <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-brand">
-        <Upload className="h-6 w-6" />
-      </div>
-      <h3 className="mt-4 font-display text-lg font-bold">Téléversez votre base de données</h3>
-      <p className="mt-1.5 text-sm text-muted-foreground">
-        Formats acceptés : SPSS (.sav), Excel (.xlsx, .xls) et CSV.
+      <Upload className="mx-auto h-8 w-8 text-brand" aria-hidden />
+      <h2 className="mt-4 font-sans text-lg font-semibold">Déposez votre base de données</h2>
+      <p className="mt-1.5 text-[15px] text-muted-foreground">
+        Glissez votre fichier ici ou choisissez-le : SPSS (.sav), Excel (.xlsx, .xls) ou CSV.
       </p>
 
       <input
@@ -54,6 +52,7 @@ export function AuditUploader({
         className="hidden"
         onChange={(e) => onFile(e.target.files?.[0] ?? null)}
         disabled={disabled}
+        aria-label="Base de données à auditer"
       />
 
       <div className="mt-5">
@@ -63,12 +62,20 @@ export function AuditUploader({
       </div>
 
       {file && (
-        <div className="mt-5 inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm">
-          <FileBarChart2 className="h-4 w-4 text-brand" />
-          <span className="font-medium">{file.name}</span>
-          <span className="text-muted-foreground">· {(file.size / 1024).toFixed(1)} Ko</span>
+        <div className="mt-5 inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm">
+          <FileBarChart2 className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+          <span className="truncate font-medium">{file.name}</span>
+          <span className="shrink-0 text-muted-foreground">
+            · {(file.size / 1024).toFixed(1)} Ko
+          </span>
         </div>
       )}
+
+      <p className="mx-auto mt-6 flex max-w-md items-start justify-center gap-2 text-left text-sm text-muted-foreground">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
+        Envoyez une base anonymisée (sans nom ni numéro de dossier). Votre fichier est supprimé
+        automatiquement au bout de 30 jours.
+      </p>
     </div>
   );
 }
@@ -84,19 +91,18 @@ export function ProtocolUploader({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="rounded-xl border border-border bg-card/60 p-4">
+    <div className="rounded-md border border-border bg-card/60 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand/10 text-brand">
-            <FileText className="h-4 w-4" />
-          </div>
+          <FileText className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
           <div>
-            <p className="text-sm font-semibold">
+            <p className="text-[15px] font-semibold">
               Protocole de recherche{" "}
               <span className="font-normal text-muted-foreground">(optionnel)</span>
             </p>
-            <p className="text-xs text-muted-foreground">
-              Word ou PDF. Avec le protocole, l'audit évalue aussi la faisabilité de vos analyses.
+            <p className="text-sm text-muted-foreground">
+              Word (.docx), PDF ou texte. Utile pour l'audit complet, qui vérifie que les analyses
+              prévues sont faisables avec votre base.
             </p>
           </div>
         </div>
@@ -107,18 +113,20 @@ export function ProtocolUploader({
           className="hidden"
           onChange={(e) => onProtocol(e.target.files?.[0] ?? null)}
           disabled={disabled}
+          aria-label="Protocole de recherche (optionnel)"
         />
         {protocol ? (
-          <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs">
-            <FileText className="h-3.5 w-3.5 text-brand" />
-            <span className="font-medium">{protocol.name}</span>
+          <div className="inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-surface py-1 pl-3 pr-1 text-sm">
+            <FileText className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+            <span className="truncate font-medium">{protocol.name}</span>
             {!disabled && (
               <button
+                type="button"
                 onClick={() => onProtocol(null)}
-                className="text-muted-foreground hover:text-destructive"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive"
                 aria-label="Retirer le protocole"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>

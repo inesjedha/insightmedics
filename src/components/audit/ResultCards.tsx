@@ -4,12 +4,8 @@ import type { AiAssessment, AuditResult, Finding, ScoreDetail } from "@/lib/api/
 import { cn } from "@/lib/utils";
 
 const VERDICT_STYLES: Record<number, { ring: string; text: string; bg: string }> = {
-  1: {
-    ring: "border-emerald-300/50",
-    text: "text-emerald-700 dark:text-emerald-300",
-    bg: "bg-emerald-500/5",
-  },
-  2: { ring: "border-brand/40", text: "text-brand", bg: "bg-brand/5" },
+  1: { ring: "border-brand/50", text: "text-brand", bg: "bg-accent" },
+  2: { ring: "border-brand/40", text: "text-brand", bg: "bg-accent/60" },
   3: {
     ring: "border-amber-300/50",
     text: "text-amber-700 dark:text-amber-300",
@@ -32,19 +28,17 @@ export function VerdictBanner({
 }) {
   const st = VERDICT_STYLES[verdict.level] ?? VERDICT_STYLES[3];
   return (
-    <div className={cn("mt-2 rounded-2xl border p-6 sm:p-7", st.ring, st.bg)}>
+    <div className={cn("mt-2 rounded-md border p-6 sm:p-7", st.ring, st.bg)}>
       <div className="flex flex-wrap items-center gap-3">
         <Gauge className={cn("h-5 w-5", st.text)} />
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Verdict d'exploitabilité
         </p>
         <Badge variant="outline" className="border-border text-muted-foreground">
-          Confiance : {scoreDetail.confiance.niveau}
+          Confiance : {scoreDetail.confiance.niveau}
         </Badge>
       </div>
-      <p className={cn("mt-2 font-display text-2xl font-extrabold tracking-tight", st.text)}>
-        {verdict.label}
-      </p>
+      <p className={cn("mt-2 font-display text-4xl", st.text)}>{verdict.label}</p>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-foreground/85">
         {verdict.justification_fr}
       </p>
@@ -55,8 +49,8 @@ export function VerdictBanner({
 export function ExecutiveSummaryCard({ assessment }: { assessment: AiAssessment }) {
   const r = assessment.report_sections_fr;
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+    <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
+      <h3 className="flex items-center gap-2 text-lg font-semibold">
         <ClipboardList className="h-5 w-5 text-brand" />
         Synthèse de l'audit
       </h3>
@@ -116,8 +110,8 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
     (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
   );
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+    <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
+      <h3 className="flex items-center gap-2 text-lg font-semibold">
         <ShieldAlert className="h-5 w-5 text-brand" />
         Anomalies détectées
         <span className="text-sm font-normal text-muted-foreground">({findings.length})</span>
@@ -130,7 +124,7 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
             <li
               key={f.id}
               className={cn(
-                "rounded-xl border p-4",
+                "rounded-md border p-4",
                 crit && "border-destructive/30 bg-destructive/5",
                 maj && "border-amber-300/40 bg-amber-500/5",
                 !crit && !maj && "border-border bg-surface/50",
@@ -161,7 +155,7 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
               <p className="mt-1 text-sm leading-relaxed text-foreground/85">{f.explanation_fr}</p>
               {f.proposed_correction && (
                 <p className="mt-2 text-sm text-foreground/80">
-                  <span className="font-medium text-brand">Correction proposée : </span>
+                  <span className="font-medium text-brand">Correction proposée : </span>
                   {f.proposed_correction}
                 </p>
               )}
@@ -180,13 +174,13 @@ export function FindingsCard({ findings }: { findings: Finding[] }) {
 
 export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-      <h3 className="flex items-center gap-2 font-display text-lg font-bold">
+    <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
+      <h3 className="flex items-center gap-2 text-lg font-semibold">
         <Gauge className="h-5 w-5 text-brand" />
         Détail du score par domaine
       </h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        Grille d'audit en 8 domaines. Note globale : {scoreDetail.score_final}/100 —{" "}
+        Grille d'audit en 8 domaines. Note globale : {scoreDetail.score_final}/100 —{" "}
         {scoreDetail.niveau_qualite}.
       </p>
       <ul className="mt-4 space-y-3">
@@ -206,7 +200,7 @@ export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
                 <div
                   className={cn(
                     "h-full rounded-full",
-                    good && "bg-emerald-500",
+                    good && "bg-brand",
                     mid && "bg-amber-500",
                     !good && !mid && "bg-destructive",
                   )}
@@ -218,7 +212,7 @@ export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
         })}
       </ul>
       {scoreDetail.plafonds_appliques.length > 0 && (
-        <div className="mt-5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+        <div className="mt-5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <p className="font-semibold">Plafond appliqué</p>
           <ul className="mt-1 list-disc pl-5">
             {scoreDetail.plafonds_appliques.map((p, i) => (
@@ -243,16 +237,16 @@ export function AuditScoreCard({
   preview?: boolean;
 }) {
   const scoreColor =
-    result.score >= 80 ? "text-brand" : result.score >= 60 ? "text-amber-600" : "text-destructive";
+    result.score >= 80 ? "text-brand" : result.score >= 60 ? "text-amber-700" : "text-destructive";
 
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+    <div className="mt-6 rounded-md border border-border bg-card p-6 sm:p-8">
       <div className="grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {preview ? "Score préliminaire" : "Score de qualité"}
           </p>
-          <p className={cn("font-display text-6xl font-extrabold tracking-tight", scoreColor)}>
+          <p className={cn("font-display text-7xl leading-none", scoreColor)}>
             {result.score}
             <span className="text-2xl text-muted-foreground">/100</span>
           </p>
@@ -277,7 +271,7 @@ export function AuditScoreCard({
       </div>
 
       <div className="mt-8">
-        <h4 className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        <h4 className="font-sans text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Observations
         </h4>
         <ul className="mt-3 space-y-2">
@@ -309,25 +303,28 @@ export function AuditScoreCard({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-surface/60 px-4 py-3">
+    <div className="rounded-md border border-border bg-surface/60 px-4 py-3">
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 font-display text-xl font-bold text-foreground">{value}</div>
+      <div className="mt-1 font-display text-3xl leading-none text-foreground">{value}</div>
     </div>
   );
 }
 
-export function HumanAlert() {
+/** Alerte « relecture humaine ». `client` : audit livré (nous avons déjà les coordonnées). */
+export function HumanAlert({ context = "preview" }: { context?: "preview" | "client" }) {
   return (
-    <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-300/50 bg-amber-500/5 p-5 text-amber-800 dark:text-amber-200">
+    <div className="mt-6 flex items-start gap-3 rounded-md border border-foreground bg-highlight/50 p-5 text-foreground">
       <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
       <div>
-        <p className="font-display text-base font-semibold">
-          Un expert humain reviendra vers vous sous 48h.
+        <p className="text-base font-semibold">
+          {context === "client"
+            ? "Plusieurs alertes critiques : un expert vous recontacte."
+            : "Plusieurs alertes critiques : parlez-en à un expert."}
         </p>
         <p className="mt-1 text-sm">
-          Plusieurs alertes critiques ont été détectées dans votre base. Notre équipe (médecin +
-          biostatisticien) va analyser le rapport et vous recontactera personnellement par
-          téléphone.
+          {context === "client"
+            ? "Un médecin et un biostatisticien relisent votre rapport et vous recontactent sous 48 h ouvrées pour en parler."
+            : "Laissez vos coordonnées ci-dessous : nous vous rappelons sous 48 h ouvrées pour voir avec vous ce qui peut être corrigé, sans engagement."}
         </p>
       </div>
     </div>

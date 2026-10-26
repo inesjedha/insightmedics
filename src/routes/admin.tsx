@@ -33,8 +33,10 @@ function AdminLayout() {
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link to="/admin" className="flex items-center gap-3">
-            <Logo showWordmark={false} />
-            <span className="font-display text-sm font-semibold text-foreground">Admin · CRM</span>
+            <Logo className="text-[22px] sm:text-[22px]" />
+            <span className="font-sans text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Admin · CRM
+            </span>
           </Link>
           <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
             ← Retour au site

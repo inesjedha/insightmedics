@@ -6,8 +6,9 @@
   "ignoreDependencies": [
     "tailwindcss",
     "tw-animate-css",
-    "@fontsource/inter",
-    "@fontsource/manrope"
+    "@fontsource/caveat",
+    "@fontsource/hanken-grotesk",
+    "@fontsource/instrument-serif"
   ],
   "vite": false,
   "vitest": false

@@ -67,7 +67,7 @@ function AdminAudits() {
   }, [anyProcessing, pollingBlocked, refresh]);
 
   const onUnlock = async (id: string) => {
-    if (pendingId) return; // double clic : une seule demande
+    if (pendingId) return; // double clic : une seule demande
     if (!window.confirm("Paiement reçu ? Lancer l'audit IA complet (consomme la clé IA) ?")) return;
     setPendingId(id);
     setActionError(null);
@@ -86,7 +86,7 @@ function AdminAudits() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold">Audits</h1>
+          <h1 className="font-display text-3xl">Audits</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Débloquez un audit après réception du paiement ({FULL_AUDIT_PRICE_LABEL}) : l'audit IA
             complet se lance en arrière-plan (quelques minutes), vous pouvez quitter la page.
@@ -99,18 +99,18 @@ function AdminAudits() {
       </div>
 
       {needKey && (
-        <div className="rounded-lg border border-amber-300/40 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300">
+        <div className="rounded-md border border-amber-300/40 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300">
           Clé admin requise ou invalide. Renseignez-la dans la barre latérale, puis rafraîchissez.
         </div>
       )}
       {error && (
-        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+        <div className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
       {actionError && (
-        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+        <div className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{actionError}</span>
         </div>
@@ -123,7 +123,7 @@ function AdminAudits() {
       ) : audits.length === 0 && !needKey ? (
         <p className="text-sm text-muted-foreground">Aucun audit pour l'instant.</p>
       ) : audits.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="overflow-x-auto rounded-md border border-border">
           <table className="w-full text-sm">
             <thead className="bg-surface/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
@@ -258,7 +258,7 @@ function CopyLinkButton({ token }: { token: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      window.prompt("Copiez le lien client :", url);
+      window.prompt("Copiez le lien client :", url);
     }
   };
   return (

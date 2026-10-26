@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
@@ -20,15 +20,15 @@ import { FULL_AUDIT_PRICE_LABEL } from "@/lib/offers";
 export const Route = createFileRoute("/audit")({
   head: () => ({
     meta: [
-      { title: "Audit — aperçu gratuit · Insight Medics" },
+      { title: "Test gratuit de votre base de thèse — Insight Medics" },
       {
         name: "description",
-        content: `Téléversez votre base : aperçu gratuit (score préliminaire + anomalies structurelles). Audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}. Formats SPSS, Excel et CSV.`,
+        content: `Testez gratuitement votre base de thèse : score sur 100 et anomalies en quelques minutes. Audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}. SPSS, Excel, CSV.`,
       },
-      { property: "og:title", content: "Audit — aperçu gratuit · Insight Medics" },
+      { property: "og:title", content: "Test gratuit de votre base · Insight Medics" },
       {
         property: "og:description",
-        content: `Votre base radiographiée en quelques minutes. Aperçu gratuit ; audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}.`,
+        content: `Votre base vérifiée en quelques minutes. Test gratuit ; audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}.`,
       },
     ],
   }),
@@ -87,11 +87,16 @@ function AuditPage() {
 
   return (
     <SiteLayout>
-      <Section>
+      <Section className="bg-paper">
         <SectionHeader
-          eyebrow="Audit · aperçu gratuit"
-          title="Votre base radiographiée en quelques minutes."
-          description={`L'aperçu est gratuit et 100 % calculé par du code — zéro valeur hallucinée : score préliminaire et anomalies structurelles. L'audit complet (verdict d'exploitabilité, anomalies classées, plan d'action et livrables) se débloque pour ${FULL_AUDIT_PRICE_LABEL}.`}
+          as="h1"
+          eyebrow="Test gratuit · sans inscription"
+          title={
+            <>
+              Votre base vérifiée <span className="italic text-brand">en quelques minutes.</span>
+            </>
+          }
+          description={`Gratuit et sans inscription. Le score et les anomalies sont calculés par du code, directement sur vos données : aucune valeur n'est inventée. L'audit complet (verdict d'exploitabilité, plan de correction, rapport Word, classeur Excel, base nettoyée) coûte ${FULL_AUDIT_PRICE_LABEL}.`}
         />
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
@@ -103,21 +108,16 @@ function AuditPage() {
               disabled={phase === "running"}
             />
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
-                size="lg"
-                disabled={!file || phase === "running"}
-                onClick={start}
-                className="bg-brand text-brand-foreground hover:bg-brand/90"
-              >
+              <Button size="lg" disabled={!file || phase === "running"} onClick={start}>
                 {phase === "running" ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyse en cours…
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    Vérification en cours…
                   </>
                 ) : (
                   <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Lancer l'aperçu gratuit
+                    Vérifier ma base gratuitement
+                    <ArrowRight className="h-4 w-4" aria-hidden />
                   </>
                 )}
               </Button>
@@ -127,9 +127,20 @@ function AuditPage() {
                 </Button>
               )}
             </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              En lançant la vérification, vous confirmez que votre base est anonymisée et acceptez
+              notre{" "}
+              <Link to="/confidentialite" className="text-brand underline underline-offset-2">
+                politique de confidentialité
+              </Link>
+              .
+            </p>
             {error && (
-              <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div
+                role="alert"
+                className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive"
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 <span>{error}</span>
               </div>
             )}
@@ -141,7 +152,7 @@ function AuditPage() {
 
       {phase === "done" && result && (
         <Section className="pt-0">
-          {/* Rythme vertical unique : un seul écart entre tous les blocs. */}
+          {/* Rythme vertical unique : un seul écart entre tous les blocs. */}
           <div ref={resultsRef} className="scroll-mt-24 space-y-6">
             <ResultsSummary result={result} nIssues={nIssues} nCrit={nCrit} />
             {isPreview && <PreviewNotice nIssues={nIssues} />}
