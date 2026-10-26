@@ -24,7 +24,7 @@ export const FAQ: FaqItem[] = [
   {
     question: "Mes données patients sont-elles protégées ?",
     answer:
-      "Envoyez une base anonymisée, sans nom ni numéro de dossier. Les colonnes nominatives (nom, téléphone, e-mail, adresse, CIN, date de naissance) sont repérées et masquées avant tout envoi à l'IA, qui ne voit qu'un extrait de 50 lignes au plus. Le numéro patient est transmis tel quel : utilisez un identifiant d'étude (P-001…), jamais un numéro de dossier. Vos fichiers sont supprimés automatiquement 30 jours après le test ou la livraison, et rien n'est réutilisé.",
+      "Envoyez une base anonymisée, sans nom ni numéro de dossier. Les colonnes nominatives (nom, téléphone, e-mail, adresse, CIN, date de naissance) sont repérées et masquées avant tout envoi à l'IA, qui ne voit qu'un extrait de 50 lignes au plus. Vos fichiers sont supprimés automatiquement 30 jours après le test ou la livraison, et rien n'est réutilisé.",
   },
   {
     question: "Combien de temps faut-il ?",

@@ -140,9 +140,8 @@ function PrivacyPage() {
               artificielle Claude (Anthropic, société américaine). Claude ne reçoit jamais votre
               base complète : les noms et libellés de vos variables, un extrait d'au plus 50 lignes
               dont les colonnes nominatives (nom, téléphone, e-mail, adresse, CIN, date de
-              naissance) sont masquées, avec l'identifiant d'étude de chaque patient, des
-              statistiques calculées par notre code et, si vous l'avez fourni, le texte de votre
-              protocole.
+              naissance) sont masquées, des statistiques calculées par notre code et, si vous l'avez
+              fourni, le texte de votre protocole.
             </p>
             <p>
               Les bases de données patients que vous nous confiez doivent être
