@@ -247,49 +247,79 @@ export function AiHuman() {
 
 /* ------------------------------------------------------------------ Équipe */
 
-const TEAM = [
+const TEAM_ROLES = [
+  {
+    title: "Des médecins",
+    text: "Ils vérifient la cohérence clinique de vos résultats et vous préparent aux questions du jury.",
+  },
+  {
+    title: "Des biostatisticiens",
+    text: "Ils choisissent les tests adaptés à votre étude, vérifient leurs conditions d'application et valident chaque analyse.",
+  },
+  {
+    title: "Une équipe data",
+    text: "Elle a conçu les contrôles automatiques qui repèrent les erreurs de votre base avant toute analyse.",
+  },
+];
+
+const FOUNDERS = [
   {
     name: "Dr Hamza Ben Kheder",
-    role: "Médecin anesthésiste-réanimateur · cofondateur",
+    role: "Médecin anesthésiste-réanimateur, passionné de tech",
     photo: hamzaPhoto,
-    text: "Passionné de tech, il veille à la cohérence clinique de chaque travail et à ce que vous sachiez le défendre devant votre jury.",
   },
   {
     name: "Inès Ben Amor",
-    role: "Ingénieure IA · cofondatrice",
+    role: "Ingénieure IA, ex\u2011Lead Data Scientist dans la Silicon Valley",
     photo: inesPhoto,
-    text: "Ingénieure des Mines de Saint-Étienne, ex‑Lead Data Scientist dans la Silicon Valley, fondatrice de Luna for Health. Elle a conçu les contrôles automatiques de votre base.",
   },
 ];
 
 export function Team() {
   return (
     <Section className="border-t border-border">
-      <div className="grid gap-12 lg:grid-cols-[1fr_1.6fr] lg:gap-16">
-        <SectionHeader
-          eyebrow="Qui sommes-nous"
-          title={
-            <>
-              Un médecin et une ingénieure,{" "}
-              <span className="italic text-brand">derrière chaque thèse.</span>
-            </>
-          }
-          description="L'un connaît la thèse de médecine de l'intérieur, l'autre a fait de la donnée son métier."
-        />
-        <ul className="grid gap-10 sm:grid-cols-2">
-          {TEAM.map((m) => (
-            <li key={m.name} className="border-t border-foreground pt-6">
+      <SectionHeader
+        eyebrow="Qui sommes-nous"
+        title={
+          <>
+            Une équipe de médecins et de biostatisticiens,{" "}
+            <span className="italic text-brand">derrière chaque thèse.</span>
+          </>
+        }
+        description="Votre travail passe entre plusieurs mains avant de vous être rendu : la méthode d'un côté, la lecture clinique de l'autre."
+      />
+
+      <ol className="mt-10 grid gap-8 md:grid-cols-3">
+        {TEAM_ROLES.map((r, i) => (
+          <li key={r.title} className="border-t border-foreground pt-5">
+            <span aria-hidden className="font-hand text-3xl leading-none text-brand">
+              {i + 1}.
+            </span>
+            <h3 className="mt-2 font-display text-3xl">{r.title}</h3>
+            <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{r.text}</p>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-12 flex flex-col gap-6 rounded-md border border-border bg-surface p-6 sm:p-7 lg:flex-row lg:items-center lg:gap-10">
+        <p className="shrink-0 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Fondé par
+        </p>
+        <ul className="grid flex-1 gap-6 sm:grid-cols-2">
+          {FOUNDERS.map((f) => (
+            <li key={f.name} className="flex items-center gap-4">
               <img
-                src={m.photo}
-                alt={`Portrait de ${m.name}`}
-                width={112}
-                height={112}
+                src={f.photo}
+                alt={`Portrait de ${f.name}`}
+                width={64}
+                height={64}
                 loading="lazy"
-                className="size-28 rounded-md border border-foreground object-cover shadow-offset"
+                className="size-16 shrink-0 rounded-md border border-foreground object-cover"
               />
-              <h3 className="mt-6 font-display text-3xl">{m.name}</h3>
-              <p className="mt-1 text-sm font-semibold text-brand">{m.role}</p>
-              <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{m.text}</p>
+              <div className="min-w-0">
+                <p className="font-display text-2xl leading-tight">{f.name}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{f.role}</p>
+              </div>
             </li>
           ))}
         </ul>
