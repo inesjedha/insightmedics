@@ -141,8 +141,8 @@ redéploie pas le backend). Les réglages vivent dans Railway (les fichiers
 
 | Service  | Dossier racine | Démarrage                                                     | Domaine                |
 | -------- | -------------- | ------------------------------------------------------------- | ---------------------- |
-| backend  | `/backend`     | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'` | `api.insightmedics.tn` |
-| front    | `/`            | build `bun run build`, démarrage `bun .output/server/index.mjs` | `www.insightmedics.tn` |
+| backend  | `/backend`     | `uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'` | `api.insightmedics.fr` |
+| front    | `/`            | build `bun run build`, démarrage `bun .output/server/index.mjs` | `www.insightmedics.fr` |
 | Postgres | modèle Railway | —                                                             | réseau privé uniquement |
 
 - **backend** : healthcheck `/health`, redémarrage sur échec, `drainingSeconds` 900 (un

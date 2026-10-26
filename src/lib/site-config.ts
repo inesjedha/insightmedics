@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "Insight Medics",
   description:
     "Insight Medics accompagne les étudiants et les médecins dans les statistiques et la rédaction de leur thèse, mémoire ou article. Nous analysons votre base, rédigeons avec vous, et un médecin et un biostatisticien relisent tout.",
-  url: "https://www.insightmedics.tn",
+  url: "https://www.insightmedics.fr",
   email: "helpinsightmedics@gmail.com",
   location: "Sousse, Tunisie",
   nav: [
