@@ -6,6 +6,7 @@ import {
   ProblemApproach,
   AuditTeaser,
   AiHuman,
+  Team,
   Authorship,
   ServicesTeaser,
   Testimonials,
@@ -43,6 +44,7 @@ function HomePage() {
       <ProblemApproach />
       <AuditTeaser />
       <AiHuman />
+      <Team />
       <Authorship />
       <ServicesTeaser />
       <Testimonials />

@@ -8,6 +8,8 @@ import { OFFER_GRID, OfferCard } from "@/components/site/OfferCard";
 import { TestBanner } from "@/components/site/TestBanner";
 import { Section, SectionHeader } from "@/components/site/Section";
 import { siteConfig } from "@/lib/site-config";
+import hamzaPhoto from "@/assets/team/hamza-ben-kheder.jpg";
+import inesPhoto from "@/assets/team/ines-ben-amor.jpg";
 import { FULL_AUDIT_PRICE_LABEL, OFFERS, getOffer, weeksLabel } from "@/lib/offers";
 
 const analyses = getOffer("analyses");
@@ -238,6 +240,59 @@ export function AiHuman() {
             </ul>
           </div>
         </div>
+      </div>
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------------ Équipe */
+
+const TEAM = [
+  {
+    name: "Dr Hamza Ben Kheder",
+    role: "Médecin anesthésiste-réanimateur · cofondateur",
+    photo: hamzaPhoto,
+    text: "Passionné de tech, il veille à la cohérence clinique de chaque travail et à ce que vous sachiez le défendre devant votre jury.",
+  },
+  {
+    name: "Inès Ben Amor",
+    role: "Ingénieure IA · cofondatrice",
+    photo: inesPhoto,
+    text: "Ingénieure des Mines de Saint-Étienne, ex‑Lead Data Scientist dans la Silicon Valley, fondatrice de Luna for Health. Elle a conçu les contrôles automatiques de votre base.",
+  },
+];
+
+export function Team() {
+  return (
+    <Section className="border-t border-border">
+      <div className="grid gap-12 lg:grid-cols-[1fr_1.6fr] lg:gap-16">
+        <SectionHeader
+          eyebrow="Qui sommes-nous"
+          title={
+            <>
+              Un médecin et une ingénieure,{" "}
+              <span className="italic text-brand">derrière chaque thèse.</span>
+            </>
+          }
+          description="L'un connaît la thèse de médecine de l'intérieur, l'autre a fait de la donnée son métier."
+        />
+        <ul className="grid gap-10 sm:grid-cols-2">
+          {TEAM.map((m) => (
+            <li key={m.name} className="border-t border-foreground pt-6">
+              <img
+                src={m.photo}
+                alt={`Portrait de ${m.name}`}
+                width={112}
+                height={112}
+                loading="lazy"
+                className="size-28 rounded-md border border-foreground object-cover shadow-offset"
+              />
+              <h3 className="mt-6 font-display text-3xl">{m.name}</h3>
+              <p className="mt-1 text-sm font-semibold text-brand">{m.role}</p>
+              <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{m.text}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </Section>
   );
