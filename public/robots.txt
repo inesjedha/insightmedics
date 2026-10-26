@@ -1,4 +1,4 @@
-# Insight Medics — https://www.insightmedics.tn
+# Insight Medics — https://www.insightmedics.fr
 # Moteurs de recherche et assistants IA bienvenus sur les pages publiques.
 
 User-agent: *
@@ -19,4 +19,4 @@ Allow: /
 Disallow: /admin
 Disallow: /r/
 
-Sitemap: https://www.insightmedics.tn/sitemap.xml
+Sitemap: https://www.insightmedics.fr/sitemap.xml

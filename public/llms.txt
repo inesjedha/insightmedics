@@ -19,18 +19,18 @@
 
 ## Pages
 
-- [Accueil](https://www.insightmedics.tn/): présentation, équipe, film de 52 secondes, FAQ.
-- [Services](https://www.insightmedics.tn/services): détail des formules.
-- [Tarifs](https://www.insightmedics.tn/tarifs): prix et délais.
-- [Méthode](https://www.insightmedics.tn/methode): déroulé en six étapes et double relecture.
-- [Tester ma base](https://www.insightmedics.tn/audit): test gratuit de la base de données.
-- [À propos](https://www.insightmedics.tn/a-propos): équipe et engagements.
-- [Contact](https://www.insightmedics.tn/contact): demande de devis.
+- [Accueil](https://www.insightmedics.fr/): présentation, équipe, film de 52 secondes, FAQ.
+- [Services](https://www.insightmedics.fr/services): détail des formules.
+- [Tarifs](https://www.insightmedics.fr/tarifs): prix et délais.
+- [Méthode](https://www.insightmedics.fr/methode): déroulé en six étapes et double relecture.
+- [Tester ma base](https://www.insightmedics.fr/audit): test gratuit de la base de données.
+- [À propos](https://www.insightmedics.fr/a-propos): équipe et engagements.
+- [Contact](https://www.insightmedics.fr/contact): demande de devis.
 
 ## Guides
 
-- [Quel test statistique choisir pour votre thèse de médecine ?](https://www.insightmedics.tn/guides/quel-test-statistique-choisir-these-medecine)
-- [Régression logistique : interpréter un odds ratio dans votre thèse](https://www.insightmedics.tn/guides/regression-logistique-interpreter-odds-ratio-these)
+- [Quel test statistique choisir pour votre thèse de médecine ?](https://www.insightmedics.fr/guides/quel-test-statistique-choisir-these-medecine)
+- [Régression logistique : interpréter un odds ratio dans votre thèse](https://www.insightmedics.fr/guides/regression-logistique-interpreter-odds-ratio-these)
 
 ## Contact
 
