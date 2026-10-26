@@ -7,12 +7,12 @@ import {
   FileBarChart2,
   Loader2,
   Lock,
-  RefreshCw,
   RotateCcw,
   Unlock,
 } from "lucide-react";
 import { listAudits, unlockAudit, UnauthorizedError } from "@/lib/api/client";
 import type { AuditResult } from "@/lib/api/types";
+import { AdminPageHeader, RefreshButton } from "@/components/admin/AdminUi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FULL_AUDIT_PRICE_LABEL } from "@/lib/offers";
@@ -21,6 +21,16 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/admin/audits")({
   component: AdminAudits,
 });
+
+type Filter = "all" | "preview" | "processing" | "done" | "failed";
+const FILTERS: [Filter, string][] = [
+  ["all", "Tous"],
+  ["preview", "Aperçus"],
+  ["processing", "En cours"],
+  ["done", "Livrés"],
+  ["failed", "En échec"],
+];
+const inFilter = (f: Filter, a: AuditResult) => f === "all" || a.status === f;
 
 /** Intervalle de rafraîchissement tant qu'un audit IA tourne (il dure plusieurs minutes). */
 const POLL_MS = 5000;
@@ -33,6 +43,7 @@ function AdminAudits() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   // Erreur d'une action (déblocage) : distincte du chargement, elle n'arrête pas le suivi.
   const [actionError, setActionError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>("all");
 
   const refresh = useCallback(async () => {
     try {
@@ -58,6 +69,9 @@ function AdminAudits() {
 
   // Tant qu'un audit est en cours côté serveur, on rafraîchit la liste en silence
   // (arrêt dès qu'une erreur s'affiche, pour ne pas insister indéfiniment).
+  const shown = [...audits]
+    .filter((a) => inFilter(filter, a))
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   const anyProcessing = audits.some((a) => a.status === "processing");
   const pollingBlocked = needKey || error !== null;
   useEffect(() => {
@@ -84,25 +98,42 @@ function AdminAudits() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl">Audits</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+      <AdminPageHeader
+        title="Audits"
+        description={
+          <>
             Débloquez un audit après réception du paiement ({FULL_AUDIT_PRICE_LABEL}) : l'audit IA
             complet se lance en arrière-plan (quelques minutes), vous pouvez quitter la page.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-          <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
-          Rafraîchir
-        </Button>
+          </>
+        }
+        action={<RefreshButton onClick={load} loading={loading} />}
+      />
+
+      <div className="-mx-1 flex gap-1 overflow-x-auto px-1" role="tablist" aria-label="Filtrer">
+        {FILTERS.map(([f, label]) => {
+          const active = f === filter;
+          return (
+            <button
+              key={f}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setFilter(f)}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm",
+                active
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {label}
+              <span className="tabular-nums opacity-70">
+                {audits.filter((a) => inFilter(f, a)).length}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {needKey && (
-        <div className="rounded-md border border-amber-300/40 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300">
-          Clé admin requise ou invalide. Renseignez-la dans la barre latérale, puis rafraîchissez.
-        </div>
-      )}
       {error && (
         <div className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -120,9 +151,13 @@ function AdminAudits() {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
         </div>
-      ) : audits.length === 0 && !needKey ? (
-        <p className="text-sm text-muted-foreground">Aucun audit pour l'instant.</p>
-      ) : audits.length > 0 ? (
+      ) : shown.length === 0 ? (
+        <p className="rounded-md border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+          {audits.length === 0
+            ? "Aucun audit pour l'instant. Chaque base testée sur le site apparaîtra ici."
+            : "Aucun audit dans cette catégorie."}
+        </p>
+      ) : (
         <div className="overflow-x-auto rounded-md border border-border">
           <table className="w-full text-sm">
             <thead className="bg-surface/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -134,14 +169,23 @@ function AdminAudits() {
               </tr>
             </thead>
             <tbody>
-              {audits.map((a) => (
+              {shown.map((a) => (
                 <tr key={a.id} className="border-t border-border align-top">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 font-medium">
                       <FileBarChart2 className="h-4 w-4 shrink-0 text-brand" />
                       {a.fileName}
                     </div>
-                    <div className="font-mono text-xs text-muted-foreground">{a.id}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(a.startedAt).toLocaleString("fr-FR", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {a.rowCount > 0 && ` · ${a.rowCount} lignes × ${a.columnCount} colonnes`}
+                    </div>
+                    <div className="font-mono text-[11px] text-muted-foreground/70">{a.id}</div>
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge audit={a} />
@@ -162,7 +206,7 @@ function AdminAudits() {
             </tbody>
           </table>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

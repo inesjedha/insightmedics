@@ -14,7 +14,14 @@ import type {
   ScoreDetail,
 } from "./types";
 
-export { ApiError, UnauthorizedError, getAdminKey, setAdminKey } from "./http";
+export {
+  ADMIN_UNAUTHORIZED_EVENT,
+  ApiError,
+  UnauthorizedError,
+  clearAdminKey,
+  getAdminKey,
+  setAdminKey,
+} from "./http";
 
 // --- Leads ---
 
