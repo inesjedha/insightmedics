@@ -8,8 +8,9 @@ import { FinalCTA } from "@/components/site/FinalCTA";
 import { FaqSection } from "@/components/site/Faq";
 import { OFFER_GRID, OfferCard } from "@/components/site/OfferCard";
 import { OrderSteps } from "@/components/site/OrderSteps";
+import { ExtraOffers } from "@/components/site/ExtraOffers";
 import { TestBanner } from "@/components/site/TestBanner";
-import { FULL_AUDIT_PRICE_LABEL, OFFERS, getOffer } from "@/lib/offers";
+import { FULL_AUDIT_PRICE_LABEL, OFFERS, getExtraOffer, getOffer } from "@/lib/offers";
 
 export const Route = createFileRoute("/tarifs")({
   head: () =>
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/tarifs")({
       path: "/tarifs",
       ogImage: "/og/tarifs.jpg",
       title: "Tarifs aide thèse de médecine en Tunisie | Insight Medics",
-      description: `Test gratuit, audit complet ${FULL_AUDIT_PRICE_LABEL}, analyses + résultats ${getOffer("analyses").priceLabel}, discussion ${getOffer("discussion").priceLabel}, thèse complète ${getOffer("these").priceLabel}. Prix fixé avant de commencer.`,
+      description: `Test gratuit, audit complet ${FULL_AUDIT_PRICE_LABEL}, analyses + résultats ${getOffer("analyses").priceLabel}, discussion ${getOffer("discussion").priceLabel}, thèse complète ${getOffer("these").priceLabel}, présentation de soutenance ${getExtraOffer("soutenance").priceLabel}, saisie de fiches sur devis.`,
       jsonLd: [servicesLd, breadcrumbLd([["Tarifs", "/tarifs"]])],
     }),
   component: TarifsPage,
@@ -64,6 +65,8 @@ function TarifsPage() {
             />
           ))}
         </div>
+
+        <ExtraOffers className="mt-14" />
 
         <div className="mx-auto mt-10 flex max-w-3xl items-start gap-3 rounded-md border border-border bg-surface p-5">
           <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />

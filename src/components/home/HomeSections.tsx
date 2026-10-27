@@ -11,7 +11,7 @@ import { Section, SectionHeader } from "@/components/site/Section";
 import { siteConfig } from "@/lib/site-config";
 import hamzaPhoto from "@/assets/team/hamza-ben-kheder.jpg";
 import inesPhoto from "@/assets/team/ines-ben-amor.jpg";
-import { FULL_AUDIT_PRICE_LABEL, OFFERS, getOffer, weeksLabel } from "@/lib/offers";
+import { FULL_AUDIT_PRICE_LABEL, OFFERS, getExtraOffer, getOffer, weeksLabel } from "@/lib/offers";
 
 const analyses = getOffer("analyses");
 const these = getOffer("these");
@@ -422,6 +422,18 @@ export function ServicesTeaser() {
           Devis sur mesure pour articles et mémoires
         </li>
       </ul>
+
+      <p className="mt-6 text-[15px] text-muted-foreground">
+        Aussi&nbsp;: la saisie de vos fiches papier en base de données (sur devis) et votre
+        présentation de soutenance ({getExtraOffer("soutenance").priceLabel}).{" "}
+        <Link
+          to="/tarifs"
+          hash="en-plus"
+          className="font-semibold text-brand underline-offset-4 hover:underline"
+        >
+          Voir ces services
+        </Link>
+      </p>
     </Section>
   );
 }

@@ -11,7 +11,14 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
-import { OFFERS, isOfferId, weeksLabel, type OfferId } from "@/lib/offers";
+import {
+  EXTRA_OFFERS,
+  OFFERS,
+  isOfferId,
+  weeksLabel,
+  type ExtraOfferId,
+  type OfferId,
+} from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
 import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
@@ -39,7 +46,7 @@ export const Route = createFileRoute("/contact")({
       jsonLd: [breadcrumbLd([["Contact", "/contact"]])],
     }),
   // ?offre=these : formule pré-cochée quand on arrive depuis une fiche d'offre.
-  validateSearch: (search: Record<string, unknown>): { offre?: OfferId } =>
+  validateSearch: (search: Record<string, unknown>): { offre?: OfferId | ExtraOfferId } =>
     isOfferId(search.offre) ? { offre: search.offre } : {},
   component: ContactPage,
 });
@@ -74,13 +81,22 @@ type FieldName = keyof ContactValues;
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 // Lues dans lib/offers.ts (source unique des prix et délais).
-const SERVICE_OFFERS: ServiceOffer[] = OFFERS.map((o) => ({
-  id: o.id,
-  number: o.number,
-  name: o.shortTitle,
-  price: o.priceLabel,
-  delay: `Livré en ${weeksLabel(o.delayWeeks)}`,
-}));
+const SERVICE_OFFERS: ServiceOffer[] = [
+  ...OFFERS.map((o) => ({
+    id: o.id,
+    number: o.number,
+    name: o.shortTitle,
+    price: o.priceLabel,
+    delay: `Livré en ${weeksLabel(o.delayWeeks)}`,
+  })),
+  ...EXTRA_OFFERS.map((o) => ({
+    id: o.id,
+    tag: "en plus",
+    name: o.shortTitle,
+    price: o.priceLabel,
+    delay: o.price === null ? "Selon le nombre de fiches" : "Avant votre soutenance",
+  })),
+];
 
 const URGENCIES = [
   "Moins de 2 semaines",

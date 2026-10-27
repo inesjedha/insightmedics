@@ -1,6 +1,8 @@
 import { frTypo } from "@/lib/typo";
 
 export type OfferId = "analyses" | "discussion" | "these";
+/** Services à part, autour des trois formules : avant (saisie) et après (soutenance). */
+export type ExtraOfferId = "saisie" | "soutenance";
 
 type OfferInput = {
   id: OfferId;
@@ -125,6 +127,74 @@ export function getOffer(id: OfferId): Offer {
 /** Plus petit prix des formules (« dès 500 DT »). */
 export const LOWEST_PRICE_LABEL = formatPrice(Math.min(...OFFERS.map((o) => o.price)));
 
-export function isOfferId(value: unknown): value is OfferId {
-  return typeof value === "string" && OFFERS.some((o) => o.id === value);
+type ExtraOffer = {
+  id: ExtraOfferId;
+  /** Moment du parcours, affiché en étiquette. */
+  moment: string;
+  title: string;
+  shortTitle: string;
+  /** Prix en dinars, ou null : sur devis. */
+  price: number | null;
+  priceLabel: string;
+  /** Ce qui fait le prix, ou le délai. */
+  priceNote: string;
+  description: string;
+  features: string[];
+  ctaLabel: string;
+};
+
+/**
+ * Les deux services complémentaires (retour de Hamza, 27/10/2026). Présentés à part des
+ * trois formules, en plus petit, pour que la page Tarifs reste lisible.
+ */
+export const EXTRA_OFFERS: ExtraOffer[] = [
+  {
+    id: "saisie",
+    moment: "Avant l'analyse",
+    title: "Saisie de vos fiches en base de données",
+    shortTitle: "Saisie de vos fiches",
+    price: null,
+    priceLabel: "Sur devis",
+    priceNote:
+      "Selon le nombre de fiches et de données par fiche. Devis gratuit, avant de commencer.",
+    description:
+      "Vos données sont sur fiches papier, en scans ou en PDF ? Nous les saisissons dans une base Excel ou SPSS structurée, prête pour l'audit et l'analyse.",
+    features: [
+      "Fiches papier, scans ou PDF",
+      "Une ligne par patient, une colonne par donnée",
+      "Saisie vérifiée par notre équipe",
+    ],
+    ctaLabel: "Demander un devis",
+  },
+  {
+    id: "soutenance",
+    moment: "Pour la soutenance",
+    title: "Présentation de soutenance (PowerPoint)",
+    shortTitle: "Présentation de soutenance",
+    price: 200,
+    priceLabel: formatPrice(200),
+    priceNote: "Délai convenu avec vous selon la date de votre soutenance.",
+    description:
+      "Les diapositives de votre soutenance, construites à partir de votre thèse : claires, au bon rythme pour le jury.",
+    features: [
+      "Construite à partir de votre manuscrit",
+      "Tableaux et figures lisibles à l'écran",
+      "Fichier PowerPoint que vous pouvez modifier",
+    ],
+    ctaLabel: "Demander ma présentation",
+  },
+];
+
+/** Service complémentaire par identifiant. */
+export function getExtraOffer(id: ExtraOfferId): ExtraOffer {
+  const offer = EXTRA_OFFERS.find((o) => o.id === id);
+  if (!offer) throw new Error(`Service inconnu : ${id}`);
+  return offer;
+}
+
+export function isOfferId(value: unknown): value is OfferId | ExtraOfferId {
+  return (
+    typeof value === "string" &&
+    (OFFERS.some((o) => o.id === value) || EXTRA_OFFERS.some((o) => o.id === value))
+  );
 }
