@@ -34,12 +34,13 @@ def test_vocabulaire_clinique_intact():
         assert clean(txt) == txt
 
 
-def test_coupe_en_fin_de_phrase():
-    txt = "Une phrase courte ici. " + " ".join(["mot"] * 30)
-    assert shorten(txt, 8) == "Une phrase courte ici. mot mot mot mot…"  # phrase trop courte
-    long_sentence = "Premiere phrase de six mots. Deuxième phrase qui déborde largement du plafond fixé."
-    assert shorten(long_sentence, 8) == "Premiere phrase de six mots."
+def test_ne_coupe_jamais_une_phrase():
+    two = "Première phrase de six mots. Deuxième phrase qui déborde largement du plafond fixé."
+    assert shorten(two, 8) == "Première phrase de six mots."
+    one_long = " ".join(["mot"] * 30) + "."
+    assert shorten(one_long, 8) == one_long  # gardée entière plutôt que coupée
     assert shorten("Court.", 8) == "Court."
+    assert "…" not in shorten("Une phrase. " + " ".join(["mot"] * 30), 8)
 
 
 def test_tidy_output_plafonne_tous_les_textes():
@@ -58,16 +59,40 @@ def test_tidy_output_plafonne_tous_les_textes():
         "executive_summary_fr": long,
     })
     tidy_output(out)
-    assert len(out.headline.title.split()) <= 12
+    # Une seule « phrase » géante : jamais coupée ; les listes, elles, sont plafonnées.
+    assert out.headline.title == long
     assert len(out.blocking_points) == 3 and len(out.blocking_points[0].refs) == 6
-    assert len(out.blocking_points[0].what.split()) <= 60
     assert len(out.analysis_map.realisable) == 6
-    assert len(out.findings[0].explanation_fr.split()) <= 56
     assert len(out.client_decisions[0].options) == 5
-    assert len(out.executive_summary_fr.split()) <= 110
+    multi = " ".join(["Une phrase courte."] * 40)
+    out2 = Llm2Output.model_validate({"findings": [], "executive_summary_fr": multi})
+    tidy_output(out2)
+    assert len(out2.executive_summary_fr.split()) <= 110
 
 
 def test_anciens_audits_sans_nouveaux_champs_restent_valides():
     out = Llm2Output.model_validate({"findings": [], "executive_summary_fr": "…"})
     assert out.headline is None and out.blocking_points == []
     assert out.analysis_map.realisable == []
+
+
+def test_numeros_de_dossier_masques_partout():
+    import pandas as pd
+
+    from app.pipeline.student_text import identifying_values, redact_output
+    df = pd.DataFrame({"Numéro de dossier": ["204/2026", "220/2026", "45"],
+                       "Initiales": ["Age", "Mra", "BAT"]})
+    prof = {"pii_candidates": [{"column": "Numéro de dossier"}, {"column": "Initiales"}]}
+    secrets = identifying_values(df, prof)
+    assert secrets == {"204/2026", "220/2026"}   # « 45 » trop court, initiales sans chiffre
+    out = Llm2Output.model_validate({
+        "findings": [{"id": "F1", "anomaly_class": "B", "severity": "critique",
+                      "certainty": "probable", "title_fr": "Même dossier 220/2026",
+                      "explanation_fr": "Les patients 13 et 43 (204/2026) se ressemblent."}],
+        "highlights": [{"title": "Dossier 220/2026 porté trois fois", "detail": "Age 75 ans."}],
+    })
+    redact_output(out, secrets)
+    assert out.findings[0].title_fr == "Même dossier [masqué]"
+    assert "204/2026" not in out.findings[0].explanation_fr
+    assert out.highlights[0].title == "Dossier [masqué] porté trois fois"
+    assert out.highlights[0].detail == "Age 75 ans."            # mot ordinaire intact

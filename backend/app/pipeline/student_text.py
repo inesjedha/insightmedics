@@ -4,7 +4,7 @@ Le prompt fixe des longueurs et interdit le jargon interne ; ce module est le fi
 sécurité côté code, appliqué après validation :
 - retire les codes internes entre parenthèses (« (F02) », « (voir R018) ») et remplace les
   expressions de travail (« décision client n° 3 », « le dictionnaire », « medium ») ;
-- coupe un texte trop long, de préférence à la fin d'une phrase.
+- retire les phrases de trop d'un texte trop long, sans jamais couper une phrase.
 
 Les plafonds sont un peu plus larges que ceux du prompt : ils ne doivent couper qu'un texte
 qui déborde nettement, pas réécrire chaque réponse.
@@ -13,7 +13,9 @@ qui déborde nettement, pas réécrire chaque réponse.
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from pydantic import BaseModel
 
 if TYPE_CHECKING:  # pragma: no cover
     from .llm2 import Llm2Output
@@ -58,19 +60,30 @@ def clean(text: str | None) -> str:
     return out.strip()
 
 
+_SENTENCE_RE = re.compile(r"[^.!?]+(?:[.!?]+|$)")
+
+
 def shorten(text: str | None, max_words: int) -> str:
-    """Coupe à `max_words` mots, à la dernière fin de phrase si elle garde l'essentiel."""
+    """Garde des phrases entières tant qu'on reste sous `max_words` mots.
+
+    Ne coupe JAMAIS au milieu d'une phrase (une phrase coupée a l'air d'un bug) : si la
+    première phrase dépasse à elle seule le plafond, elle est gardée entière. Le prompt
+    impose les longueurs ; ce filet ne retire que des phrases de trop.
+    """
     text = clean(text)
-    words = text.split()
-    if len(words) <= max_words:
+    if len(text.split()) <= max_words:
         return text
-    cut = " ".join(words[:max_words])
-    end = max(cut.rfind(". "), cut.rfind("! "), cut.rfind("? "))
-    if cut.endswith((".", "!", "?")):
-        return cut
-    if end >= 0 and len(cut[: end + 1].split()) >= 0.6 * max_words:
-        return cut[: end + 1]
-    return cut.rstrip(",;:– ") + "…"
+    kept: list[str] = []
+    n_words = 0
+    for sentence in (s.strip() for s in _SENTENCE_RE.findall(text)):
+        if not sentence:
+            continue
+        n = len(sentence.split())
+        if kept and n_words + n > max_words:
+            break
+        kept.append(sentence)
+        n_words += n
+    return " ".join(kept)
 
 
 def _short_list(items: list[str], max_items: int, max_words: int) -> list[str]:
@@ -89,6 +102,14 @@ def tidy_output(out: Llm2Output) -> Llm2Output:
         bp.why = shorten(bp.why, 35)
         bp.todo = shorten(bp.todo, 35)
         bp.refs = _short_list(bp.refs, 6, 4)
+    out.highlights = out.highlights[:3]
+    for h in out.highlights:
+        h.title = shorten(h.title, 16)
+        h.detail = shorten(h.detail, 35)
+    out.checklist = out.checklist[:30]
+    for c in out.checklist:
+        c.patients = shorten(c.patients, 8)
+        c.check = shorten(c.check, 20)
     amap = out.analysis_map
     amap.realisable = _short_list(amap.realisable, 6, 18)
     amap.avec_reserves = _short_list(amap.avec_reserves, 6, 18)
@@ -113,4 +134,43 @@ def tidy_output(out: Llm2Output) -> Llm2Output:
     out.executive_summary_fr = shorten(out.executive_summary_fr, 110)
     for p in out.pii_assessment:
         p.recommendation_fr = shorten(p.recommendation_fr, 35)
+    return out
+
+
+def identifying_values(df: Any, profiling: dict) -> set[str]:
+    """Valeurs des colonnes identifiantes qui pourraient se glisser dans un texte : numéros
+    de dossier, téléphones, identifiant retenu s'il est lui-même identifiant. Seules les
+    valeurs contenant un chiffre (et d'au moins 4 caractères) sont retenues, pour ne pas
+    masquer des mots ordinaires (des initiales comme « Age » ou « Mra »)."""
+    cols = {p["column"] for p in profiling.get("pii_candidates") or []}
+    values: set[str] = set()
+    for c in cols:
+        if c not in df.columns:
+            continue
+        for v in df[c].dropna().astype(str).str.strip().unique():
+            if len(v) >= 4 and any(ch.isdigit() for ch in v):
+                values.add(v)
+    return values
+
+
+def redact_output(out: Llm2Output, secrets: set[str]) -> Llm2Output:
+    """Remplace dans tous les textes de LLM-2 chaque valeur identifiante par
+    « [masqué] » (en place)."""
+    if not secrets:
+        return out
+    pattern = re.compile("|".join(
+        rf"(?<![\w/]){re.escape(s)}(?![\w/])" for s in sorted(secrets, key=len, reverse=True)))
+
+    def scrub(value: Any) -> Any:
+        if isinstance(value, str):
+            return pattern.sub("[masqué]", value)
+        if isinstance(value, list):
+            return [scrub(v) for v in value]
+        if isinstance(value, BaseModel):
+            for name in type(value).model_fields:
+                setattr(value, name, scrub(getattr(value, name)))
+            return value
+        return value
+
+    scrub(out)
     return out

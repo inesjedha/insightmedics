@@ -142,7 +142,8 @@ def test_critere_non_operationnel_perd_des_points_sans_plafond():
     assert _crit(r, 5, "Critère principal")["obtenu"] == 1
     assert _crit(r, 6, "Critère principal")["obtenu"] == 1
     assert r["confiance"]["niveau"] == "faible"
-    assert r["score_final"] == compute_score(CLEAN, FULL_SI)["score_final"] - 5
+    assert _crit(r, 2, "Complétude du critère principal")["obtenu"] == 3  # Amine v2 : 3/5
+    assert r["score_final"] == compute_score(CLEAN, FULL_SI)["score_final"] - 7
 
 
 def test_pas_de_perte_si_critere_operationnel():
@@ -173,3 +174,29 @@ def test_lignes_recopiees_comptent_comme_doublons_et_plafonnent_a_59():
     assert _crit(r, 1, "Absence de doublons")["obtenu"] == 0
     assert r["score_final"] <= 59
     assert any("effectif réel" in c["defaut"] for c in r["plafonds_appliques"])
+
+
+
+def test_valeurs_impossibles_coutent_des_points_en_validite():
+    """Le PaO2/FiO2 à 2 183 (règle sur une seule variable) ne peut plus laisser
+    « Valeurs dans les bornes : conforme »."""
+    si = copy.deepcopy(FULL_SI)
+    si["rule_violations"]["results"] = [{"kind": "valeur", "n_violations": 1},
+                                        {"kind": "relation", "n_violations": 3}]
+    assert _crit(compute_score(CLEAN, si), 3, "Valeurs quantitatives")["obtenu"] == 2
+
+
+def test_sans_date_la_chronologie_n_est_pas_conforme():
+    r = compute_score(CLEAN, FULL_SI)
+    assert _crit(r, 4, "Cohérence chronologique")["obtenu"] == 1.5
+    prof = copy.deepcopy(CLEAN)
+    prof["dates_audit"] = [{"column": "date_adm", "n_future": 0, "n_before_1900": 0}]
+    assert _crit(compute_score(prof, FULL_SI), 4, "Cohérence chronologique")["obtenu"] == 3
+
+
+def test_numero_de_dossier_repete_coute_des_points_d_identifiant():
+    prof = copy.deepcopy(CLEAN)
+    prof["structure"]["duplicates"]["secondary_id_duplicates"] = [
+        {"column": "Numéro de dossier", "n_duplicated": 20}]
+    crit = _crit(compute_score(prof, FULL_SI), 1, "Identifiants uniques")
+    assert crit["obtenu"] == 2.4 and "Numéro de dossier" in crit["motif"]

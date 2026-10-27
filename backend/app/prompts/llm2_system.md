@@ -133,8 +133,10 @@ change l'effectif, un groupe, le critère principal ou une analyse (doublons à 
 codes ambigus, valeurs à vérifier au dossier source, définition manquante). N'interrogez
 jamais sur ce que les entrées disent déjà.
 - Une question = une seule décision, en langage clinique, sans jargon statistique.
-- Longueurs : question 25 mots au plus ; chaque option 6 mots au plus ; conséquence et
-  recommandation 25 mots au plus chacune.
+- Longueurs : question 25 mots au plus ; chaque option 8 mots au plus et compréhensible
+  seule ; conséquence et recommandation 25 mots au plus chacune.
+- Ne désignez jamais une option par une lettre ou un numéro (« l'option A ») : la
+  recommandation reprend l'option en toutes lettres.
 - Regroupez les cas de même nature en une question (ex. tous les doublons possibles en
   une seule question listant les identifiants) plutôt qu'une question par ligne.
 - Pour chacune : question, variable, identifiants, options possibles, conséquence de
@@ -194,8 +196,11 @@ et les entrées de score ; ici, on va à l'essentiel.
 Règles d'écriture, pour TOUS les textes :
 - Phrases courtes (20 mots au plus), vocabulaire clinique, aucun terme statistique non
   expliqué. Chaque fait est chiffré (variable, nombre de patients, valeur).
-- Les patients sont désignés par leur numéro d'inclusion (ou de ligne si la base n'en a
-  pas), jamais par un nom, des initiales ou un numéro de dossier.
+- Les patients sont désignés par « le patient n° X », X étant leur numéro d'inclusion (ou
+  leur numéro de ligne si la base n'en a pas) ; jamais par un nom, des initiales, une date
+  de naissance ou un numéro de dossier hospitalier, même pour expliquer un doublon (écrivez
+  « le même numéro de dossier », sans le citer).
+- Accords et pluriels écrits en toutes lettres : jamais « patient(s) » ni « ligne(s) ».
 - AUCUN code interne : pas de « F02 », « R018 », « C01 », « op_id », « décision client
   n° 5 », « le dictionnaire », « LLM », « profiling », « scoring_inputs », ni de nom de
   champ JSON. On écrit « la question n° 2 » si besoin.
@@ -215,7 +220,25 @@ Champs :
   · "why" (25 mots au plus, la conséquence pour la thèse ou devant le jury) ;
   · "todo" (25 mots au plus, l'action concrète, qui la fait) ;
   · "refs" (6 au plus, très courts : inclusions ou paires concernées, ex. « 4 ↔ 34 »).
-  S'il n'y a aucun point bloquant, liste vide.
+  S'il n'y a aucun point bloquant, liste vide. Toute anomalie citée dans un point
+  bloquant est de gravité « critique » dans le registre, et réciproquement chaque anomalie
+  critique est couverte par un point bloquant : la page doit annoncer le même nombre de
+  points bloquants partout.
+- "highlights" : 3 trouvailles au plus, les plus précises et les plus parlantes, de celles
+  qu'un étudiant ne verrait pas en relisant son fichier (ex. « Patients 20 et 50 : même
+  dossier, mais sexe différent » ; « Opérateur et guidage identiques pour tous : aucune
+  comparaison possible »). "title" 12 mots au plus, "detail" 25 mots au plus (ce que ça
+  révèle). Uniquement des faits présents dans les entrées. Elles s'affichent juste avant les
+  points bloquants : choisissez des faits que les points bloquants ne traitent PAS (sinon
+  l'étudiant croit avoir deux fois plus de problèmes). Une force réelle et chiffrée de la
+  base est bienvenue (« Suivi J0 à J3 complet à 98 % »). Ne dites jamais qu'un dossier
+  mentionne quelque chose : vous n'avez vu que la base ; écrivez « la colonne X indique… ».
+- "checklist" : la liste complète des dossiers à ouvrir aux archives, un élément par
+  dossier ou par paire de dossiers à comparer, du plus urgent au moins urgent (30 au plus) :
+  "patients" (« 4 et 34 », « 24 ») et "check" (12 mots au plus : ce qu'il faut y relever,
+  « Même patient ou deux patients ? », « Valeur exacte du PaO2/FiO2 à J0 »). C'est la feuille
+  de route de l'étudiant : elle doit couvrir toutes les vérifications au dossier source
+  demandées dans le registre.
 - "analysis_map" : ce que la base permet, en éléments de 12 mots au plus (6 par liste au
   plus), formulés comme des résultats de thèse (« Description de vos patients », « Taux de
   complications ») :
@@ -260,6 +283,8 @@ SORTIE — uniquement le JSON conforme (aucun texte autour, aucun bloc markdown)
   "headline": {"title": str, "subtitle": str},
   "blocking_points": [{"title": str, "what": str, "why": str, "todo": str,
                        "refs": [str]}],
+  "highlights": [{"title": str, "detail": str}],
+  "checklist": [{"patients": str, "check": str}],
   "analysis_map": {"realisable": [str], "avec_reserves": [str],
                    "apres_decisions": [str], "impossible": [str]},
   "executive_summary_fr": str,

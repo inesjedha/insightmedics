@@ -1,10 +1,12 @@
 """Classeur Excel remis à l'étudiant avec l'audit : 4 onglets, courts et actionnables.
 
 - « À lire d'abord » : verdict, note, chiffres clés, les points qui bloquent, mode d'emploi ;
+- « Dossiers à ouvrir » : la feuille de route aux archives, un dossier ou une paire par
+  ligne, avec une colonne pour noter ce qu'on y trouve ;
 - « Anomalies à vérifier » : une ligne par anomalie, avec ce qu'il faut vérifier et une
   colonne « Votre décision » à remplir (listes déroulantes) ;
 - « Questions pour votre directeur » : les décisions à prendre, par priorité ;
-- « Score détaillé » : la grille en 8 domaines et le plafond éventuel.
+- « Score détaillé » : la grille en 8 domaines, en clair, et le plafond éventuel.
 
 Le classeur expert (10 onglets, report_xlsx.py) reste disponible dans l'admin. Les
 patients sont désignés par leur numéro d'inclusion ; si la colonne identifiant est une
@@ -28,6 +30,7 @@ from .summary import key_counts
 
 ANALYSIS_OFFER = "l'analyse statistique (500 DT)"
 CONTACT_EMAIL = "helpinsightmedics@gmail.com"
+WHATSAPP_DISPLAY = "+216 96 389 570"
 
 INK = "111827"
 FONT = "Calibri"
@@ -36,8 +39,9 @@ H2 = Font(name=FONT, bold=True, size=12, color=INK)
 BOLD = Font(name=FONT, bold=True, size=11, color=INK)
 NORM = Font(name=FONT, size=11, color=INK)
 MUTED = Font(name=FONT, size=10, color="4B5563")
-HEAD_FONT = Font(name=FONT, bold=True, size=11, color=INK)
-HEAD_FILL = PatternFill("solid", fgColor="F3F4F6")
+HEAD_FONT = Font(name=FONT, bold=True, size=11, color="FFFFFF")
+HEAD_FILL = PatternFill("solid", fgColor="1F3FD1")  # bleu Insight Medics
+INPUT_HEAD_FONT = Font(name=FONT, bold=True, size=11, color=INK)
 INPUT_FILL = PatternFill("solid", fgColor="FFF8D6")
 WRAP = Alignment(wrap_text=True, vertical="top")
 LINE = Border(bottom=Side(style="thin", color="E5E7EB"))
@@ -58,13 +62,23 @@ def _table(ws: Worksheet, row: int, headers: list[str], widths: list[int],
     """Écrit une ligne d'en-têtes ; renvoie la ligne suivante."""
     for j, (h, w) in enumerate(zip(headers, widths, strict=True), start=1):
         c = ws.cell(row=row, column=j, value=h)
-        c.font = HEAD_FONT
+        c.font = INPUT_HEAD_FONT if j in input_cols else HEAD_FONT
         c.fill = INPUT_FILL if j in input_cols else HEAD_FILL
         c.alignment = Alignment(wrap_text=True, vertical="center")
         c.border = HEAD_LINE
         ws.column_dimensions[get_column_letter(j)].width = w
     ws.freeze_panes = ws.cell(row=row + 1, column=1)
+    ws.print_title_rows = f"{row}:{row}"  # en-têtes répétés à chaque page imprimée
     return row + 1
+
+
+def _print_setup(ws: Worksheet, tab_color: str) -> None:
+    """Paysage, ajusté à la largeur de la page ; couleur d'onglet."""
+    ws.sheet_properties.tabColor = tab_color
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
 
 
 def _row(ws: Worksheet, row: int, values: list[Any], input_cols: tuple[int, ...] = ()) -> None:
@@ -139,10 +153,14 @@ def _sheet_read_first(wb: Workbook, prof: dict, score: dict, assess: dict, n_fin
                     MUTED)
     row += 1
 
-    tiles = [("Patients", counts["patients"]),
+    patients = counts["patients"]
+    if counts["duplicated_rows"] and counts["patients_min"] < patients:
+        patients = f"{counts['patients_min']} à {counts['patients']}"
+    n_points = len(assess.get("blocking_points") or []) or n_blocking_findings
+    tiles = [("Patients", patients),
              ("Saisis deux fois ?", counts["duplicated_rows"]),
-             ("Données manquantes", f"{_fr((prof.get('missing_summary') or {}).get('pct_global', 0))} %"),
-             ("Anomalies relevées", f"{n_findings} (dont {n_blocking_findings} bloquantes)")]
+             ("Données manquantes", f"{_fr(counts['missing_useful_pct'])} %"),
+             ("Points bloquants", n_points)]
     for j, (label, value) in enumerate(tiles, start=1):
         ws.cell(row=row, column=j, value=label).font = MUTED
         c = ws.cell(row=row + 1, column=j, value=value)
@@ -170,14 +188,16 @@ def _sheet_read_first(wb: Workbook, prof: dict, score: dict, assess: dict, n_fin
 
     row = _text(ws, row, "Comment utiliser ce classeur", H2)
     for line in [
-        "1. Onglet « Anomalies à vérifier » : ouvrez les dossiers concernés et remplissez la "
-        "colonne « Votre décision ».",
+        "1. Onglet « Dossiers à ouvrir » : la liste des dossiers à sortir des archives, et ce "
+        "qu'il faut y relever. Notez ce que vous trouvez dans la colonne jaune.",
         "2. Onglet « Questions pour votre directeur » : apportez-les à votre prochain rendez-vous.",
-        f"3. Renvoyez-nous ce classeur avec votre base corrigée : nous réalisons {ANALYSIS_OFFER} "
-        "et vous remettons la base nettoyée, les tableaux et les tests.",
-        f"Une question ? {CONTACT_EMAIL}",
+        "3. Onglet « Anomalies à vérifier » : le détail de chaque point, si vous voulez comprendre.",
+        f"4. Renvoyez-nous ce classeur rempli avec votre base corrigée : nous réalisons "
+        f"{ANALYSIS_OFFER} et vous remettons la base nettoyée, les tableaux et les tests.",
+        f"Dr Hamza sur WhatsApp : {WHATSAPP_DISPLAY} · {CONTACT_EMAIL}",
     ]:
         row = _text(ws, row, line)
+    _print_setup(ws, "1F3FD1")
 
 
 def _sheet_findings(wb: Workbook, findings: list[dict], hide_ids: bool) -> None:
@@ -213,6 +233,7 @@ def _sheet_findings(wb: Workbook, findings: list[dict], hide_ids: bool) -> None:
     decision.add(f"H{first}:H{row - 1}")
     done.add(f"I{first}:I{row - 1}")
     ws.auto_filter.ref = f"A{first - 1}:I{row - 1}"
+    _print_setup(ws, "B42318")
 
 
 def _sheet_questions(wb: Workbook, decisions: list[dict]) -> None:
@@ -234,30 +255,68 @@ def _sheet_questions(wb: Workbook, decisions: list[dict]) -> None:
                        d.get("recommendation_fr", ""), ""], input_cols=(7,))
         ws.cell(row=row, column=2).fill = PRIORITY_FILL.get(prio, PRIORITY_FILL["importante"])
         row += 1
+    _print_setup(ws, "8A4B08")
+
+
+# Motifs internes de la grille, inutiles pour l'étudiant (« analyse fine au M5 »,
+# « statut : sous_conditions », « hash SHA-256 »…).
+_INTERNAL_MOTIF = ("statut :", "M4", "M5", "jalon", "hash", "inévaluable", "points accordés")
 
 
 def _sheet_score(wb: Workbook, score: dict) -> None:
     ws = wb.create_sheet("Score détaillé")
     ws.sheet_view.showGridLines = False
-    ws.cell(row=1, column=1, value="Score de qualité : grille en 8 domaines").font = TITLE
+    ws.cell(row=1, column=1, value="Votre note, domaine par domaine").font = TITLE
     ws.cell(row=2, column=1, value=f"Note : {_fr(score.get('score_final'))}/100 — "
-            f"{score.get('niveau_qualite', '')}. Total des domaines : "
+            f"{score.get('niveau_qualite', '')}. Total des 8 domaines : "
             f"{_fr(score.get('score_brut'))}/100.").font = NORM
     row = 3
     for cap in score.get("plafonds_appliques") or []:
-        ws.cell(row=row, column=1, value=f"Plafond appliqué : {cap['defaut']} "
-                f"(note limitée à {cap['plafond']}/100).").font = MUTED
+        ws.cell(row=row, column=1, value=f"Note limitée à {cap['plafond']}/100 : "
+                f"{cap['defaut'].lower()}.").font = MUTED
         row += 1
-    row = _table(ws, row + 1, ["Domaine", "Critère", "Points", "Maximum", "Motif"],
-                 [36, 44, 10, 10, 60])
+    row = _table(ws, row + 1, ["Domaine", "Points", "Ce qui coûte des points"], [44, 12, 90])
     for d in score.get("domaines") or []:
-        _row(ws, row, [f"{d['domaine']}. {d['nom']}", "Total du domaine", d["obtenu"], d["max"], ""])
-        for j in range(1, 6):
-            ws.cell(row=row, column=j).font = BOLD
-        row += 1
+        losses = []
         for c in d.get("criteres") or []:
-            _row(ws, row, ["", c["critere"], c["obtenu"], c["max"], c.get("motif", "")])
-            row += 1
+            if c["obtenu"] >= c["max"]:
+                continue
+            motif = c.get("motif") or ""
+            if any(token in motif for token in _INTERNAL_MOTIF):
+                motif = ""
+            losses.append(f"{c['critere']} ({_fr(c['obtenu'])}/{c['max']})"
+                          + (f" : {motif}" if motif else ""))
+        _row(ws, row, [f"{d['domaine']}. {d['nom']}", f"{_fr(d['obtenu'])} / {d['max']}",
+                       "\n".join(losses) or "Rien à signaler"])
+        ws.cell(row=row, column=1).font = BOLD
+        row += 1
+    _print_setup(ws, "4B5563")
+
+
+def _sheet_checklist(wb: Workbook, assess: dict, findings: list[dict], hide_ids: bool) -> None:
+    ws = wb.create_sheet("Dossiers à ouvrir")
+    ws.sheet_view.showGridLines = False
+    ws.cell(row=1, column=1, value="Dossiers à ouvrir aux archives").font = TITLE
+    ws.cell(row=2, column=1, value="Un dossier ou une paire de dossiers par ligne, du plus "
+            "urgent au moins urgent. Notez ce que vous trouvez dans la colonne jaune.").font = MUTED
+    row = _table(ws, 4, ["N°", "Patient(s)", "Ce qu'il faut relever", "Ce que vous avez trouvé",
+                         "Fait"], [6, 18, 56, 48, 8], input_cols=(4, 5))
+    items = [(c.get("patients", ""), c.get("check", "")) for c in assess.get("checklist") or []]
+    if not items:  # audits antérieurs : une ligne par anomalie à vérifier au dossier
+        items = [(_rows_label(f, hide_ids), f.get("check_fr") or f.get("title_fr", ""))
+                 for f in findings if f.get("requires_source_verification")]
+    if not items:
+        ws.cell(row=row, column=1, value="Aucun dossier à vérifier.").font = MUTED
+        _print_setup(ws, "11643A")
+        return
+    done = DataValidation(type="list", formula1='"Oui,Non"', allow_blank=True)
+    ws.add_data_validation(done)
+    first = row
+    for i, (patients, check) in enumerate(items, start=1):
+        _row(ws, row, [i, patients, check, "", ""], input_cols=(4, 5))
+        row += 1
+    done.add(f"E{first}:E{row - 1}")
+    _print_setup(ws, "11643A")
 
 
 # ---------------------------------------------------------------- assemblage
@@ -274,6 +333,7 @@ def build_client_workbook(profiling: dict, score_detail: dict, ai_audit: dict | 
     wb = Workbook()
     wb.remove(wb.active)
     _sheet_read_first(wb, profiling, score_detail, assess, len(findings), n_blocking)
+    _sheet_checklist(wb, assess, findings, hide_ids)
     _sheet_findings(wb, findings, hide_ids)
     _sheet_questions(wb, decisions)
     _sheet_score(wb, score_detail)

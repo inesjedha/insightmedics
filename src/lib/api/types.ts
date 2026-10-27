@@ -54,8 +54,14 @@ export interface AuditResult {
   duplicatesPct: number;
   /** Patients réels : lignes de la base moins lignes modèles et lignes vides. */
   patientCount: number;
+  /** Patients si toutes les copies suspectes se confirment (≤ patientCount). */
+  patientMin?: number;
   /** Lignes saisies deux fois : doublons stricts + lignes recopiées sauf l'identifiant. */
   duplicatedRows: number;
+  /** Données manquantes hors colonnes entièrement vides (en %). */
+  missingUsefulPct?: number;
+  /** Lignes recopiées, pour le schéma de la page client ; aucune valeur de cellule. */
+  copies?: CopiesView | null;
   issues: AuditIssue[];
   needsHumanReview: boolean;
   // Parcours aperçu → paiement → audit complet
@@ -71,6 +77,22 @@ export interface AuditResult {
   purged: boolean;
   /** Date de purge prévue (ISO) : expiration du lien client, ou de l'aperçu. */
   expiresAt: string | null;
+}
+
+export interface CopiedBlock {
+  length: number;
+  /** Premier et dernier numéro (d'inclusion si `by` vaut « patient », sinon de ligne). */
+  source: (number | string)[];
+  copy: (number | string)[];
+  by: "patient" | "ligne";
+  min_similarity: number | null;
+}
+export interface CopiesView {
+  blocks: CopiedBlock[];
+  identical_pairs: number;
+  near_pairs: number;
+  max_similarity: number | null;
+  median_similarity: number | null;
 }
 
 export interface AuditEvent {
@@ -156,6 +178,10 @@ export interface AiAssessment {
   blocking_points?: BlockingPoint[];
   analysis_map?: AnalysisMap;
   client_decisions?: ClientDecision[];
+  /** Trouvailles précises, montrées en tête (« ce que nous avons repéré »). */
+  highlights?: { title: string; detail: string }[];
+  /** Dossiers à ouvrir aux archives, du plus urgent au moins urgent. */
+  checklist?: { patients: string; check: string }[];
   executive_summary_fr: string;
   report_sections_fr: {
     limites: string;

@@ -26,6 +26,8 @@ PII_NAME_RE = {
     "address": re.compile(r"\b(adresse)\b", re.I),
     "national_id": re.compile(r"\b(cin|cnss|passeport)\b", re.I),
     "birth_date": re.compile(r"\b(date.{0,3}naissance|ddn)\b", re.I),
+    # Numéro de dossier hospitalier (IPP) : il permet de retrouver le patient.
+    "medical_record": re.compile(r"(?<![a-z])(dossier|ipp)(?![a-z])", re.I),
 }
 SEX_NAME_RE = re.compile(r"(?:^|_)(sexe?|genre|gender)(?:_|$)", re.I)
 PHONE_CONTENT_RE = re.compile(r"^\+?\d[\d\s.-]{7,14}$")
@@ -248,6 +250,19 @@ def _blocks(pair_sims: dict[tuple[int, int], float]) -> list[dict[str, Any]]:
     return blocks[:MAX_EXAMPLES]
 
 
+def _with_ids(blocks: list[dict[str, Any]], df: pd.DataFrame,
+              id_col: str | None) -> list[dict[str, Any]]:
+    """Ajoute à chaque bloc l'identifiant de la première et de la dernière ligne (les
+    numéros d'inclusion parlent plus à l'étudiant que des numéros de ligne)."""
+    if not id_col:
+        return blocks
+    ids = df[id_col].tolist()
+    for b in blocks:
+        b["source_ids"] = [_py(ids[b["source_lines"][0] - 1]), _py(ids[b["source_lines"][1] - 1])]
+        b["copy_ids"] = [_py(ids[b["copy_lines"][0] - 1]), _py(ids[b["copy_lines"][1] - 1])]
+    return blocks
+
+
 def _copies(df: pd.DataFrame, id_col: str | None, row_ids: RowIds) -> dict[str, Any]:
     """Lignes identiques ou quasi identiques sauf l'identifiant, et blocs de lignes
     consécutives recopiés."""
@@ -294,7 +309,7 @@ def _copies(df: pd.DataFrame, id_col: str | None, row_ids: RowIds) -> dict[str, 
                          for a, b, sim, shared in sorted(near_pairs, key=lambda p: -p[2])
                          [:MAX_EXAMPLES]],
         },
-        "copied_blocks": _blocks(pair_sims),
+        "copied_blocks": _with_ids(_blocks(pair_sims), df, id_col),
         # Lignes probablement recopiées d'une autre (identiques ou quasi identiques sauf
         # l'identifiant) : elles rendent l'effectif réel incertain (score, domaine 1).
         "n_suspect_copy_rows": len(copy_rows),
@@ -345,6 +360,19 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
     empty_row_pos = [i + 1 for i, empty in enumerate(body.isna().all(axis=1)) if empty]
     template_row_pos = _template_rows(df)
 
+    # Autres colonnes d'identifiant (n° de dossier quand l'identifiant retenu est le n°
+    # d'inclusion) : une valeur répétée y signale aussi un patient saisi deux fois.
+    secondary_id_dups = []
+    for c in df.columns:
+        if str(c) == id_col or not ID_NAME_RE.search(str(c)):
+            continue
+        values = df[c].dropna()
+        if len(values) < 2 or values.nunique() / len(values) < 0.5:
+            continue  # pas une colonne d'identifiant (catégorie, constante…)
+        n_dup = int(values.duplicated().sum())
+        if n_dup:
+            secondary_id_dups.append({"column": str(c), "n_duplicated": n_dup})
+
     advanced_dups: dict[str, Any] = {}
     if id_col:
         advanced_dups.update(_id_conflicts(df, id_col))
@@ -361,6 +389,7 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
             "duplicate_ids": dup_ids,
             "example_row_ids": row_ids(exact_dup_mask),
             **advanced_dups,
+            "secondary_id_duplicates": secondary_id_dups,
         },
         "empty_rows": {"n": len(empty_row_pos), "lines": empty_row_pos[:20]},
         "template_rows": {"n": len(template_row_pos), "lines": template_row_pos[:20]},

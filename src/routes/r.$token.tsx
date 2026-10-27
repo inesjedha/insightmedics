@@ -5,11 +5,15 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
 import {
   ReportHero,
+  SpottedInBase,
   BlockingPoints,
-  AnalysisMapCard,
+  OfferNudge,
+  RecordsToOpen,
   DirectorQuestions,
-  ActionPlan,
-  AnalysisOffer,
+  AnalysisMapCard,
+  NextSteps,
+  TrustStrip,
+  StickyWhatsApp,
   TechnicalDetails,
   WorkbookDownload,
 } from "@/components/audit/ClientReport";
@@ -35,6 +39,8 @@ function ClientResultPage() {
   const [scoreDetail, setScoreDetail] = useState<ScoreDetail | null>(null);
   const [assessment, setAssessment] = useState<AiAssessment | null>(null);
   const workbookHref = clientDownloadUrl(token, "workbook.xlsx");
+  // Cases cochées gardées dans ce navigateur, par audit (un fragment du jeton suffit).
+  const storageKey = `im-audit:${token.slice(0, 10)}`;
 
   useEffect(() => {
     let alive = true;
@@ -66,7 +72,7 @@ function ClientResultPage() {
           as="h1"
           eyebrow="Rapport privé"
           title="Votre audit."
-          description="Lien privé valable 30 jours : enregistrez votre classeur, et ne partagez ce lien qu'avec votre directeur de thèse."
+          description="Lien privé, valable 30 jours. Ne le partagez qu'avec votre directeur de thèse."
         />
 
         {phase === "loading" && (
@@ -98,21 +104,28 @@ function ClientResultPage() {
         )}
 
         {phase === "ready" && result && (
-          <div className="mt-8 space-y-8">
-            <ReportHero result={result} scoreDetail={scoreDetail} assessment={assessment} />
-            <BlockingPoints assessment={assessment} />
-            <AnalysisMapCard map={assessment?.analysis_map} />
-            <DirectorQuestions
-              decisions={assessment?.client_decisions}
+          <div className="mt-8 space-y-10 pb-20 md:pb-0">
+            <ReportHero
+              result={result}
+              scoreDetail={scoreDetail}
+              assessment={assessment}
               workbookHref={workbookHref}
             />
-            <ActionPlan
-              findings={assessment?.findings ?? []}
-              nQuestions={assessment?.client_decisions?.length ?? 0}
+            <SpottedInBase copies={result.copies} highlights={assessment?.highlights} />
+            <BlockingPoints assessment={assessment} />
+            <AnalysisMapCard map={assessment?.analysis_map} />
+            <OfferNudge />
+            <RecordsToOpen
+              assessment={assessment}
+              storageKey={storageKey}
+              workbookHref={workbookHref}
             />
-            <AnalysisOffer needsHumanReview={result.needsHumanReview} />
+            <DirectorQuestions decisions={assessment?.client_decisions} storageKey={storageKey} />
+            <NextSteps assessment={assessment} needsHumanReview={result.needsHumanReview} />
+            <TrustStrip />
             <TechnicalDetails scoreDetail={scoreDetail} findings={assessment?.findings ?? []} />
             <WorkbookDownload href={workbookHref} />
+            <StickyWhatsApp />
           </div>
         )}
       </Section>

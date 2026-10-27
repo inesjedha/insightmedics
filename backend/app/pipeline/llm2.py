@@ -57,6 +57,18 @@ class BlockingPoint(BaseModel):
     refs: list[str] = []
 
 
+class Highlight(BaseModel):
+    """Une trouvaille précise et vérifiable, de celles qu'un œil pressé ne voit pas."""
+    title: str
+    detail: str = ""
+
+
+class ChecklistItem(BaseModel):
+    """Un dossier (ou une paire) à ouvrir, et ce qu'il faut y regarder."""
+    patients: str                      # « 4 et 34 », « 24 »
+    check: str                         # « Même patient ou deux patients ? »
+
+
 class AnalysisMap(BaseModel):
     """Ce que la base permet, en résultats de thèse."""
     realisable: list[str] = []
@@ -152,6 +164,8 @@ class Llm2Output(BaseModel):
     exploitability_verdict: Verdict | None = None
     headline: Headline | None = None
     blocking_points: list[BlockingPoint] = []
+    highlights: list[Highlight] = []
+    checklist: list[ChecklistItem] = []
     analysis_map: AnalysisMap = AnalysisMap()
     executive_summary_fr: str = ""
     report_sections_fr: ReportSections = ReportSections()

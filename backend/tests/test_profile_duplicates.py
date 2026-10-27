@@ -82,7 +82,8 @@ def test_bloc_de_lignes_recopie():
     _copy_row(df, 2, 10)
     blocks = _dups(df)["copied_blocks"]
     assert blocks == [{"length": 3, "source_lines": [1, 3], "copy_lines": [9, 11],
-                       "min_similarity": 1.0}]
+                       "min_similarity": 1.0, "source_ids": ["P0", "P2"],
+                       "copy_ids": ["P8", "P10"]}]
 
 
 def test_une_seule_ligne_recopiee_nest_pas_un_bloc():
@@ -221,3 +222,14 @@ def test_texte_avec_un_seul_soulignement_pas_une_ligne_modele():
     df = _base().astype(object)
     df.loc[2, "sexe"] = "F ____ à préciser"
     assert profile(df, {"file_name": "t.csv", "format": "csv"})["structure"]["template_rows"]["n"] == 0
+
+
+
+def test_numero_de_dossier_repete_detecte_meme_si_l_identifiant_est_l_inclusion():
+    df = _base().assign(numero_dossier=[f"D{i}" for i in range(N)])
+    df.loc[5, "numero_dossier"] = "D4"
+    df.loc[7, "numero_dossier"] = "D4"
+    d = _dups(df)
+    assert d["secondary_id_duplicates"] == [{"column": "numero_dossier", "n_duplicated": 2}]
+    pii = profile(df, {"file_name": "t.csv", "format": "csv"})["pii_candidates"]
+    assert any(p["column"] == "numero_dossier" and "medical_record" in p["kinds"] for p in pii)

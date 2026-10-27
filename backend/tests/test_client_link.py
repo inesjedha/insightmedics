@@ -71,3 +71,32 @@ def test_resultat_expose_patients_et_lignes_en_double():
     db.close()
     body = client.get("/r/tokchiffres").json()
     assert body["patientCount"] == 50 and body["duplicatedRows"] == 14
+
+
+def test_resultat_expose_les_copies_sans_valeur_de_cellule():
+    _mk("tokcopies", paid=True, status="done",
+        expires_at=(datetime.now(UTC) + timedelta(days=10)).isoformat())
+    db = SessionLocal()
+    audit = db.get(Audit, "audit_tokcopies")
+    audit.profiling = {
+        "structure": {"n_rows": 51, "id_column": "Numéro d'inclusion", "empty_columns": ["J0"],
+                      "template_rows": {"n": 1},
+                      "duplicates": {"exact_rows": 0, "n_suspect_copy_rows": 14,
+                                     "identical_except_id": {"n_groups": 6},
+                                     "near_identical_rows": {"n_pairs": 8, "median_similarity": 0.4,
+                                                             "examples": [{"similarity": 0.98}]},
+                                     "copied_blocks": [{"length": 14, "source_lines": [5, 18],
+                                                        "copy_lines": [35, 48], "source_ids": [4, 17],
+                                                        "copy_ids": [34, 47], "min_similarity": 0.92}]}},
+        "columns": [{"name": "J0", "n_missing": 51}, {"name": "age", "n_missing": 2}],
+        "pii_candidates": [{"column": "Initiales"}],
+    }
+    db.commit()
+    db.close()
+    body = client.get("/r/tokcopies").json()
+    assert body["patientCount"] == 50 and body["patientMin"] == 36
+    assert body["missingUsefulPct"] == round(100 * 2 / 51, 1)   # colonne J0 vide exclue
+    block = body["copies"]["blocks"][0]
+    assert block == {"length": 14, "source": [4, 17], "copy": [34, 47], "by": "patient",
+                     "min_similarity": 0.92}
+    assert body["copies"]["identical_pairs"] == 6 and body["copies"]["near_pairs"] == 8
