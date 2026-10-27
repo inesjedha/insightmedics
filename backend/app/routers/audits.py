@@ -64,6 +64,26 @@ def unlock_audit(audit_id: str, background: BackgroundTasks, response: Response,
     return AuditResult.from_audit(audit, view="admin")
 
 
+@router.post("/{audit_id}/rerun", response_model=AuditResult, response_model_by_alias=True,
+             status_code=202, dependencies=[Depends(require_admin)])
+def rerun_audit(audit_id: str, background: BackgroundTasks,
+                db: Session = Depends(get_db)) -> AuditResult:
+    """Relance l'audit IA d'un audit déjà livré (prompts améliorés). Coûte un audit IA.
+
+    Le lien client reste valide et affiche l'ancien bilan jusqu'à ce que le nouveau soit
+    prêt ; un second appel pendant la relance ne relance rien."""
+    audit = _get_or_404(db, audit_id)
+    try:
+        job_id = unlock_jobs.claim_rerun(db, audit)
+    except service.SourceFileMissingError as exc:
+        raise HTTPException(410, str(exc)) from exc
+    except service.UnlockNotAllowedError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    if job_id is not None:
+        background.add_task(unlock_jobs.run, audit.id, job_id, rerun=True)
+    return AuditResult.from_audit(audit, view="admin")
+
+
 @router.get("/{audit_id}/profiling", dependencies=[Depends(require_admin)])
 def get_profiling(audit_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
     """Profiling complet (admin : peut contenir des valeurs identifiantes)."""

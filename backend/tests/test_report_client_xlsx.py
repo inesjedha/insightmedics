@@ -29,8 +29,8 @@ def _values(ws):
 
 def test_cinq_onglets_dans_l_ordre():
     assert _wb(NEW_FIELDS).sheetnames == ["À lire d'abord", "Dossiers à ouvrir",
-                                          "Anomalies à vérifier",
-                                          "Questions pour votre directeur", "Score détaillé"]
+                                          "Points à vérifier",
+                                          "Questions pour votre directeur", "Votre note en détail"]
 
 
 def test_dossiers_a_ouvrir_depuis_la_checklist_ou_les_anomalies():
@@ -42,7 +42,7 @@ def test_dossiers_a_ouvrir_depuis_la_checklist_ou_les_anomalies():
 
 
 def test_score_en_clair_sans_motifs_internes():
-    vals = " ".join(str(v) for v in _values(_wb(NEW_FIELDS)["Score détaillé"]))
+    vals = " ".join(str(v) for v in _values(_wb(NEW_FIELDS)["Votre note en détail"]))
     for token in ("statut :", "M5", "hash"):
         assert token not in vals
 
@@ -60,7 +60,7 @@ def test_ancien_audit_sans_nouveaux_champs_reste_lisible():
 
 
 def test_anomalies_triees_par_priorite_avec_colonne_decision():
-    ws = _wb(NEW_FIELDS)["Anomalies à vérifier"]
+    ws = _wb(NEW_FIELDS)["Points à vérifier"]
     header = [c.value for c in ws[4]]
     assert header[7] == "Votre décision"
     assert ws["B5"].value == "Avant toute analyse"   # la critique d'abord
@@ -75,14 +75,14 @@ def test_identifiants_masques_si_la_colonne_identifiant_est_identifiante():
     findings = [{"id": "F1", "severity": "critique", "anomaly_class": "A",
                  "certainty": "certain", "row_ids": ["DOS-123"], "title_fr": "t",
                  "explanation_fr": "e"}]
-    vals = _values(_wb({"findings": findings}, prof)["Anomalies à vérifier"])
+    vals = _values(_wb({"findings": findings}, prof)["Points à vérifier"])
     assert "DOS-123" not in vals
 
 
 def test_questions_et_score():
     wb = _wb(NEW_FIELDS)
     assert "Fusionner les doublons ?" in _values(wb["Questions pour votre directeur"])
-    assert "Votre note, domaine par domaine" in _values(wb["Score détaillé"])
+    assert "Votre note, point par point" in _values(wb["Votre note en détail"])
 
 
 def test_bilan_v3_missions_statut_et_choix():

@@ -25,6 +25,7 @@ from .ingest import ingest
 from .issues import detect_issues
 from .llm1 import run_llm1
 from .llm2 import run_llm2
+from .plain_text import run_plain_pass
 from .profile import profile
 from .rules_engine import execute_rules
 from .score_engine import compute_score
@@ -109,6 +110,14 @@ def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: st
     if llm2_out is None:
         log("warn", "Jugement IA (LLM-2) non produit : " + "; ".join(llm2_notes))
         return ai_audit
+
+    # Relecture en mots simples des textes de l'étudiant (passe courte, effort réduit) :
+    # elle ne change ni les chiffres ni les jugements, et l'audit continue si elle échoue.
+    log("info", "Relecture des textes en mots simples pour l'étudiant…")
+    plain_notes = run_plain_pass(llm2_out)
+    llm2_notes = [*llm2_notes, *plain_notes]
+    if plain_notes:
+        log("info", plain_notes[-1])
 
     # Aucun numéro de dossier ni téléphone dans ce que l'étudiant lira (ni dans un lien
     # partagé) : filet après le prompt, qui l'interdit déjà.

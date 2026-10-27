@@ -39,7 +39,7 @@ from functools import lru_cache
 import anthropic
 from pydantic import BaseModel, ValidationError
 
-from ..config import settings
+from ..config import Effort, settings
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def _is_transient(exc: anthropic.APIError) -> bool:
     return False
 
 
-def _stream_message(system: str, user: str) -> anthropic.types.Message:
+def _stream_message(system: str, user: str, effort: Effort) -> anthropic.types.Message:
     for attempt in range(1, TRANSIENT_ATTEMPTS + 1):
         try:
             with _client().messages.stream(
@@ -87,7 +87,7 @@ def _stream_message(system: str, user: str) -> anthropic.types.Message:
                 system=[{"type": "text", "text": system,
                          "cache_control": {"type": "ephemeral", "ttl": "1h"}}],
                 messages=[{"role": "user", "content": user}],
-                output_config={"effort": settings.llm_effort},
+                output_config={"effort": effort},
             ) as stream:
                 return stream.get_final_message()
         except anthropic.APIError as exc:
@@ -99,13 +99,15 @@ def _stream_message(system: str, user: str) -> anthropic.types.Message:
     raise AssertionError("inatteignable")
 
 
-def call_llm(system: str, user: str) -> str:
-    """Envoie un message à Claude et retourne le texte de la réponse (hors réflexion)."""
-    message = _stream_message(system, user)
+def call_llm(system: str, user: str, effort: Effort | None = None) -> str:
+    """Envoie un message à Claude et retourne le texte de la réponse (hors réflexion).
+    `effort` : par défaut celui de la configuration (`LLM_EFFORT`)."""
+    effort = effort or settings.llm_effort
+    message = _stream_message(system, user, effort)
 
     usage = message.usage
     logger.info("Claude %s (effort %s) : %s jetons en entrée (%s lus en cache), %s en sortie",
-                settings.llm_model, settings.llm_effort, usage.input_tokens,
+                settings.llm_model, effort, usage.input_tokens,
                 usage.cache_read_input_tokens or 0, usage.output_tokens)
 
     if message.stop_reason == "refusal":
@@ -141,7 +143,8 @@ def extract_json(text: str) -> dict:
 
 def call_and_validate[T: BaseModel](system: str, user: str, schema: type[T],
                                     post: Callable[[T], tuple[T, list[str]]] | None = None,
-                                    attempts: int = 3) -> tuple[T | None, list[str]]:
+                                    attempts: int = 3,
+                                    effort: Effort | None = None) -> tuple[T | None, list[str]]:
     """Appelle Claude, valide contre `schema`, relance jusqu'à `attempts` fois si le JSON
     est invalide.
 
@@ -160,7 +163,7 @@ def call_and_validate[T: BaseModel](system: str, user: str, schema: type[T],
             user + f"\n\n## CORRECTION DEMANDÉE\nTa réponse précédente était invalide "
                    f"({last_error}). Renvoie UNIQUEMENT le JSON conforme au schéma.")
         try:
-            raw = call_llm(system, prompt)
+            raw = call_llm(system, prompt, effort)
         except LlmError as exc:
             notes.append(f"Échec : {exc}")
             return None, notes
@@ -179,7 +182,7 @@ def call_and_validate[T: BaseModel](system: str, user: str, schema: type[T],
                 last_error = str(exc)[:600]
                 continue
             notes.extend(extra)
-        notes.append(f"OK ({settings.llm_model}, effort {settings.llm_effort}, "
+        notes.append(f"OK ({settings.llm_model}, effort {effort or settings.llm_effort}, "
                      f"tentative {attempt + 1})")
         return obj, notes
 

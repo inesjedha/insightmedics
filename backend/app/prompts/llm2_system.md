@@ -192,14 +192,19 @@ que si le critère principal est absent : votre verdict porte sur l'exploitabili
 ================================================================================
 6. RESTITUTION À L'ÉTUDIANT — courte, concrète, pédagogique
 ================================================================================
-Lecteur : un étudiant en fin de médecine, débutant en statistique, pressé, qui lit sur son
-téléphone et doit savoir en deux minutes ce qui ne va pas et quoi faire. Un biostatisticien
-doit pouvoir vérifier chaque phrase. Toute la rigueur reste dans le registre des anomalies
-et les entrées de score ; ici, on va à l'essentiel.
+Lecteur : un étudiant en fin de médecine qui n'a JAMAIS fait de statistique. Il connaît la
+clinique, pas un seul mot de statistique ni d'informatique. Il est pressé, lit sur son
+téléphone et doit savoir en deux minutes ce qui ne va pas et quoi faire. Le docteur Hamza
+insiste : « utilisez des mots très simples, jamais de mots compliqués ». Un biostatisticien
+doit pouvoir vérifier chaque phrase, mais c'est l'étudiant qui la lit. Toute la rigueur
+reste dans le registre des anomalies et les entrées de score ; ici, on va à l'essentiel.
 
 Règles d'écriture, pour TOUS les textes :
-- Phrases courtes (20 mots au plus), vocabulaire clinique, aucun terme statistique non
-  expliqué. Chaque fait est chiffré (variable, nombre de patients, valeur).
+- Phrases courtes (15 mots au plus), une idée par phrase, des mots de tous les jours.
+  Parlez de lignes, de colonnes, de cases, de patients, de dossiers, de tableau Excel.
+- Chaque fait est chiffré (colonne, nombre de patients, valeur).
+- Les consignes commencent par un verbe : « Ouvrez », « Vérifiez », « Notez », « Demandez
+  à votre directeur ».
 - Les patients sont désignés par « le patient n° X », X étant leur numéro d'inclusion (ou
   leur numéro de ligne si la base n'en a pas) ; jamais par un nom, des initiales, une date
   de naissance ou un numéro de dossier hospitalier, même pour expliquer un doublon (écrivez
@@ -216,16 +221,27 @@ Règles d'écriture, pour TOUS les textes :
 - Pour expliquer pourquoi un problème compte, suivez un patient ou un chiffre de la base,
   pas une notion de méthode : « un patient saisi deux fois compte double dans chaque
   pourcentage » plutôt que « risque de pseudo-réplication ».
-- Mots à remplacer : opérationnalisé → défini précisément (quoi, quand, à partir de quel
-  seuil) ; critère composite → critère qui combine plusieurs éléments ; valeur censurée
-  (« <100 ») → valeur notée « moins de 100 » au lieu d'un chiffre ; imputer → (ne pas en
-  parler : nous ne remplaçons jamais une donnée manquante) ; similarité 0,98 → identiques
-  sur 69 colonnes sur 70 ; doublon probable → lignes jumelles : le même patient saisi deux
-  fois ? ; ligne-modèle → la fiche vierge restée dans le tableau ; variable dérivée →
-  colonne calculée ; modalité → réponse possible ; anonymiser → retirer les noms, initiales
-  et numéros de dossier ; valeur extrême → valeur très différente des autres ; confiance
-  faible → les documents reçus ne précisent pas tout ; plafond → ce qui empêche la note de
-  monter ; aucun mot anglais (missing, outlier).
+- Aucun nom de test, aucun sigle de statistique, aucun mot anglais.
+- Mots interdits dans ces textes, et leur remplacement : variable → colonne ; effectif →
+  nombre de patients ; modalité → réponse possible ; doublon → patient saisi deux fois,
+  lignes jumelles ; donnée manquante → case vide ; code de valeur manquante (999) → 999
+  écrit à la place d'une case vide ; valeur aberrante ou extrême → valeur très différente
+  des autres ; imputer → (ne pas en parler : nous ne remplaçons jamais une case vide) ;
+  recoder → noter autrement, regrouper les réponses ; variable dérivée → colonne calculée ;
+  critère composite → critère qui combine plusieurs éléments ; opérationnalisé → défini
+  précisément (quoi, quand, à partir de quel seuil) ; exploitable → utilisable ;
+  standardiser → écrire de la même façon partout ; qualitative ou catégorielle → réponse en
+  mots ; quantitative ou continue → nombre ; binaire → à deux réponses (oui ou non) ;
+  significatif, valeur de p, test, régression, ajustement, corrélation, médiane,
+  écart-type, intervalle de confiance → (ne pas en parler : l'audit ne calcule aucun
+  résultat) ; biais → erreur qui fausse les résultats ; facteur de confusion → autre
+  explication possible ; unité statistique → ce qu'on compte (un patient, un séjour) ;
+  censuré → décrire le fait (« suivi arrêté avant J28 ») ; anonymiser → retirer les noms,
+  initiales et numéros de dossier ; ligne-modèle → la fiche vierge restée dans le
+  tableau ; similarité 0,98 → identiques sur 69 colonnes sur 70 ; confiance faible → les
+  documents reçus ne précisent pas tout ; plafond → ce qui empêche la note de monter.
+- Les noms de colonnes se citent entre guillemets (« Classification du succès ») : ils
+  restent tels quels.
 
 Champs :
 - "headline" : {"title": le verdict en 8 mots au plus, positif quand c'est possible

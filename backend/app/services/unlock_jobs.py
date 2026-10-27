@@ -16,6 +16,11 @@ La solution : un verrou à bail (« lease ») stocké sur la ligne de l'audit.
 4. `release_stale_claims` : un bail non renouvelé depuis `UNLOCK_LEASE_MINUTES`
    (serveur arrêté en plein audit) est libéré, l'audit revient en aperçu et peut être
    relancé. Appelé par la maintenance périodique du serveur.
+
+Relance d'un audit déjà livré (`claim_rerun`, après un changement des prompts) : même
+verrou, mais l'audit reste `done` pendant la relance, pour que le lien de l'étudiant
+continue d'afficher l'ancien bilan. Le nouveau résultat le remplace seulement s'il est
+complet ; en cas d'échec, l'ancien bilan reste en place et l'erreur est notée.
 """
 
 from __future__ import annotations
@@ -74,13 +79,32 @@ def claim(db: Session, audit: Audit) -> str | None:
     return job_id if claimed == 1 else None
 
 
+def claim_rerun(db: Session, audit: Audit) -> str | None:
+    """Réserve un audit LIVRÉ pour une nouvelle exécution de l'audit IA. Retourne le
+    `job_id`, ou None si une relance est déjà en cours."""
+    if audit.status != AuditStatus.DONE:
+        raise UnlockNotAllowedError("Seul un audit livré peut être relancé.")
+    if audit.purged_at or not Path(audit.stored_path).exists():
+        raise SourceFileMissingError("Fichier source expiré ou introuvable")
+    job_id = secrets.token_hex(8)
+    claimed = execute_update(db, (
+        update(Audit)
+        .where(Audit.id == audit.id, Audit.status == AuditStatus.DONE,
+               Audit.job_id.is_(None), Audit.purged_at.is_(None))
+        .values(job_id=job_id, job_started_at=utcnow_iso(), error=None)))
+    db.commit()
+    db.refresh(audit)
+    return job_id if claimed == 1 else None
+
+
 def _owned(audit_id: str, job_id: str) -> Any:
-    """Condition SQL : l'audit est toujours en cours ET réservé par cette tâche."""
-    return ((Audit.id == audit_id) & (Audit.job_id == job_id)
-            & (Audit.status == AuditStatus.PROCESSING))
+    """Condition SQL : l'audit est toujours réservé par cette tâche (identifiant unique ;
+    statut `processing` pour un déblocage, `done` pour une relance)."""
+    return (Audit.id == audit_id) & (Audit.job_id == job_id) & Audit.status.in_(
+        [AuditStatus.PROCESSING, AuditStatus.DONE])
 
 
-def run(audit_id: str, job_id: str) -> None:
+def run(audit_id: str, job_id: str, *, rerun: bool = False) -> None:
     """Tâche de fond : exécute l'audit IA et enregistre le résultat. Ne lève jamais.
 
     Aucune session n'est ouverte pendant l'appel IA (plusieurs minutes) : on lit ce qu'il
@@ -101,20 +125,22 @@ def run(audit_id: str, job_id: str) -> None:
                 result = run_audit(path, name, protocol)
             _require_ai_assessment(result)
 
+            values: dict[str, Any] = {**result_values(result), "status": AuditStatus.DONE,
+                                      "paid": True, "error": None, "job_id": None}
+            if not rerun:
+                # Le lien client expire N jours après la livraison (une relance ne
+                # prolonge pas la conservation des données).
+                values["expires_at"] = link_expiry()
             with SessionLocal() as db:
                 written = execute_update(db, (
-                    update(Audit).where(_owned(audit_id, job_id))
-                    .values(**result_values(result), status=AuditStatus.DONE, paid=True,
-                            error=None, job_id=None,
-                            # Le lien client expire N jours après la livraison.
-                            expires_at=link_expiry())))
+                    update(Audit).where(_owned(audit_id, job_id)).values(**values)))
                 db.commit()
             if not written:
                 logger.warning("Audit %s : résultat de la tâche %s ignoré (dépossédée)",
                                audit_id, job_id)
         except Exception as exc:
             logger.exception("Échec de l'audit complet %s", audit_id)
-            _mark_failed(audit_id, job_id, exc)
+            _mark_failed(audit_id, job_id, exc, rerun=rerun)
 
 
 def _require_ai_assessment(result: dict[str, Any]) -> None:
@@ -163,14 +189,18 @@ def _heartbeat(audit_id: str, job_id: str) -> Iterator[None]:
         thread.join(timeout=5)
 
 
-def _mark_failed(audit_id: str, job_id: str, exc: Exception) -> None:
-    """Enregistre l'échec (session neuve : l'ancienne peut être cassée). Best effort."""
+def _mark_failed(audit_id: str, job_id: str, exc: Exception, *, rerun: bool = False) -> None:
+    """Enregistre l'échec (session neuve : l'ancienne peut être cassée). Best effort.
+    Relance : l'audit reste livré avec son ancien bilan, seule l'erreur est notée."""
+    values: dict[str, Any] = (
+        {"error": f"Relance échouée, ancien bilan conservé : {exc}"[:500], "job_id": None}
+        if rerun else
+        {"status": AuditStatus.FAILED, "error": str(exc)[:500], "finished_at": utcnow_iso(),
+         "job_id": None})
     try:
         with SessionLocal() as db:
             execute_update(db, (
-                update(Audit).where(_owned(audit_id, job_id))
-                .values(status=AuditStatus.FAILED, error=str(exc)[:500],
-                        finished_at=utcnow_iso(), job_id=None)))
+                update(Audit).where(_owned(audit_id, job_id)).values(**values)))
             db.commit()
     except Exception:
         # Base injoignable : le bail expirera et `release_stale_claims` libérera l'audit.
@@ -189,7 +219,16 @@ def release_stale_claims(db: Session, now: datetime | None = None) -> int:
         .values(status=AuditStatus.PREVIEW, job_id=None,
                 error="Audit IA interrompu (serveur arrêté pendant le traitement) : "
                       "relancer le déblocage.")))
+    # Relance d'un audit livré interrompue : l'ancien bilan reste, le verrou est levé.
+    released_reruns = execute_update(db, (
+        update(Audit)
+        .where(Audit.status == AuditStatus.DONE, Audit.job_id.is_not(None),
+               or_(Audit.job_started_at.is_(None), Audit.job_started_at < cutoff))
+        .values(job_id=None, error="Relance interrompue (serveur arrêté) : ancien bilan "
+                                  "conservé, relancer si besoin.")))
     db.commit()
     if released:
         logger.warning("%d audit(s) interrompu(s) remis en aperçu", released)
-    return released
+    if released_reruns:
+        logger.warning("%d relance(s) d'audit interrompue(s)", released_reruns)
+    return released + released_reruns

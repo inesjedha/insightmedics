@@ -11,7 +11,13 @@ import {
   Sigma,
   Unlock,
 } from "lucide-react";
-import { listAudits, orderAnalysis, unlockAudit, UnauthorizedError } from "@/lib/api/client";
+import {
+  listAudits,
+  orderAnalysis,
+  rerunAudit,
+  unlockAudit,
+  UnauthorizedError,
+} from "@/lib/api/client";
 import type { AuditResult } from "@/lib/api/types";
 import { AdminPageHeader, RefreshButton } from "@/components/admin/AdminUi";
 import { Button } from "@/components/ui/button";
@@ -73,7 +79,7 @@ function AdminAudits() {
   const shown = [...audits]
     .filter((a) => inFilter(filter, a))
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-  const anyProcessing = audits.some((a) => a.status === "processing");
+  const anyProcessing = audits.some((a) => a.status === "processing" || a.rerunning);
   const pollingBlocked = needKey || error !== null;
   useEffect(() => {
     if (!anyProcessing || pollingBlocked) return;
@@ -92,6 +98,26 @@ function AdminAudits() {
       setAudits((prev) => prev.map((a) => (a.id === id ? updated : a)));
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Échec du déblocage");
+    } finally {
+      setPendingId(null);
+    }
+  };
+
+  const onRerun = async (id: string) => {
+    if (pendingId) return;
+    if (
+      !window.confirm(
+        "Relancer l'audit IA de cet audit déjà livré (consomme la clé IA, quelques minutes) ? Le lien client garde l'ancien bilan jusqu'à ce que le nouveau soit prêt.",
+      )
+    )
+      return;
+    setPendingId(id);
+    setActionError(null);
+    try {
+      const updated = await rerunAudit(id);
+      setAudits((prev) => prev.map((a) => (a.id === id ? updated : a)));
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Échec de la relance");
     } finally {
       setPendingId(null);
     }
@@ -200,7 +226,12 @@ function AdminAudits() {
                   </td>
                   <td className="px-4 py-3 font-mono tabular-nums">{a.score}/100</td>
                   <td className="px-4 py-3 text-right">
-                    <AuditAction audit={a} pending={pendingId === a.id} onUnlock={onUnlock} />
+                    <AuditAction
+                      audit={a}
+                      pending={pendingId === a.id}
+                      onUnlock={onUnlock}
+                      onRerun={onRerun}
+                    />
                   </td>
                 </tr>
               ))}
@@ -248,19 +279,38 @@ function AuditAction({
   audit,
   pending,
   onUnlock,
+  onRerun,
 }: {
   audit: AuditResult;
   pending: boolean;
   onUnlock: (id: string) => void;
+  onRerun: (id: string) => void;
 }) {
   if (audit.status === "done") {
     return (
-      <div className="inline-flex items-center gap-2">
+      <div className="inline-flex flex-wrap items-center justify-end gap-2">
         <span className="inline-flex items-center gap-1 text-xs text-brand">
           <Unlock className="h-3.5 w-3.5" /> débloqué
         </span>
         {audit.token && !audit.purged && <CopyLinkButton token={audit.token} />}
         {!audit.purged && <OrderAnalysisButton auditId={audit.id} />}
+        {!audit.purged &&
+          (audit.rerunning ? (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> relance en cours…
+            </span>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onRerun(audit.id)}
+              disabled={pending}
+              title="Refaire l'audit IA avec les prompts actuels (coûte un audit IA)"
+              className="h-7 gap-1 px-2 text-xs"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Relancer l'IA
+            </Button>
+          ))}
       </div>
     );
   }
