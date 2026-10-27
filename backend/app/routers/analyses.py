@@ -29,6 +29,13 @@ def _out(db: Session, analysis: Analysis) -> AnalysisOut:
     return out
 
 
+def _audit(db: Session, analysis: Analysis) -> Audit:
+    audit = db.get(Audit, analysis.audit_id)
+    if not audit:
+        raise HTTPException(404, "Audit introuvable")
+    return audit
+
+
 def _guard(exc: service.AuditError) -> HTTPException:
     return HTTPException(409, str(exc))
 
@@ -80,11 +87,22 @@ def upload_base(analysis_id: str, file: UploadFile, db: Session = Depends(get_db
         raise _guard(exc) from exc
 
 
+@router.delete("/analyses/{analysis_id}/base", response_model=AnalysisOut,
+               response_model_by_alias=True)
+def delete_base(analysis_id: str, db: Session = Depends(get_db)) -> AnalysisOut:
+    """Revient à la base de l'audit."""
+    try:
+        return _out(db, service.drop_base(db, _get(db, analysis_id)))
+    except service.AuditError as exc:
+        raise _guard(exc) from exc
+
+
 @router.post("/analyses/{analysis_id}/plan/generate", response_model=AnalysisOut,
              response_model_by_alias=True, status_code=202)
 def generate_plan(analysis_id: str, background: BackgroundTasks,
                   db: Session = Depends(get_db)) -> AnalysisOut:
-    """Contre-audit puis plan proposé par l'IA, en tâche de fond."""
+    """Nettoyage et plan proposés par l'IA (contre-audit si base corrigée déposée), en
+    tâche de fond."""
     analysis = _get(db, analysis_id)
     try:
         job_id = service.claim(db, analysis, "plan")
@@ -100,7 +118,8 @@ def put_plan(analysis_id: str, plan: dict[str, Any] = Body(...),
              db: Session = Depends(get_db)) -> AnalysisOut:
     """Plan écrit ou corrigé à la main (validé avant d'être gardé)."""
     try:
-        return _out(db, service.save_plan(db, _get(db, analysis_id), plan))
+        analysis = _get(db, analysis_id)
+        return _out(db, service.save_plan(db, analysis, _audit(db, analysis), plan))
     except service.AuditError as exc:
         raise _guard(exc) from exc
 
@@ -123,20 +142,17 @@ def validate_and_compute(analysis_id: str, background: BackgroundTasks,
              response_model_by_alias=True)
 def deliver(analysis_id: str, db: Session = Depends(get_db)) -> AnalysisOut:
     analysis = _get(db, analysis_id)
-    audit = db.get(Audit, analysis.audit_id)
-    if not audit:
-        raise HTTPException(404, "Audit introuvable")
     try:
-        return _out(db, service.deliver(db, analysis, audit))
+        return _out(db, service.deliver(db, analysis, _audit(db, analysis)))
     except service.AuditError as exc:
         raise _guard(exc) from exc
 
 
-def file_response(analysis: Analysis, kind: str) -> Response:
+def file_response(analysis: Analysis, audit: Audit, kind: str) -> Response:
     if kind not in service.DELIVERABLES:
         raise HTTPException(404, "Livrable inconnu")
     try:
-        content, media = service.build_deliverable(analysis, kind)
+        content, media = service.build_deliverable(analysis, audit, kind)
     except service.AuditError as exc:
         raise HTTPException(404, str(exc)) from exc
     return Response(content=content, media_type=media,
@@ -145,4 +161,5 @@ def file_response(analysis: Analysis, kind: str) -> Response:
 
 @router.get("/analyses/{analysis_id}/{kind}")
 def download(analysis_id: str, kind: str, db: Session = Depends(get_db)) -> Response:
-    return file_response(_get(db, analysis_id), kind)
+    analysis = _get(db, analysis_id)
+    return file_response(analysis, _audit(db, analysis), kind)

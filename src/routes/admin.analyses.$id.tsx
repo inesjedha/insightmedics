@@ -15,6 +15,7 @@ import {
 import {
   computeAnalysis,
   deliverAnalysis,
+  dropAnalysisBase,
   downloadAnalysisFile,
   generateAnalysisPlan,
   getAnalysis,
@@ -110,27 +111,29 @@ function AdminAnalysis() {
       {error && <ErrorBanner message={error} />}
       {a.error && !error && <ErrorBanner message={a.error} />}
 
-      <Step n={1} title="Base corrigée et consignes" done={!!a.fileName}>
+      <Step n={1} title="Base et réponses de l'étudiant" done={!!a.plan}>
         <BaseStep
           a={a}
           disabled={!canEditBase || !!busy}
           onUpload={(f) => act("base", () => uploadAnalysisBase(a.id, f))}
+          onDrop={() => act("base", () => dropAnalysisBase(a.id))}
           onSave={(t) => act("instructions", () => setAnalysisInstructions(a.id, t))}
           saving={busy === "instructions"}
         />
       </Step>
 
-      <Step n={2} title="Contre-audit et plan d'analyse" done={!!a.planValidatedAt}>
+      <Step n={2} title="Nettoyage de la base et plan d'analyse" done={!!a.planValidatedAt}>
         <div className="flex flex-wrap items-center gap-3">
           <Button
             onClick={() => act("plan", () => generateAnalysisPlan(a.id))}
-            disabled={!a.fileName || !canEditBase || !!busy || running}
+            disabled={!canEditBase || !!busy || running}
           >
             {a.status === "planning" ? <Loader2 className="animate-spin" /> : <Sparkles />}
-            {a.plan ? "Refaire le plan (IA)" : "Préparer le plan (IA)"}
+            {a.plan ? "Refaire nettoyage et plan (IA)" : "Préparer nettoyage et plan (IA)"}
           </Button>
           <span className="text-xs text-muted-foreground">
-            Quelques minutes. Le plan peut aussi être écrit ou corrigé à la main.
+            Quelques minutes, un appel IA. L'IA propose les corrections de la base et le plan ; tout
+            peut être corrigé à la main.
           </span>
         </div>
         {a.recheck && <Recheck a={a} />}
@@ -211,44 +214,72 @@ function BaseStep({
   a,
   disabled,
   onUpload,
+  onDrop,
   onSave,
   saving,
 }: {
   a: AnalysisDetail;
   disabled: boolean;
   onUpload: (f: File) => void;
+  onDrop: () => void;
   onSave: (text: string) => void;
   saving: boolean;
 }) {
   const [text, setText] = useState(a.instructions);
   return (
     <div className="space-y-4">
-      <label
-        className={cn(
-          "flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-border px-4 py-3 text-sm",
-          disabled && "pointer-events-none opacity-50",
+      <div className="rounded-lg bg-muted/40 p-4 text-sm">
+        {a.fileName ? (
+          <p>
+            <span className="font-semibold">Base utilisée : {a.fileName}</span>, corrigée par
+            l'étudiant (elle remplace celle de l'audit ; un contre-audit la compare à l'audit).{" "}
+            <button
+              type="button"
+              onClick={onDrop}
+              disabled={disabled}
+              className="font-medium text-brand hover:underline disabled:opacity-50"
+            >
+              Revenir à la base de l'audit
+            </button>
+          </p>
+        ) : (
+          <p>
+            <span className="font-semibold">
+              Base utilisée : celle de l'audit ({a.auditFileName ?? "fichier de l'étudiant"})
+            </span>
+            . Nous la nettoyons nous-mêmes : l'IA propose les corrections, Dr Hamza les valide avec
+            le plan, chaque cellule modifiée est notée dans le journal remis à l'étudiant.
+          </p>
         )}
-      >
-        <FileUp className="h-4 w-4 text-brand" />
-        {a.fileName ? `${a.fileName} · remplacer` : "Déposer la base corrigée (Excel, SPSS, CSV)"}
-        <input
-          type="file"
-          accept=".xlsx,.xls,.sav,.csv"
-          className="sr-only"
-          disabled={disabled}
-          onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
-        />
-      </label>
+        <label
+          className={cn(
+            "mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs",
+            disabled && "pointer-events-none opacity-50",
+          )}
+        >
+          <FileUp className="h-4 w-4 text-brand" />
+          {a.fileName
+            ? "Remplacer la base corrigée"
+            : "Facultatif : l'étudiant a renvoyé une base corrigée ? La déposer"}
+          <input
+            type="file"
+            accept=".xlsx,.xls,.sav,.csv"
+            className="sr-only"
+            disabled={disabled}
+            onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+          />
+        </label>
+      </div>
       <div className="space-y-2">
         <p className="text-sm font-medium">
-          Consignes pour le plan : réponses du directeur, définition du critère principal, demandes
-          de l'étudiant
+          Réponses de l'étudiant et de son directeur : dossiers vérifiés (valeurs relevées, avec la
+          ligne), décisions sur les lignes en double, définition du critère principal, demandes
         </p>
         <Textarea
-          rows={5}
+          rows={6}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Ex. : Succès = volume évacué ≥ 90 % du volume estimé (validé par le directeur le 28/10). Les inclusions 34 à 47 sont des doublons, retirés de la base. Comparer les patients ventilés et non ventilés."
+          placeholder="Ex. : Succès = volume évacué ≥ 90 % du volume estimé (validé par le directeur le 28/10). Les inclusions 34 à 47 sont des copies des inclusions 4 à 17 : à écarter. Ligne 24 : volume vérifié au dossier = 650 mL. Comparer les patients ventilés et non ventilés."
         />
         <Button variant="outline" size="sm" onClick={() => onSave(text)} disabled={saving}>
           {saving && <Loader2 className="animate-spin" />} Enregistrer les consignes
@@ -310,8 +341,48 @@ function Recheck({ a }: { a: AnalysisDetail }) {
   );
 }
 
+type CorrectionLike = {
+  kind: string;
+  column: string;
+  reason?: string;
+  lines?: number[];
+  where?: string | null;
+  values?: unknown[];
+  mapping?: Record<string, unknown>;
+  value?: unknown;
+  source?: string;
+};
+
+const CORRECTION_LABEL: Record<string, string> = {
+  trim: "Espaces retirés",
+  missing_codes: "Code de case vide → vide",
+  harmonize: "Réponses écrites de la même façon",
+  to_number: "Texte → nombre",
+  to_date: "Texte → date",
+  set_missing: "Valeur impossible → vide",
+  set_value: "Valeur corrigée (dossier)",
+};
+
+function correctionDetail(c: CorrectionLike): string {
+  if (c.kind === "missing_codes") return (c.values ?? []).map(String).join(", ");
+  if (c.kind === "harmonize")
+    return Object.entries(c.mapping ?? {})
+      .map(([k, v]) => `${k} → ${String(v)}`)
+      .join(" ; ");
+  const where = [
+    c.lines?.length ? `lignes ${c.lines.join(", ")}` : "",
+    c.where ? `si ${c.where}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (c.kind === "set_value") return `${where} → ${String(c.value)} (${c.source ?? "?"})`;
+  return where;
+}
+
 type PlanLike = {
   title?: string;
+  corrections?: CorrectionLike[];
+  to_check?: { lines?: number[]; column?: string; question: string }[];
   population?: { description?: string; exclusions?: { label: string; expr: string }[] };
   derived?: { name: string; label?: string; kind: string; rationale?: string }[];
   groups?: { variable: string } | null;
@@ -363,6 +434,44 @@ function PlanStep({
       {plan && !editing && (
         <div className="space-y-3 text-sm">
           <p className="text-base font-semibold">{plan.title}</p>
+          {!!plan.corrections?.length && (
+            <div>
+              <p className="font-medium">
+                Nettoyage : {plan.corrections.length} correction
+                {plan.corrections.length > 1 ? "s" : ""} (sur une copie, fichier d'origine intact)
+              </p>
+              <ul className="mt-1 space-y-1">
+                {plan.corrections.map((c, i) => (
+                  <li key={i} className="rounded-md bg-muted/40 px-3 py-1.5">
+                    <span className="font-medium">{c.column}</span> ·{" "}
+                    {CORRECTION_LABEL[c.kind] ?? c.kind}
+                    {c.reason && <span className="text-muted-foreground"> — {c.reason}</span>}
+                    {correctionDetail(c) && (
+                      <code className="block text-xs text-muted-foreground">
+                        {correctionDetail(c)}
+                      </code>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {!!plan.to_check?.length && (
+            <div className="rounded-md bg-amber-500/10 p-3">
+              <p className="font-medium">
+                À vérifier au dossier par l'étudiant (analysé tel quel en attendant)
+              </p>
+              <ul className="list-disc pl-5">
+                {plan.to_check.map((t, i) => (
+                  <li key={i}>
+                    {t.lines?.length ? `Lignes ${t.lines.join(", ")} · ` : ""}
+                    {t.column ? `${t.column} : ` : ""}
+                    {t.question}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {plan.population?.description && <p>{plan.population.description}</p>}
           {!!plan.population?.exclusions?.length && (
             <div>
@@ -440,7 +549,7 @@ function PlanStep({
         </div>
       )}
       <div className="flex flex-wrap gap-3">
-        {!editing && a.fileName && (
+        {!editing && (
           <Button variant="outline" onClick={startEdit} disabled={busy}>
             {a.plan ? "Modifier le plan (JSON)" : "Écrire le plan à la main"}
           </Button>
@@ -510,6 +619,7 @@ function ResultsStep({
           <p className="text-foreground/80">{a.text.methods_paragraph}</p>
         </div>
       )}
+      <CorrectionsJournal log={a.derivedLog} />
       {a.flow && (
         <div>
           <p className="font-semibold">Diagramme de flux</p>
@@ -527,6 +637,55 @@ function ResultsStep({
         <ResultBlock key={r.id} r={r} section={sections.get(r.id)} />
       ))}
     </div>
+  );
+}
+
+type JournalEntry = {
+  step?: string;
+  kind: string;
+  column: string;
+  reason?: string;
+  n?: number;
+  lines?: number[];
+  examples?: string[];
+  illisibles?: number[];
+  source?: string;
+};
+
+function CorrectionsJournal({ log }: { log: Record<string, unknown>[] | null }) {
+  const entries = (log ?? []).filter((d) => d.step === "correction") as JournalEntry[];
+  if (!entries.length) return null;
+  const total = entries.reduce((n, e) => n + (e.n ?? 0), 0);
+  return (
+    <details className="rounded-md border border-border p-3">
+      <summary className="cursor-pointer font-semibold">
+        Journal des corrections : {total} cellule{total > 1 ? "s" : ""} modifiée
+        {total > 1 ? "s" : ""}
+      </summary>
+      <ul className="mt-2 space-y-2">
+        {entries.map((e, i) => (
+          <li key={i}>
+            <span className="font-medium">{e.column}</span> · {CORRECTION_LABEL[e.kind] ?? e.kind} ·{" "}
+            {e.n ?? 0} cellule{(e.n ?? 0) > 1 ? "s" : ""}
+            {e.reason && <span className="text-muted-foreground"> — {e.reason}</span>}
+            {!!e.lines?.length && (
+              <span className="block text-xs text-muted-foreground">
+                Lignes {e.lines.join(", ")}
+                {(e.n ?? 0) > e.lines.length ? " …" : ""}
+              </span>
+            )}
+            {!!e.examples?.length && (
+              <span className="block text-xs text-muted-foreground">{e.examples.join(" · ")}</span>
+            )}
+            {!!e.illisibles?.length && (
+              <span className="block text-xs text-amber-700">
+                Illisibles, laissées vides : lignes {e.illisibles.join(", ")}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 

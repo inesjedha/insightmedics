@@ -145,6 +145,14 @@ export function uploadAnalysisBase(id: string, file: File): Promise<AnalysisDeta
   });
 }
 
+/** Revient à la base de l'audit (supprime la base corrigée déposée). */
+export function dropAnalysisBase(id: string): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/base`, {
+    method: "DELETE",
+    admin: true,
+  });
+}
+
 export function setAnalysisInstructions(id: string, text: string): Promise<AnalysisDetail> {
   return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/instructions`, {
     method: "PUT",

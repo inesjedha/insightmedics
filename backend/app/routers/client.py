@@ -71,7 +71,7 @@ def client_analysis_file(kind: str, audit: Audit = Depends(paid_audit),
     analysis = analyses.for_audit(db, audit.id)
     if not analysis or analysis.status != AnalysisStatus.DELIVERED:
         raise HTTPException(404, "Aucune analyse livrée")
-    return file_response(analysis, kind)
+    return file_response(analysis, audit, kind)
 
 
 @router.get("/{token}/{kind}")

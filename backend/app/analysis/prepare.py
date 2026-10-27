@@ -1,4 +1,5 @@
-"""Base d'analyse : colonnes calculées et exclusions du plan, appliquées à une copie.
+"""Base d'analyse : corrections (nettoyage), colonnes calculées et exclusions du plan,
+appliquées à une copie.
 
 Rien n'est supprimé : chaque ligne garde `INCLUS_ANALYSE` (1/0) et son motif
 d'exclusion, qui alimentent le diagramme de flux. Rien n'est inventé : une valeur
@@ -13,6 +14,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .clean import apply_corrections
 from .expr import evaluate
 from .plan import AnalysisPlan, Derived
 
@@ -108,15 +110,16 @@ def _derive(d: Derived, df: pd.DataFrame) -> tuple[pd.Series, dict[str, Any]]:
 def prepare(df: pd.DataFrame, plan: AnalysisPlan,
             auto_exclusions: list[tuple[str, list[int]]] | None = None
             ) -> tuple[pd.DataFrame, list[dict[str, Any]], list[dict[str, Any]]]:
-    """Retourne (base d'analyse complète, diagramme de flux, journal des colonnes
-    calculées). `auto_exclusions` : motifs repérés par le code avant le plan (fiche
+    """Retourne (base d'analyse complète, diagramme de flux, journal). Le journal liste
+    les corrections (`step` = « correction ») puis les colonnes calculées (`step` =
+    « derived »). `auto_exclusions` : motifs repérés par le code avant le plan (fiche
     vierge, lignes vides), en positions de ligne."""
-    base = df.copy()
-    log: list[dict[str, Any]] = []
+    base, log = apply_corrections(df, plan.corrections)
     for d in plan.derived:
         series, note = _derive(d, base)
         base[d.name] = series
-        log.append({"name": d.name, "label": d.label, "kind": d.kind, **note})
+        log.append({"step": "derived", "name": d.name, "label": d.label, "kind": d.kind,
+                    **note})
 
     included = pd.Series(True, index=base.index)
     reason = pd.Series("", index=base.index, dtype="object")

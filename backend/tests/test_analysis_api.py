@@ -66,8 +66,7 @@ def test_chaine_complete_sans_ia(admin_headers):
     assert again["id"] == a["id"]                                  # idempotent
     aid = a["id"]
 
-    # Avant la base : ni plan ni calcul
-    assert client.post(f"/analyses/{aid}/plan/generate", headers=h).status_code == 409
+    # Base corrigée par l'étudiant (facultative) : elle remplace celle de l'audit
     r = client.post(f"/analyses/{aid}/base", headers=h,
                     files={"file": ("corrigee.csv", io.BytesIO(_csv()), "text/csv")})
     assert r.status_code == 200 and r.json()["fileName"] == "corrigee.csv"
@@ -118,3 +117,60 @@ def test_commande_refusee_sur_un_apercu(admin_headers):
     db.close()
     r = client.post("/audit/audit_tokapercu2/analysis", headers=admin_headers)
     assert r.status_code == 409
+
+
+def test_nettoyage_par_nos_soins_sur_la_base_de_l_audit(admin_headers, tmp_path):
+    """Sans base corrigée : la base de l'audit est nettoyée par les corrections du plan,
+    chaque cellule modifiée est consignée, et le classeur livre le journal."""
+    import openpyxl
+
+    src = tmp_path / "these.csv"
+    pd.DataFrame({"N°": range(1, 9),
+                  "Âge": [34, 999, 51, -3, 45, 60, 29, 999],
+                  "Sexe": ["H", "h ", "Homme", "F", "femme", "F", "H", "F"],
+                  "Volume": ["600 mL", "1 200 mL", "> 400", "450", "700", "800 ml", "?", "650"],
+                  }).to_csv(src, index=False)
+    audit_id = _audit("toknettoyage")
+    db = SessionLocal()
+    audit = db.get(Audit, audit_id)
+    audit.stored_path, audit.file_name = str(src), "these.csv"
+    db.commit()
+    db.close()
+    h = admin_headers
+    aid = client.post(f"/audit/{audit_id}/analysis", headers=h).json()["id"]
+    plan = {"title": "Nettoyage", "corrections": [
+                {"kind": "missing_codes", "column": "Âge", "values": [999],
+                 "reason": "999 = âge non renseigné"},
+                {"kind": "set_missing", "column": "Âge", "where": 'col("Âge") < 0',
+                 "reason": "Âge négatif impossible"},
+                {"kind": "harmonize", "column": "Sexe", "reason": "Même réponse, écrite "
+                 "différemment", "mapping": {"h": "Homme", "homme": "Homme", "f": "Femme",
+                                             "femme": "Femme"}},
+                {"kind": "to_number", "column": "Volume", "reason": "Volumes saisis avec "
+                 "leur unité"},
+                {"kind": "set_value", "column": "Volume", "lines": [9], "value": 640,
+                 "source": "dossier vérifié par l'étudiant", "reason": "Valeur relevée"}],
+            "to_check": [{"lines": [3], "column": "Volume", "question": "1 200 mL ?"}],
+            "analyses": [{"kind": "describe", "id": "d", "title": "Patients", "by_group": False,
+                          "variables": [{"name": "Âge", "type": "quantitative"},
+                                        {"name": "Sexe", "type": "categorical"},
+                                        {"name": "Volume", "type": "quantitative"}]}]}
+    a = client.put(f"/analyses/{aid}/plan", headers=h, json=plan).json()
+    assert a["status"] == "plan_ready", a
+    assert client.post(f"/analyses/{aid}/compute", headers=h).status_code == 202
+    a = client.get(f"/analyses/{aid}", headers=h).json()
+    journal = {d["kind"]: d for d in a["derivedLog"] if d.get("step") == "correction"}
+    assert journal["missing_codes"]["n"] == 2 and journal["missing_codes"]["lines"] == [3, 9]
+    assert journal["set_missing"]["lines"] == [5]
+    assert journal["harmonize"]["n"] == 7                          # « Homme » inchangé
+    assert journal["to_number"]["illisibles"] == [4, 8]           # « > 400 », « ? »
+    assert journal["set_value"]["lines"] == [9] and journal["set_value"]["source"]
+    table = {r[0]: r[1] for r in a["results"][0]["table"]["rows"]}
+    assert any("Homme" in k for k in table) and not any(k.strip() == "h" for k in table)
+
+    wb = openpyxl.load_workbook(io.BytesIO(
+        client.get(f"/analyses/{aid}/resultats.xlsx", headers=h).content))
+    assert "Journal des corrections" in wb.sheetnames
+    text = " ".join(str(c.value) for row in wb["Journal des corrections"].iter_rows()
+                    for c in row if c.value is not None)
+    assert "999 = âge non renseigné" in text and "« 1 200 mL » → 1200" in text

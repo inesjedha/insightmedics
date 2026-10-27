@@ -1,8 +1,13 @@
 """Chaîne « Analyses + résultats » (offre à 500 DT) : logique métier, indépendante de HTTP.
 
 Cycle de vie (models.AnalysisStatus) :
-  awaiting_base → (base corrigée déposée, « préparer le plan ») planning → plan_ready
+  awaiting_base (« à préparer ») → (« préparer le plan ») planning → plan_ready
   → (plan validé par Dr Hamza) computing → review → (relu) delivered.
+
+La base de départ est celle de l'audit : c'est nous qui la nettoyons (corrections du
+plan, analysis/clean.py). Si l'étudiant renvoie une base qu'il a corrigée lui-même,
+l'admin peut la déposer : elle remplace alors la base de l'audit, et un contre-audit la
+compare à l'audit.
 Les deux étapes longues (plan par l'IA ; calculs puis rédaction par l'IA) tournent en
 tâche de fond, protégées par un verrou à bail comme l'audit (services/unlock_jobs.py) :
 jamais deux exécutions en même temps, résultat écrit seulement par la tâche propriétaire.
@@ -82,7 +87,8 @@ def create(db: Session, audit: Audit) -> Analysis:
     db.add(analysis)
     db.commit()
     db.refresh(analysis)
-    _event(db, analysis, "info", "Analyse commandée (offre Analyses + résultats).")
+    _event(db, analysis, "info", "Analyse commandée (offre Analyses + résultats). Base de "
+                                 "départ : celle de l'audit, nettoyée par nos soins.")
     return analysis
 
 
@@ -91,7 +97,8 @@ def _dir(analysis: Analysis) -> Path:
 
 
 def save_base(db: Session, analysis: Analysis, src: BinaryIO, file_name: str) -> Analysis:
-    """Enregistre la base corrigée et vérifie tout de suite qu'elle se lit."""
+    """Facultatif : base corrigée par l'étudiant, qui remplace celle de l'audit. Vérifie
+    tout de suite qu'elle se lit."""
     if analysis.status not in (AnalysisStatus.AWAITING_BASE, AnalysisStatus.PLAN_READY,
                                AnalysisStatus.FAILED):
         raise AnalysisError("La base ne se remplace qu'avant la validation du plan.")
@@ -114,6 +121,21 @@ def save_base(db: Session, analysis: Analysis, src: BinaryIO, file_name: str) ->
     return analysis
 
 
+def drop_base(db: Session, analysis: Analysis) -> Analysis:
+    """Revient à la base de l'audit (la base corrigée déposée est supprimée)."""
+    if analysis.status not in (AnalysisStatus.AWAITING_BASE, AnalysisStatus.PLAN_READY,
+                               AnalysisStatus.FAILED):
+        raise AnalysisError("La base ne se change qu'avant la validation du plan.")
+    for old in _dir(analysis).glob("base_corrigee.*"):
+        old.unlink()
+    analysis.file_name, analysis.stored_path, analysis.recheck = None, None, None
+    analysis.status, analysis.error = AnalysisStatus.AWAITING_BASE, None
+    analysis.updated_at = utcnow_iso()
+    db.commit()
+    _event(db, analysis, "info", "Retour à la base de l'audit.")
+    return analysis
+
+
 def set_instructions(db: Session, analysis: Analysis, text: str) -> Analysis:
     analysis.instructions = text.strip()[:20000]
     analysis.updated_at = utcnow_iso()
@@ -121,14 +143,20 @@ def set_instructions(db: Session, analysis: Analysis, text: str) -> Analysis:
     return analysis
 
 
-def _load_base(analysis: Analysis) -> tuple[pd.DataFrame, dict[str, Any]]:
-    if not analysis.stored_path or not Path(analysis.stored_path).exists():
-        raise AnalysisError("Aucune base corrigée déposée (ou fichier expiré).")
-    df, meta = ingest(analysis.stored_path, analysis.file_name)
+def _load_base(analysis: Analysis, audit: Audit) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Base de départ : la base corrigée par l'étudiant si elle a été déposée, sinon celle
+    de l'audit (que nous nettoyons)."""
+    if analysis.stored_path:
+        path, name = analysis.stored_path, analysis.file_name or "base"
+    else:
+        path, name = audit.stored_path, audit.file_name
+    if not path or not Path(path).exists():
+        raise AnalysisError("Base introuvable (fichier expiré ou supprimé).")
+    df, meta = ingest(path, name)
     return df, profile(df, meta)
 
 
-def save_plan(db: Session, analysis: Analysis, raw: dict[str, Any]) -> Analysis:
+def save_plan(db: Session, analysis: Analysis, audit: Audit, raw: dict[str, Any]) -> Analysis:
     """Plan écrit ou corrigé à la main : validé (schéma et colonnes) avant d'être gardé."""
     if analysis.status not in (AnalysisStatus.AWAITING_BASE, AnalysisStatus.PLAN_READY,
                                AnalysisStatus.FAILED, AnalysisStatus.REVIEW):
@@ -137,7 +165,7 @@ def save_plan(db: Session, analysis: Analysis, raw: dict[str, Any]) -> Analysis:
         plan = AnalysisPlan.model_validate(raw)
     except ValidationError as exc:
         raise AnalysisError(f"Plan invalide : {exc.errors()[:3]}") from exc
-    df, _ = _load_base(analysis)
+    df, _ = _load_base(analysis, audit)
     problems = plan_problems(plan, [str(c) for c in df.columns]) or dry_run(df, plan)
     if problems:
         raise AnalysisError("Plan incohérent : " + " ; ".join(problems[:8]))
@@ -167,8 +195,6 @@ def claim(db: Session, analysis: Analysis, step: str) -> str:
     """Réserve l'analyse pour une étape longue (« plan » ou « compute »). Lève une
     erreur si l'étape ne peut pas démarrer (déjà en cours, mauvaise étape)."""
     if step == "plan":
-        if not analysis.stored_path:
-            raise AnalysisError("Déposez d'abord la base corrigée.")
         allowed, target = ([AnalysisStatus.AWAITING_BASE, AnalysisStatus.PLAN_READY,
                             AnalysisStatus.FAILED], AnalysisStatus.PLANNING)
     else:
@@ -277,33 +303,36 @@ def run_planning(analysis_id: str, job_id: str) -> None:
         try:
             analysis, audit = _context(analysis_id)
             with _heartbeat(analysis_id, job_id):
-                df, prof = _load_base(analysis)
-                check = recheck(audit.profiling, (audit.ai_audit or {}).get("assessment"),
-                                df, prof)
+                df, prof = _load_base(analysis, audit)
+                corrected = bool(analysis.stored_path)
+                # Contre-audit seulement pour une base corrigée par l'étudiant.
+                check = (recheck(audit.profiling, (audit.ai_audit or {}).get("assessment"),
+                                 df, prof) if corrected else None)
                 plan, notes = run_plan_llm(df, prof, audit.ai_audit, protocol_text(audit),
-                                           analysis.instructions or "", check)
+                                           analysis.instructions or "", check, corrected)
             if plan is None:
                 _finish(analysis_id, job_id,
                         {"status": AnalysisStatus.AWAITING_BASE, "recheck": check,
                          "plan_notes": notes,
                          "error": "Plan IA non produit : " + "; ".join(notes)[:400]
                          + " (le plan peut être écrit à la main)."},
-                        ("warn", "Contre-audit fait ; plan IA non produit."))
+                        ("warn", "Plan IA non produit (il peut être écrit à la main)."))
                 return
             _finish(analysis_id, job_id,
                     {"status": AnalysisStatus.PLAN_READY, "recheck": check,
                      "plan": plan.model_dump(mode="json"), "plan_notes": notes},
-                    ("success", "Plan proposé : à valider par Dr Hamza."))
+                    ("success", "Nettoyage et plan proposés : à valider par Dr Hamza."))
         except Exception as exc:
             logger.exception("Échec du plan de l'analyse %s", analysis_id)
             _fail(analysis_id, job_id, exc)
 
 
-def compute(analysis: Analysis) -> tuple[pd.DataFrame, list[dict[str, Any]],
-                                          list[dict[str, Any]], list[dict[str, Any]],
-                                          dict[str, Any]]:
-    """Base d'analyse, flux, journal des colonnes, résultats, profiling (déterministe)."""
-    df, prof = _load_base(analysis)
+def compute(analysis: Analysis, audit: Audit) -> tuple[pd.DataFrame, list[dict[str, Any]],
+                                                       list[dict[str, Any]],
+                                                       list[dict[str, Any]], dict[str, Any]]:
+    """Base d'analyse, flux, journal (corrections et colonnes calculées), résultats,
+    profiling (déterministe)."""
+    df, prof = _load_base(analysis, audit)
     plan = AnalysisPlan.model_validate(analysis.plan)
     base, flow, log = prepare(df, plan, auto_exclusions(prof))
     return base, flow, log, run_plan(plan, included_rows(base)), prof
@@ -313,9 +342,9 @@ def run_computing(analysis_id: str, job_id: str) -> None:
     """Calculs (code) puis rédaction (IA, chiffres contrôlés). Ne lève jamais."""
     with _SLOT:
         try:
-            analysis, _ = _context(analysis_id)
+            analysis, audit = _context(analysis_id)
             with _heartbeat(analysis_id, job_id):
-                _, flow, log, results, _ = compute(analysis)
+                _, flow, log, results, _ = compute(analysis, audit)
                 text, notes = run_write_llm(build_context(analysis.plan or {}, flow, results, log))
             _finish(analysis_id, job_id,
                     {"status": AnalysisStatus.REVIEW, "flow": flow, "derived_log": log,
@@ -349,14 +378,14 @@ def release_stale(db: Session, now: datetime | None = None) -> int:
 DELIVERABLES = {"resultats.docx", "resultats.xlsx"}
 
 
-def build_deliverable(analysis: Analysis, kind: str) -> tuple[bytes, str]:
+def build_deliverable(analysis: Analysis, audit: Audit, kind: str) -> tuple[bytes, str]:
     if not analysis.results:
         raise AnalysisError("Aucun résultat calculé.")
     if kind == "resultats.docx":
         return (build_results_docx(analysis.plan or {}, analysis.flow or [], analysis.results,
                                    analysis.text),
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-    base, flow, log, results, prof = compute(analysis)
+    base, flow, log, results, prof = compute(analysis, audit)
     pii = {p.get("column") for p in prof.get("pii_candidates") or []}
     return (build_results_xlsx(base, pii, flow, results, log, analysis.plan or {}),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
