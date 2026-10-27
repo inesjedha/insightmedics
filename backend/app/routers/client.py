@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..models import Audit
+from ..pipeline.student_text import mask_dossier_numbers
 from ..schemas import AuditResult
 from ..services import audits as service
 from ..services.audits import DeliverableKind
@@ -48,7 +49,7 @@ def client_assessment(audit: Audit = Depends(paid_audit)) -> dict[str, Any]:
     assessment = (audit.ai_audit or {}).get("assessment")
     if not assessment:
         raise HTTPException(404, "Jugement IA indisponible")
-    return assessment
+    return mask_dossier_numbers(assessment)
 
 
 @router.get("/{token}/{kind}")

@@ -20,6 +20,7 @@ from typing import Any
 import pandas as pd
 
 from .builtin_rules import severity_score_rules
+from .client_view import fill_checklist_lines, twin_example
 from .ingest import ingest
 from .issues import detect_issues
 from .llm1 import run_llm1
@@ -112,6 +113,7 @@ def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: st
     # Aucun numéro de dossier ni téléphone dans ce que l'étudiant lira (ni dans un lien
     # partagé) : filet après le prompt, qui l'interdit déjà.
     redact_output(llm2_out, identifying_values(df, profiling))
+    fill_checklist_lines(llm2_out.checklist, df, profiling)  # « lignes 6 et 36 »
     scoring_inputs.update(llm2_out.scoring_inputs.model_dump(exclude_none=True))
     ai_audit["assessment"] = {
         "findings": [f.model_dump() for f in llm2_out.findings],
@@ -121,8 +123,15 @@ def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: st
         if llm2_out.exploitability_verdict else None,
         "headline": llm2_out.headline.model_dump() if llm2_out.headline else None,
         "blocking_points": [b.model_dump() for b in llm2_out.blocking_points],
+        "missions": [m.model_dump() for m in llm2_out.missions],
         "highlights": [h.model_dump() for h in llm2_out.highlights],
         "checklist": [c.model_dump() for c in llm2_out.checklist],
+        "deja_en_ordre": llm2_out.deja_en_ordre,
+        "nous_corrigeons": llm2_out.nous_corrigeons,
+        "le_saviez_vous": llm2_out.le_saviez_vous,
+        "lexique": [e.model_dump() for e in llm2_out.lexique],
+        # Jeu des différences : deux lignes jumelles, calculé par le code
+        "twin_example": twin_example(df, profiling),
         "analysis_map": llm2_out.analysis_map.model_dump(),
         "executive_summary_fr": llm2_out.executive_summary_fr,
         "report_sections_fr": llm2_out.report_sections_fr.model_dump(),

@@ -157,6 +157,34 @@ export interface BlockingPoint {
   todo: string;
   refs: string[];
 }
+/** Bilan client v3 de Hamza : une cause = une mission. */
+export interface Mission {
+  feu: "rouge" | "orange";
+  title: string;
+  vu: string;
+  pourquoi: string;
+  a_faire: string[];
+  a_rouvrir: string;
+  qui: string;
+  termine_quand: string;
+  refs: string[];
+}
+export interface ChecklistItem {
+  patients: string;
+  check: string;
+  /** « lignes 6 et 36 », calculé par le code. */
+  lignes?: string;
+  colonne?: string;
+  valeur?: string;
+  mission?: number | null;
+}
+/** Le jeu des différences : deux lignes jumelles de la base, côte à côte. */
+export interface TwinExample {
+  columns: string[];
+  rows: { label: string; values: string[] }[];
+  differing: string[];
+  answer: string;
+}
 export interface AnalysisMap {
   realisable: string[];
   avec_reserves: string[];
@@ -169,6 +197,8 @@ export interface ClientDecision {
   consequence_fr: string;
   recommendation_fr: string;
   priority?: "avant_analyse" | "importante" | "facultative";
+  /** Options A, B, C avec ce qu'elles changent (bilan v3). */
+  choices?: { label: string; consequence: string }[];
 }
 export interface AiAssessment {
   findings: Finding[];
@@ -181,7 +211,13 @@ export interface AiAssessment {
   /** Trouvailles précises, montrées en tête (« ce que nous avons repéré »). */
   highlights?: { title: string; detail: string }[];
   /** Dossiers à ouvrir aux archives, du plus urgent au moins urgent. */
-  checklist?: { patients: string; check: string }[];
+  checklist?: ChecklistItem[];
+  missions?: Mission[];
+  deja_en_ordre?: string[];
+  nous_corrigeons?: string[];
+  le_saviez_vous?: string;
+  lexique?: { mot: string; sens: string }[];
+  twin_example?: TwinExample | null;
   executive_summary_fr: string;
   report_sections_fr: {
     limites: string;

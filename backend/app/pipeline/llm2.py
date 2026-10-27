@@ -49,12 +49,37 @@ class Headline(BaseModel):
 
 
 class BlockingPoint(BaseModel):
-    """Un des 3 points qui empêchent d'analyser la base (regroupe des anomalies)."""
+    """Un des 3 points qui empêchent d'analyser la base (regroupe des anomalies).
+    Audits antérieurs au bilan v3 ; depuis, dérivé des missions rouges."""
     title: str
     what: str = ""
     why: str = ""
     todo: str = ""
     refs: list[str] = []
+
+
+Light = Literal["rouge", "orange"]
+
+
+class Mission(BaseModel):
+    """Bilan client v3 de Hamza (27/10/2026) : une cause = une mission, racontée une fois.
+    Rouge : touche l'effectif, l'éligibilité, le critère principal ou un événement ;
+    orange : le reste, à faire en parallèle."""
+    feu: Light = "orange"
+    title: str
+    vu: str = ""                       # ce que nous avons vu : 2 phrases, un exemple
+    pourquoi: str = ""                 # pourquoi c'est important pour la thèse
+    a_faire: list[str] = []            # 2 à 4 actions qui commencent par un verbe
+    a_rouvrir: str = ""                # « 28 dossiers », « aucun »
+    qui: str = ""                      # « vous », « votre directeur et vous », « nous »
+    termine_quand: str = ""            # critère de fin
+    refs: list[str] = []               # inclusions ou paires (« 4 ↔ 34 »)
+    registre: list[str] = []           # identifiants des anomalies (non affichés)
+
+    @field_validator("feu", mode="before")
+    @classmethod
+    def _normalize_light(cls, v: object) -> str:
+        return "rouge" if str(v or "").strip().lower() in {"rouge", "red", "🔴"} else "orange"
 
 
 class Highlight(BaseModel):
@@ -67,6 +92,22 @@ class ChecklistItem(BaseModel):
     """Un dossier (ou une paire) à ouvrir, et ce qu'il faut y regarder."""
     patients: str                      # « 4 et 34 », « 24 »
     check: str                         # « Même patient ou deux patients ? »
+    row_ids: list[str] = []            # identifiants exacts (le code en déduit les lignes)
+    colonne: str = ""                  # colonne concernée, ou « toutes »
+    valeur: str = ""                   # valeur actuelle dans la base
+    mission: int | None = None         # numéro de la mission
+    lignes: str = ""                   # rempli par le code : « lignes 6 et 36 »
+
+
+class Choice(BaseModel):
+    """Une option d'une décision, et ce qu'elle change pour la thèse."""
+    label: str
+    consequence: str = ""
+
+
+class LexiconEntry(BaseModel):
+    mot: str
+    sens: str
 
 
 class AnalysisMap(BaseModel):
@@ -108,6 +149,7 @@ class ClientDecision(BaseModel):
     consequence_fr: str = ""
     recommendation_fr: str = ""
     priority: Priority = "importante"
+    choices: list[Choice] = []         # options A, B, C avec leur conséquence (bilan v3)
 
     @field_validator("priority", mode="before")
     @classmethod
@@ -120,6 +162,23 @@ class ClientDecision(BaseModel):
         if key in {"facultative", "optionnelle", "mineure"}:
             return "facultative"
         return "importante"
+
+
+MAX_MISSIONS = 5  # bilan client v3 de Hamza : 5 missions au plus
+
+
+def sync_missions(out: Llm2Output) -> Llm2Output:
+    """Missions rouges d'abord (ordre du modèle conservé), 5 au plus ; les points
+    bloquants, lus par le classeur, le rapport Word et les anciennes pages, sont les
+    missions rouges (en place)."""
+    if not out.missions:
+        return out
+    out.missions = sorted(out.missions, key=lambda m: m.feu != "rouge")[:MAX_MISSIONS]
+    out.blocking_points = [
+        BlockingPoint(title=m.title, what=m.vu, why=m.pourquoi, todo=" ".join(m.a_faire),
+                      refs=m.refs)
+        for m in out.missions if m.feu == "rouge"]
+    return out
 
 
 def prioritize_decisions(decisions: list[ClientDecision]) -> tuple[list[ClientDecision], int]:
@@ -164,8 +223,13 @@ class Llm2Output(BaseModel):
     exploitability_verdict: Verdict | None = None
     headline: Headline | None = None
     blocking_points: list[BlockingPoint] = []
+    missions: list[Mission] = []
     highlights: list[Highlight] = []
     checklist: list[ChecklistItem] = []
+    deja_en_ordre: list[str] = []
+    nous_corrigeons: list[str] = []
+    le_saviez_vous: str = ""
+    lexique: list[LexiconEntry] = []
     analysis_map: AnalysisMap = AnalysisMap()
     executive_summary_fr: str = ""
     report_sections_fr: ReportSections = ReportSections()
@@ -217,6 +281,7 @@ def run_llm2(profiling: dict, ai_audit: dict) -> tuple[Llm2Output | None, list[s
         dropped = before - len(out.cleaning_plan)
         out.client_decisions, n_cut = prioritize_decisions(out.client_decisions)
         tidy_output(out)  # jargon interne retiré, textes trop longs coupés
+        sync_missions(out)
         n_crit = sum(1 for f in out.findings if f.severity == "critique")
         extra = [f"{len(out.findings)} anomalie(s) classée(s) dont {n_crit} critique(s), "
                  f"verdict niveau {out.exploitability_verdict.level if out.exploitability_verdict else '?'}"]

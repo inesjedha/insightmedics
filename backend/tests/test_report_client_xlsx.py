@@ -83,3 +83,25 @@ def test_questions_et_score():
     wb = _wb(NEW_FIELDS)
     assert "Fusionner les doublons ?" in _values(wb["Questions pour votre directeur"])
     assert "Votre note, domaine par domaine" in _values(wb["Score détaillé"])
+
+
+def test_bilan_v3_missions_statut_et_choix():
+    fields = {**NEW_FIELDS,
+              "missions": [{"feu": "rouge", "title": "Des patients saisis deux fois ?",
+                            "vu": "Lignes 36 à 49.", "a_faire": ["Ouvrir les dossiers."],
+                            "qui": "vous", "a_rouvrir": "28 dossiers"}],
+              "deja_en_ordre": ["Chaque ligne a un numéro d'inclusion."],
+              "checklist": [{"patients": "4 et 34", "lignes": "lignes 6 et 36",
+                             "colonne": "toutes", "valeur": "identiques",
+                             "check": "Même patient ?", "mission": 1}],
+              "client_decisions": [{"question_fr": "Exclure ?", "choices": [
+                  {"label": "Les garder", "consequence": "Limites"},
+                  {"label": "Les exclure", "consequence": "Flux"}]}]}
+    wb = _wb(fields)
+    first = " ".join(str(v) for v in _values(wb["À lire d'abord"]))
+    assert "Rouge — Des patients saisis deux fois ?" in first
+    assert "Chaque ligne a un numéro d'inclusion." in first
+    checklist = _values(wb["Dossiers à ouvrir"])
+    assert "lignes 6 et 36" in checklist and "À vérifier" in checklist
+    questions = " ".join(str(v) for v in _values(wb["Questions pour votre directeur"]))
+    assert "A. Les garder" in questions and "B. Flux" in questions

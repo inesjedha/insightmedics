@@ -13,6 +13,8 @@ import {
   AnalysisMapCard,
   NextSteps,
   TrustStrip,
+  AlreadyInOrder,
+  DidYouKnow,
   StickyWhatsApp,
   TechnicalDetails,
   WorkbookDownload,
@@ -120,8 +122,12 @@ function ClientResultPage() {
               assessment={assessment}
               workbookHref={workbookHref}
             />
-            <SpottedInBase copies={result.copies} highlights={assessment?.highlights} />
-            <BlockingPoints assessment={assessment} />
+            <SpottedInBase
+              copies={result.copies}
+              highlights={assessment?.highlights}
+              twin={assessment?.twin_example}
+            />
+            <BlockingPoints assessment={assessment} storageKey={storageKey} />
             <AnalysisMapCard map={assessment?.analysis_map} />
             <OfferNudge />
             <RecordsToOpen
@@ -130,7 +136,9 @@ function ClientResultPage() {
               workbookHref={workbookHref}
             />
             <DirectorQuestions decisions={assessment?.client_decisions} storageKey={storageKey} />
+            <AlreadyInOrder assessment={assessment} />
             <NextSteps assessment={assessment} needsHumanReview={result.needsHumanReview} />
+            <DidYouKnow assessment={assessment} />
             <TrustStrip />
             <TechnicalDetails scoreDetail={scoreDetail} findings={assessment?.findings ?? []} />
             <WorkbookDownload href={workbookHref} />

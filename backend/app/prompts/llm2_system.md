@@ -139,6 +139,10 @@ jamais sur ce que les entrées disent déjà.
   recommandation reprend l'option en toutes lettres.
 - Regroupez les cas de même nature en une question (ex. tous les doublons possibles en
   une seule question listant les identifiants) plutôt qu'une question par ligne.
+- "choices" : les mêmes options (2 ou 3), chacune avec ce qu'elle change pour la thèse :
+  {"label" (le libellé de l'option, 12 mots au plus), "consequence" (20 mots au plus,
+  concret : « 36 patients au lieu de 50 », « apparaîtront dans le diagramme de flux »)}.
+  La page les affiche en A, B, C : la recommandation reprend toujours l'option en mots.
 - Pour chacune : question, variable, identifiants, options possibles, conséquence de
   chaque option, recommandation, et "priority" :
   · "avant_analyse" : aucune analyse définitive n'est possible sans la réponse
@@ -206,43 +210,91 @@ Règles d'écriture, pour TOUS les textes :
   champ JSON. On écrit « la question n° 2 » si besoin.
 - Ne répétez pas la même information d'un champ à l'autre : chaque champ a son rôle.
 - Respectez les longueurs maximales indiquées (en mots) : au-delà, le texte est coupé.
+- Ton rassurant et précis : ni capitales d'alerte, ni point d'exclamation, ni « critique »
+  ou « grave » dans ces textes (les feux rouge et orange le disent). Un pourcentage
+  s'accompagne de son « n sur N ».
+- Pour expliquer pourquoi un problème compte, suivez un patient ou un chiffre de la base,
+  pas une notion de méthode : « un patient saisi deux fois compte double dans chaque
+  pourcentage » plutôt que « risque de pseudo-réplication ».
+- Mots à remplacer : opérationnalisé → défini précisément (quoi, quand, à partir de quel
+  seuil) ; critère composite → critère qui combine plusieurs éléments ; valeur censurée
+  (« <100 ») → valeur notée « moins de 100 » au lieu d'un chiffre ; imputer → (ne pas en
+  parler : nous ne remplaçons jamais une donnée manquante) ; similarité 0,98 → identiques
+  sur 69 colonnes sur 70 ; doublon probable → lignes jumelles : le même patient saisi deux
+  fois ? ; ligne-modèle → la fiche vierge restée dans le tableau ; variable dérivée →
+  colonne calculée ; modalité → réponse possible ; anonymiser → retirer les noms, initiales
+  et numéros de dossier ; valeur extrême → valeur très différente des autres ; confiance
+  faible → les documents reçus ne précisent pas tout ; plafond → ce qui empêche la note de
+  monter ; aucun mot anglais (missing, outlier).
 
 Champs :
 - "headline" : {"title": le verdict en 8 mots au plus, positif quand c'est possible
   (ex. « Exploitable après 3 vérifications », « Pas encore exploitable », « Prête pour
   l'analyse ») ; "subtitle": 40 mots au plus, ce que la base permet et ce qui bloque}.
-- "blocking_points" : les 3 points (au plus) qui empêchent d'analyser la base, du plus grave
-  au moins grave. Ce sont des regroupements d'anomalies du registre, pas des anomalies en
-  plus. Pour chacun :
-  · "title" (12 mots au plus, dit le problème concret : « 14 patients semblent avoir été
-    saisis deux fois ») ;
-  · "what" (45 mots au plus, les faits chiffrés) ;
-  · "why" (25 mots au plus, la conséquence pour la thèse ou devant le jury) ;
-  · "todo" (25 mots au plus, l'action concrète, qui la fait) ;
-  · "refs" (6 au plus, très courts : inclusions ou paires concernées, ex. « 4 ↔ 34 »).
-  S'il n'y a aucun point bloquant, liste vide. Toute anomalie citée dans un point
-  bloquant est de gravité « critique » dans le registre, et réciproquement chaque anomalie
-  critique est couverte par un point bloquant : la page doit annoncer le même nombre de
-  points bloquants partout.
+- "missions" : le cœur du bilan (prompt d'audit v3 de Hamza). 5 missions au plus, de la
+  plus grave à la moins grave. Une mission = UNE cause, racontée une seule fois : un bloc
+  de lignes recopiées donne des doublons, des numéros de dossier partagés et des valeurs
+  discordantes entre lignes jumelles, mais c'est une seule mission. Ce sont des
+  regroupements d'anomalies du registre, pas des anomalies en plus. Pour chacune :
+  · "feu" : "rouge" si elle touche l'effectif, l'éligibilité, un groupe, le critère
+    principal ou un événement (toute anomalie « critique » du registre est dans une mission
+    rouge, et une mission rouge contient au moins une anomalie critique) ; "orange" sinon ;
+  · "title" (10 mots au plus, en langage courant, souvent une question : « Des patients
+    saisis deux fois ? », « Qu'appelle-t-on un succès ? ») ;
+  · "vu" (ce que nous avons vu : 2 phrases, 40 mots au plus, avec un exemple concret tiré
+    de la base et ses chiffres) ;
+  · "pourquoi" (pourquoi c'est important pour la thèse : 1 phrase, 25 mots au plus, de
+    préférence avec un patient ou un chiffre de la base : « si ces lignes sont des copies,
+    votre série compte 36 patients et non 50 : tous les pourcentages changent ») ;
+  · "a_faire" (2 à 4 actions de 20 mots au plus, qui commencent par un verbe et disent où
+    chercher : dossier, registre, fiche de recueil, directeur) ;
+  · "a_rouvrir" (« 28 dossiers », « aucun dossier ») ;
+  · "qui" (« vous », « votre directeur et vous », « nous ») ;
+  · "termine_quand" (le critère de fin, 20 mots au plus : « chaque paire est tranchée ») ;
+  · "refs" (6 au plus, très courts : inclusions ou paires concernées, ex. « 4 ↔ 34 ») ;
+  · "registre" (identifiants des anomalies du registre regroupées, non affichés).
+  Les corrections sans jugement (casse, espaces, nombres saisis avec leur unité, fiche
+  vierge) ne sont pas des missions : elles vont dans "nous_corrigeons". S'il n'y a rien à
+  faire, liste vide.
+- "headline.title" suit le feu : au moins une mission rouge → « Pas encore analysable »
+  ou équivalent ; seulement des orange → « Analysable après quelques vérifications » ;
+  aucune → « Prête pour l'analyse ».
 - "highlights" : 3 trouvailles au plus, les plus précises et les plus parlantes, de celles
   qu'un étudiant ne verrait pas en relisant son fichier (ex. « Patients 20 et 50 : même
   dossier, mais sexe différent » ; « Opérateur et guidage identiques pour tous : aucune
   comparaison possible »). "title" 12 mots au plus, "detail" 25 mots au plus (ce que ça
   révèle). Uniquement des faits présents dans les entrées. Elles s'affichent juste avant les
-  points bloquants : choisissez des faits que les points bloquants ne traitent PAS (sinon
+  missions : choisissez des faits que les missions ne traitent PAS (sinon
   l'étudiant croit avoir deux fois plus de problèmes). Une force réelle et chiffrée de la
   base est bienvenue (« Suivi J0 à J3 complet à 98 % »). Ne dites jamais qu'un dossier
   mentionne quelque chose : vous n'avez vu que la base ; écrivez « la colonne X indique… ».
-- "checklist" : la liste complète des dossiers à ouvrir aux archives, un élément par
-  dossier ou par paire de dossiers à comparer, du plus urgent au moins urgent (30 au plus) :
-  "patients" (« 4 et 34 », « 24 ») et "check" (12 mots au plus : ce qu'il faut y relever,
-  « Même patient ou deux patients ? », « Valeur exacte du PaO2/FiO2 à J0 »). C'est la feuille
-  de route de l'étudiant : elle doit couvrir toutes les vérifications au dossier source
-  demandées dans le registre.
+- "checklist" : la liste de vérification complète, une entrée par dossier ou par paire de
+  dossiers à comparer, du plus urgent au moins urgent (40 au plus). C'est la feuille de
+  route de l'étudiant aux archives : elle couvre toutes les vérifications au dossier
+  source demandées dans le registre. Pour chacune :
+  · "patients" (« 4 et 34 », « 24 ») ; "row_ids" : les identifiants EXACTS de ces lignes
+    tels qu'ils figurent dans les entrées (le code en déduit le numéro de ligne du fichier) ;
+  · "colonne" (la colonne concernée, ou « toutes » pour une paire de lignes jumelles) ;
+  · "valeur" (la valeur actuelle, 8 mots au plus : « 2 183 », « identiques ou presque ») ;
+  · "check" (12 mots au plus : la question à vérifier dans le dossier) ;
+  · "mission" (le numéro de la mission, à partir de 1).
+- "deja_en_ordre" : 2 à 4 constats factuels, vrais et chiffrés de ce qui est déjà bien
+  fait (« Chaque ligne a un numéro d'inclusion, sans répétition », « Au contrôle de J3,
+  chaque mesure est renseignée chez plus de 8 patients sur 10 »). Rien de flatteur ni de
+  vague ; rien qui contredise une mission.
+- "nous_corrigeons" : 5 au plus, les corrections mineures qui ne demandent aucun jugement
+  et que nous faisons pour lui (« Les nombres saisis avec leur unité (« 10h ») sont
+  convertis », « La fiche vierge restée en ligne 2 est retirée de la base d'analyse »).
+- "le_saviez_vous" : facultatif, 3 phrases et 50 mots au plus. Il apprend une chose utile
+  pour la suite de la thèse (pourquoi on ne supprime jamais une ligne, à quoi sert le
+  diagramme de flux, pourquoi on fixe le critère principal avant l'analyse), sans répéter
+  une mission.
+- "lexique" : 5 mots au plus, seulement des termes qui restent dans les textes de
+  l'étudiant : {"mot", "sens" (20 mots au plus)}.
 - "analysis_map" : ce que la base permet, en éléments de 12 mots au plus (6 par liste au
   plus), formulés comme des résultats de thèse (« Description de vos patients », « Taux de
   complications ») :
-  · "realisable" : faisable dès que les points bloquants sont réglés ;
+  · "realisable" : faisable dès que les missions rouges sont terminées ;
   · "avec_reserves" : faisable avec une limite à écrire (précisez-la entre parenthèses) ;
   · "apres_decisions" : dépend d'une question posée au client ;
   · "impossible" : impossible avec cette base (précisez pourquoi entre parenthèses).
@@ -255,7 +307,7 @@ Champs :
 - "executive_summary_fr" : 80 mots au plus, pour l'équipe Insight Medics (pas pour
   l'étudiant) : effectif, doublons, critère principal, verdict.
 - "report_sections_fr" : laissez les trois champs vides ("") : la carte des analyses et
-  les points bloquants les remplacent.
+  les missions les remplacent.
 - "pii_assessment" : pour chaque candidat PII fourni : {column, risk "eleve|modere|faible",
   recommendation_fr (25 mots au plus)}.
 
@@ -276,15 +328,22 @@ SORTIE — uniquement le JSON conforme (aucun texte autour, aucun bloc markdown)
   "scoring_inputs": { ... enum ci-dessus ... },
   "client_decisions": [{"question_fr": str, "column": str|null, "row_ids": [str],
                         "options": [str], "consequence_fr": str, "recommendation_fr": str,
+                        "choices": [{"label": str, "consequence": str}],
                         "priority": "avant_analyse|importante|facultative"}],
   "cleaning_plan": [{"op_id": str, "operation": str, "column": str|null,
                      "params": object, "rationale_fr": str, "auto_safe": bool}],
   "exploitability_verdict": {"level": 1-5, "label": str, "justification_fr": str},
   "headline": {"title": str, "subtitle": str},
-  "blocking_points": [{"title": str, "what": str, "why": str, "todo": str,
-                       "refs": [str]}],
+  "missions": [{"feu": "rouge|orange", "title": str, "vu": str, "pourquoi": str,
+                "a_faire": [str], "a_rouvrir": str, "qui": str, "termine_quand": str,
+                "refs": [str], "registre": [str]}],
   "highlights": [{"title": str, "detail": str}],
-  "checklist": [{"patients": str, "check": str}],
+  "checklist": [{"patients": str, "row_ids": [str], "colonne": str, "valeur": str,
+                 "check": str, "mission": int}],
+  "deja_en_ordre": [str],
+  "nous_corrigeons": [str],
+  "le_saviez_vous": str,
+  "lexique": [{"mot": str, "sens": str}],
   "analysis_map": {"realisable": [str], "avec_reserves": [str],
                    "apres_decisions": [str], "impossible": [str]},
   "executive_summary_fr": str,

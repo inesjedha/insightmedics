@@ -32,11 +32,14 @@ import type {
   AnalysisMap,
   AuditResult,
   BlockingPoint,
+  ChecklistItem,
   ClientDecision,
   CopiesView,
   CopiedBlock,
   Finding,
+  Mission,
   ScoreDetail,
+  TwinExample,
 } from "@/lib/api/types";
 
 const ANALYSIS_PRICE = "500 DT";
@@ -81,8 +84,22 @@ function blockingPoints(assessment: AiAssessment | null): BlockingPoint[] {
     }));
 }
 
+/** Feu du verdict (bilan v3) : rouge si une mission rouge, orange s'il en reste, vert
+ * sinon. Audits antérieurs : d'après les points bloquants. */
+function verdictLight(assessment: AiAssessment | null): "rouge" | "orange" | "vert" {
+  const missions = assessment?.missions ?? [];
+  if (missions.length) return missions.some((m) => m.feu === "rouge") ? "rouge" : "orange";
+  return blockingPoints(assessment).length ? "rouge" : "vert";
+}
+
+const LIGHT_DOT: Record<"rouge" | "orange" | "vert", string> = {
+  rouge: "bg-destructive",
+  orange: "bg-amber-500",
+  vert: "bg-emerald-500",
+};
+
 /** Dossiers à ouvrir : la liste de l'IA, sinon les anomalies à vérifier au dossier. */
-function checklistItems(assessment: AiAssessment | null): { patients: string; check: string }[] {
+function checklistItems(assessment: AiAssessment | null): ChecklistItem[] {
   if (assessment?.checklist?.length) return assessment.checklist;
   return (assessment?.findings ?? [])
     .filter((f) => f.requires_source_verification && f.rows_fr)
@@ -207,6 +224,9 @@ export function ReportHero({
   const subtitle = headline?.subtitle || firstSentences(verdict?.justification_fr ?? "", 40);
   const score = scoreDetail?.score_final ?? result.score;
   const nPoints = blockingPoints(assessment).length;
+  const missions = assessment?.missions ?? [];
+  const nRed = missions.filter((m) => m.feu === "rouge").length;
+  const light = verdictLight(assessment);
 
   const patients = result.patientCount || result.rowCount;
   const patientMin = result.patientMin ?? patients;
@@ -221,7 +241,13 @@ export function ReportHero({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             Audit de votre base · {result.fileName}
           </p>
-          <h2 className="text-4xl text-foreground sm:text-5xl">{title}</h2>
+          <h2 className="flex items-start gap-3 text-4xl text-foreground sm:text-5xl">
+            <span
+              className={cn("mt-3 h-4 w-4 shrink-0 rounded-full sm:mt-4", LIGHT_DOT[light])}
+              aria-hidden
+            />
+            {title}
+          </h2>
           {subtitle && (
             <p className="max-w-xl text-[17px] leading-relaxed text-foreground/80">{subtitle}</p>
           )}
@@ -266,12 +292,28 @@ export function ReportHero({
           value={`${fr(missing)} %`}
           hint="dans les colonnes utilisées"
         />
-        <Tile
-          label="Points bloquants"
-          value={String(nPoints)}
-          hint={nPoints ? "à régler avant l'analyse" : "aucun"}
-          alert={nPoints > 0}
-        />
+        {missions.length ? (
+          <Tile
+            label="Missions"
+            value={String(missions.length)}
+            hint={[
+              nRed ? `${nRed} rouge${nRed > 1 ? "s" : ""}` : "",
+              missions.length - nRed
+                ? `${missions.length - nRed} orange${missions.length - nRed > 1 ? "s" : ""}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(", ")}
+            alert={nRed > 0}
+          />
+        ) : (
+          <Tile
+            label="Points bloquants"
+            value={String(nPoints)}
+            hint={nPoints ? "à régler avant l'analyse" : "aucun"}
+            alert={nPoints > 0}
+          />
+        )}
       </dl>
     </section>
   );
@@ -426,14 +468,111 @@ function SimilarityBar({
   );
 }
 
+/** Le jeu des différences (bilan v3) : deux lignes jumelles, réponse à révéler. */
+function TwinGame({ twin, copies }: { twin: TwinExample; copies?: CopiesView | null }) {
+  const [revealed, setRevealed] = useState(false);
+  const block = copies?.blocks[0];
+  const ordinary = copies?.median_similarity != null ? pct(copies.median_similarity) : null;
+  return (
+    <figure className="space-y-4 rounded-xl border border-border bg-card p-5 sm:p-6">
+      <figcaption className="space-y-1">
+        <p className="text-lg font-bold">Le jeu des différences</p>
+        <p className="text-sm text-muted-foreground">
+          Deux lignes de votre fichier. Trouvez ce qui les distingue.
+        </p>
+      </figcaption>
+      <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
+        <table className="w-max min-w-full border-separate border-spacing-0 text-sm">
+          <thead>
+            <tr>
+              <th className="sticky left-0 bg-card" />
+              {twin.columns.map((c) => (
+                <th
+                  key={c}
+                  scope="col"
+                  className={cn(
+                    "max-w-[8rem] px-2.5 pb-2 text-left align-bottom text-xs font-semibold leading-tight text-muted-foreground",
+                    revealed && twin.differing.includes(c) && "text-destructive",
+                  )}
+                >
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {twin.rows.map((r) => (
+              <tr key={r.label}>
+                <th
+                  scope="row"
+                  className="sticky left-0 whitespace-nowrap border-t border-border bg-card py-2 pr-3 text-left text-xs font-semibold"
+                >
+                  {r.label}
+                </th>
+                {r.values.map((v, j) => {
+                  const differs = twin.differing.includes(twin.columns[j]);
+                  const isId = j === 0 && /inclusion/i.test(twin.columns[0]);
+                  return (
+                    <td
+                      key={j}
+                      className={cn(
+                        "whitespace-nowrap border-t border-border px-2.5 py-2 tabular-nums",
+                        revealed && (differs || isId) && "bg-highlight font-semibold",
+                      )}
+                    >
+                      {v}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-muted-foreground sm:hidden">
+        Faites glisser le tableau pour voir les autres colonnes.
+      </p>
+      {revealed ? (
+        <p className="rounded-lg bg-accent px-3.5 py-3 text-sm leading-relaxed text-accent-foreground">
+          <strong>Réponse.</strong> {twin.answer}
+          {block &&
+            ` Et ce n'est pas un cas isolé : ${rangeLabel(block.source, block.by).toLowerCase()} se retrouvent en ${rangeLabel(block.copy, block.by).toLowerCase()}.`}
+        </p>
+      ) : (
+        <Button variant="outline" onClick={() => setRevealed(true)}>
+          Voir la réponse
+        </Button>
+      )}
+      {revealed && block?.min_similarity != null && ordinary != null && (
+        <div className="space-y-3 border-t border-border pt-4">
+          <SimilarityBar
+            label="Une ligne et sa copie"
+            value={pct(block.min_similarity)}
+            text={`${pct(block.min_similarity)} à 100 %`}
+            className="bg-destructive"
+          />
+          <SimilarityBar
+            label="Deux patients pris au hasard"
+            value={ordinary}
+            text={`${ordinary} %`}
+            className="bg-muted-foreground/50"
+          />
+        </div>
+      )}
+    </figure>
+  );
+}
+
 export function SpottedInBase({
   copies,
   highlights,
+  twin,
 }: {
   copies?: CopiesView | null;
   highlights?: { title: string; detail: string }[];
+  twin?: TwinExample | null;
 }) {
-  const showCopies = !!copies?.blocks.length;
+  const showCopies = !!copies?.blocks.length || !!twin;
   // Le schéma montre déjà le bloc recopié : on n'en répète pas la trouvaille.
   const cards = (highlights ?? []).filter(
     (h) => !(showCopies && /recopi|copi[ée]|deux fois/i.test(h.title)),
@@ -443,16 +582,28 @@ export function SpottedInBase({
     <section className="space-y-4">
       <SectionTitle title="Ce que nous avons repéré" note="ce qu'un œil pressé ne voit pas" />
       <div className="grid gap-4 lg:grid-cols-5">
-        {showCopies && copies && (
-          <div className={cn(cards.length ? "lg:col-span-3" : "lg:col-span-5")}>
-            <CopiesVisual copies={copies} />
+        {showCopies && (
+          <div
+            className={cn(
+              "min-w-0",
+              // le tableau du jeu des différences a besoin de toute la largeur
+              cards.length && !twin ? "lg:col-span-3" : "lg:col-span-5",
+            )}
+          >
+            {twin ? (
+              <TwinGame twin={twin} copies={copies} />
+            ) : (
+              copies && <CopiesVisual copies={copies} />
+            )}
           </div>
         )}
         {cards.length > 0 && (
           <ul
             className={cn(
               "grid gap-3",
-              showCopies ? "content-start lg:col-span-2" : "lg:col-span-5 lg:grid-cols-3",
+              showCopies && !twin
+                ? "content-start lg:col-span-2"
+                : "sm:grid-cols-2 lg:col-span-5 lg:grid-cols-3",
             )}
           >
             {cards.slice(0, 3).map((h) => (
@@ -472,7 +623,121 @@ export function SpottedInBase({
 
 /* ------------------------------------------------------- 3. points bloquants */
 
-export function BlockingPoints({ assessment }: { assessment: AiAssessment | null }) {
+function Missions({ missions, storageKey }: { missions: Mission[]; storageKey: string }) {
+  const [checks, toggle] = useSavedChecks(`${storageKey}:missions`);
+  const nDone = missions.filter((_, i) => checks[i]).length;
+  return (
+    <section id="points-bloquants" className="space-y-4">
+      <SectionTitle
+        title="Vos missions"
+        note={`${nDone} terminée${nDone > 1 ? "s" : ""} sur ${missions.length}`}
+        intro="Une mission par problème, de la plus urgente à la moins urgente. Les rouges d'abord : tant qu'elles ne sont pas terminées, aucune analyse n'est fiable."
+      />
+      {missions.map((m, i) => {
+        const done = !!checks[i];
+        return (
+          <article
+            key={i}
+            className={cn(
+              "space-y-3 rounded-xl border bg-card p-5 sm:p-6",
+              m.feu === "rouge" ? "border-destructive/30" : "border-amber-500/30",
+              done && "opacity-60",
+            )}
+          >
+            <div className="flex flex-wrap items-start gap-3">
+              <span
+                className={cn(
+                  "mt-1 inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-xs font-bold",
+                  m.feu === "rouge"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-amber-500/15 text-amber-800 dark:text-amber-200",
+                )}
+              >
+                <span className={cn("h-2 w-2 rounded-full", LIGHT_DOT[m.feu])} />
+                Mission {i + 1}
+              </span>
+              <h3
+                className={cn(
+                  "min-w-0 flex-1 text-xl font-bold leading-snug",
+                  done && "line-through",
+                )}
+              >
+                {m.title}
+              </h3>
+            </div>
+            {m.vu && (
+              <p className="leading-relaxed text-foreground/80">
+                <strong className="text-foreground">Ce que nous avons vu.</strong> {m.vu}
+              </p>
+            )}
+            {m.refs.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {m.refs.map((r) => (
+                  <span key={r} className="rounded-md bg-muted px-2.5 py-1 text-sm tabular-nums">
+                    {r}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap gap-3">
+              {m.pourquoi && (
+                <p className="flex-[1_1_240px] rounded-lg bg-muted/60 px-3.5 py-3 text-sm leading-relaxed">
+                  <strong>Pourquoi c'est important pour votre thèse.</strong> {m.pourquoi}
+                </p>
+              )}
+              {m.a_faire.length > 0 && (
+                <div className="flex-[1_1_240px] rounded-lg bg-accent px-3.5 py-3 text-sm leading-relaxed text-accent-foreground">
+                  <strong>À faire</strong>
+                  <ul className="mt-1 list-disc space-y-1 pl-4">
+                    {m.a_faire.map((a) => (
+                      <li key={a}>{a}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3 text-sm">
+              {m.a_rouvrir && (
+                <span>
+                  <span className="text-muted-foreground">À rouvrir&nbsp;:</span> {m.a_rouvrir}
+                </span>
+              )}
+              {m.qui && (
+                <span>
+                  <span className="text-muted-foreground">Qui&nbsp;:</span> {m.qui}
+                </span>
+              )}
+              {m.termine_quand && (
+                <span className="min-w-0">
+                  <span className="text-muted-foreground">Terminé quand</span> {m.termine_quand}
+                </span>
+              )}
+              <label className="ml-auto inline-flex cursor-pointer items-center gap-2 font-semibold">
+                <input
+                  type="checkbox"
+                  className="h-[18px] w-[18px] accent-[var(--color-brand)]"
+                  checked={done}
+                  onChange={(e) => toggle(String(i), e.target.checked)}
+                />
+                Mission terminée
+              </label>
+            </div>
+          </article>
+        );
+      })}
+    </section>
+  );
+}
+
+export function BlockingPoints({
+  assessment,
+  storageKey,
+}: {
+  assessment: AiAssessment | null;
+  storageKey: string;
+}) {
+  if (assessment?.missions?.length)
+    return <Missions missions={assessment.missions} storageKey={storageKey} />;
   const points = blockingPoints(assessment);
   if (!points.length) return null;
   return (
@@ -587,9 +852,21 @@ export function RecordsToOpen({
                 )}
               >
                 <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-sm font-semibold tabular-nums">
-                  {/^\d/.test(item.patients) ? `n° ${item.patients}` : item.patients}
+                  {item.lignes ? `${item.lignes} · ` : ""}
+                  {/^\d/.test(item.patients)
+                    ? `${item.lignes ? "inclusion " : ""}n° ${item.patients}`
+                    : item.patients}
                 </span>
-                <span className="leading-relaxed">{item.check}</span>
+                <span className="leading-relaxed">
+                  {item.check}
+                  {(item.colonne || item.valeur) && (
+                    <span className="block text-sm text-muted-foreground">
+                      {[item.colonne, item.valeur && `valeur actuelle : ${item.valeur}`]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  )}
+                </span>
               </span>
             </label>
           </li>
@@ -658,6 +935,20 @@ export function DirectorQuestions({
                   )}
                   {d.question_fr}
                 </p>
+                {!!d.choices?.length && (
+                  <ul className="grid gap-2 sm:grid-cols-2">
+                    {d.choices.map((c, k) => (
+                      <li key={k} className="rounded-lg border border-border px-3 py-2 text-sm">
+                        <span className="font-semibold">
+                          {String.fromCharCode(65 + k)}. {c.label}
+                        </span>
+                        {c.consequence && (
+                          <span className="block text-muted-foreground">{c.consequence}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {d.recommendation_fr && (
                   <>
                     <button
@@ -697,6 +988,73 @@ export function DirectorQuestions({
   );
 }
 
+/* --------------------------------------- déjà en ordre, nous corrigeons */
+
+export function AlreadyInOrder({ assessment }: { assessment: AiAssessment | null }) {
+  const ok = assessment?.deja_en_ordre ?? [];
+  const fixes = assessment?.nous_corrigeons ?? [];
+  if (!ok.length && !fixes.length) return null;
+  return (
+    <section className="grid gap-4 md:grid-cols-2">
+      {ok.length > 0 && (
+        <div className="space-y-2 rounded-xl bg-emerald-500/10 p-5">
+          <p className="font-bold text-emerald-800 dark:text-emerald-200">
+            Ce qui est déjà en ordre
+          </p>
+          <ul className="space-y-1.5 text-sm leading-relaxed">
+            {ok.map((s) => (
+              <li key={s} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" />
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {fixes.length > 0 && (
+        <div className="space-y-2 rounded-xl border border-border bg-card p-5">
+          <p className="font-bold">Ce que nous corrigeons pour vous</p>
+          <p className="text-sm text-muted-foreground">Vous n'avez rien à faire.</p>
+          <ul className="space-y-1.5 text-sm leading-relaxed">
+            {fixes.map((s) => (
+              <li key={s} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function DidYouKnow({ assessment }: { assessment: AiAssessment | null }) {
+  const tip = assessment?.le_saviez_vous;
+  const words = assessment?.lexique ?? [];
+  if (!tip && !words.length) return null;
+  return (
+    <section className="space-y-4 rounded-xl border border-dashed border-brand/40 bg-card p-5 sm:p-6">
+      {tip && (
+        <p className="leading-relaxed">
+          <span className="font-hand text-2xl text-brand">Le saviez-vous&nbsp;? </span>
+          {tip}
+        </p>
+      )}
+      {words.length > 0 && (
+        <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+          {words.map((w) => (
+            <div key={w.mot}>
+              <dt className="inline font-semibold">{w.mot}&nbsp;: </dt>
+              <dd className="inline text-foreground/80">{w.sens}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </section>
+  );
+}
+
 /* ------------------------------------------------- 6. ce que la base permet */
 
 const ANALYSIS_GROUPS: {
@@ -728,7 +1086,7 @@ export function AnalysisMapCard({ map }: { map?: AnalysisMap }) {
     <section className="space-y-4">
       <SectionTitle
         title="Ce que vous pourrez présenter"
-        intro="Une fois les points bloquants réglés, voici les résultats que votre base permet."
+        intro="Une fois vos missions rouges terminées, voici les résultats que votre base permet."
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {ANALYSIS_GROUPS.filter((g) => map[g.key]?.length).map((g) => (
