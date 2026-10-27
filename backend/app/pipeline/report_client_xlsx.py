@@ -156,11 +156,14 @@ def _sheet_read_first(wb: Workbook, prof: dict, score: dict, assess: dict, n_fin
     patients = counts["patients"]
     if counts["duplicated_rows"] and counts["patients_min"] < patients:
         patients = f"{counts['patients_min']} à {counts['patients']}"
+    missions = assess.get("missions") or []
     n_points = len(assess.get("blocking_points") or []) or n_blocking_findings
+    n_red = sum(1 for m in missions if m.get("feu") == "rouge")
     tiles = [("Patients", patients),
              ("Saisis deux fois ?", counts["duplicated_rows"]),
              ("Données manquantes", f"{_fr(counts['missing_useful_pct'])} %"),
-             ("Points bloquants", n_points)]
+             ("Missions", f"{len(missions)} (dont {n_red} rouges)") if missions
+             else ("Points bloquants", n_points)]
     for j, (label, value) in enumerate(tiles, start=1):
         ws.cell(row=row, column=j, value=label).font = MUTED
         c = ws.cell(row=row + 1, column=j, value=value)
@@ -173,7 +176,31 @@ def _sheet_read_first(wb: Workbook, prof: dict, score: dict, assess: dict, n_fin
     row += 1
 
     points = assess.get("blocking_points") or []
-    if points:
+    if missions:
+        row = _text(ws, row, "Vos missions", H2)
+        row = _table(ws, row, ["N°", "Mission", "Pourquoi c'est important", "À faire",
+                               "Qui · à rouvrir · terminé quand"], [24, 44, 34, 44, 34])
+        for i, m in enumerate(missions, start=1):
+            light = "Rouge" if m.get("feu") == "rouge" else "Orange"
+            mission = f"{light} — {m.get('title', '')}" + (f"\n{m['vu']}" if m.get("vu") else "")
+            todo = "\n".join(f"• {a}" for a in m.get("a_faire") or [])
+            who = " · ".join(x for x in [m.get("qui", ""), m.get("a_rouvrir", ""),
+                                         m.get("termine_quand", "")] if x)
+            _row(ws, row, [i, mission, m.get("pourquoi", ""), todo, who])
+            ws.cell(row=row, column=1).fill = PRIORITY_FILL[
+                "avant_analyse" if m.get("feu") == "rouge" else "importante"]
+            row += 1
+        ws.freeze_panes = None
+        row += 1
+        for label, items in (("Ce qui est déjà en ordre", assess.get("deja_en_ordre") or []),
+                             ("Ce que nous corrigeons pour vous (rien à faire de votre côté)",
+                              assess.get("nous_corrigeons") or [])):
+            if items:
+                row = _text(ws, row, label, H2)
+                for item in items:
+                    row = _text(ws, row, f"• {item}")
+                row += 1
+    elif points:
         row = _text(ws, row, "Les points qui bloquent votre analyse", H2)
         row = _table(ws, row, ["N°", "Le problème", "Pourquoi c'est grave", "Que faire"],
                      [24, 44, 40, 40])
@@ -250,9 +277,14 @@ def _sheet_questions(wb: Workbook, decisions: list[dict]) -> None:
         return
     for i, d in enumerate(decisions, start=1):
         prio = d.get("priority") or "importante"
+        choices = d.get("choices") or []
+        options = ("\n".join(f"{chr(65 + k)}. {c.get('label', '')}" for k, c in enumerate(choices))
+                   if choices else " / ".join(d.get("options") or []))
+        effects = ("\n".join(f"{chr(65 + k)}. {c.get('consequence', '')}"
+                              for k, c in enumerate(choices) if c.get("consequence"))
+                   if choices else "") or d.get("consequence_fr", "")
         _row(ws, row, [i, PRIORITY_LABELS.get(prio, "Importante"), d.get("question_fr", ""),
-                       " / ".join(d.get("options") or []), d.get("consequence_fr", ""),
-                       d.get("recommendation_fr", ""), ""], input_cols=(7,))
+                       options, effects, d.get("recommendation_fr", ""), ""], input_cols=(7,))
         ws.cell(row=row, column=2).fill = PRIORITY_FILL.get(prio, PRIORITY_FILL["importante"])
         row += 1
     _print_setup(ws, "8A4B08")
@@ -293,29 +325,39 @@ def _sheet_score(wb: Workbook, score: dict) -> None:
     _print_setup(ws, "4B5563")
 
 
+CHECK_STATUSES = '"À vérifier,Confirmé tel quel,Corrigé dans le dossier"'
+
+
 def _sheet_checklist(wb: Workbook, assess: dict, findings: list[dict], hide_ids: bool) -> None:
+    """Liste de vérification (bilan v3) : triée par urgence, avec la ligne du fichier, la
+    colonne, la valeur actuelle, et un statut que l'étudiant remplit."""
     ws = wb.create_sheet("Dossiers à ouvrir")
     ws.sheet_view.showGridLines = False
     ws.cell(row=1, column=1, value="Dossiers à ouvrir aux archives").font = TITLE
     ws.cell(row=2, column=1, value="Un dossier ou une paire de dossiers par ligne, du plus "
-            "urgent au moins urgent. Notez ce que vous trouvez dans la colonne jaune.").font = MUTED
-    row = _table(ws, 4, ["N°", "Patient(s)", "Ce qu'il faut relever", "Ce que vous avez trouvé",
-                         "Fait"], [6, 18, 56, 48, 8], input_cols=(4, 5))
-    items = [(c.get("patients", ""), c.get("check", "")) for c in assess.get("checklist") or []]
+            "urgent au moins urgent. Remplissez les colonnes jaunes.").font = MUTED
+    row = _table(ws, 4, ["N°", "Ligne du fichier", "Patient(s)", "Colonne", "Valeur actuelle",
+                         "Question à vérifier dans le dossier", "Mission", "Statut",
+                         "Ce que vous avez trouvé"],
+                 [6, 16, 14, 22, 18, 46, 9, 22, 36], input_cols=(8, 9))
+    items = [[c.get("lignes", ""), c.get("patients", ""), c.get("colonne", ""),
+              c.get("valeur", ""), c.get("check", ""), c.get("mission") or ""]
+             for c in assess.get("checklist") or []]
     if not items:  # audits antérieurs : une ligne par anomalie à vérifier au dossier
-        items = [(_rows_label(f, hide_ids), f.get("check_fr") or f.get("title_fr", ""))
+        items = [["", _rows_label(f, hide_ids), _variable(f), f.get("observed") or "",
+                  f.get("check_fr") or f.get("title_fr", ""), ""]
                  for f in findings if f.get("requires_source_verification")]
     if not items:
         ws.cell(row=row, column=1, value="Aucun dossier à vérifier.").font = MUTED
         _print_setup(ws, "11643A")
         return
-    done = DataValidation(type="list", formula1='"Oui,Non"', allow_blank=True)
-    ws.add_data_validation(done)
+    status = DataValidation(type="list", formula1=CHECK_STATUSES, allow_blank=True)
+    ws.add_data_validation(status)
     first = row
-    for i, (patients, check) in enumerate(items, start=1):
-        _row(ws, row, [i, patients, check, "", ""], input_cols=(4, 5))
+    for i, item in enumerate(items, start=1):
+        _row(ws, row, [i, *item, "À vérifier", ""], input_cols=(8, 9))
         row += 1
-    done.add(f"E{first}:E{row - 1}")
+    status.add(f"H{first}:H{row - 1}")
     _print_setup(ws, "11643A")
 
 

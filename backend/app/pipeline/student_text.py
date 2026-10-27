@@ -39,6 +39,13 @@ _REPLACEMENTS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"«\s*medium\s*»|\bmedium\b"), "moyenne"),
     (re.compile(r"«\s*high\s*»"), "élevée"),
     (re.compile(r"«\s*low\s*»"), "faible"),
+    # Mots à remplacer du bilan client v3 de Hamza (formes sûres seulement)
+    (re.compile(r"\bcritère composite\b"), "critère qui combine plusieurs éléments"),
+    (re.compile(r"\b[Ll]a ligne[- ]modèle\b"), "la fiche vierge restée dans le tableau"),
+    (re.compile(r"\b[Dd]e façon opérationnelle\b"), "précisément"),
+    (re.compile(r"\bopérationnellement\b"), "précisément"),
+    (re.compile(r"\bvariables dérivées\b"), "colonnes calculées"),
+    (re.compile(r"\bvariable dérivée\b"), "colonne calculée"),
 ]
 _SPACE_BEFORE_PUNCT_RE = re.compile(r" +([,.)])")
 _MULTI_SPACE_RE = re.compile(r"[ \t]{2,}")
@@ -102,14 +109,32 @@ def tidy_output(out: Llm2Output) -> Llm2Output:
         bp.why = shorten(bp.why, 35)
         bp.todo = shorten(bp.todo, 35)
         bp.refs = _short_list(bp.refs, 6, 4)
+    out.missions = out.missions[:8]  # triées et ramenées à 5 par sync_missions
+    for m in out.missions:
+        m.title = shorten(m.title, 14)
+        m.vu = shorten(m.vu, 50)
+        m.pourquoi = shorten(m.pourquoi, 35)
+        m.a_faire = _short_list(m.a_faire, 4, 25)
+        m.a_rouvrir = shorten(m.a_rouvrir, 12)
+        m.qui = shorten(m.qui, 6)
+        m.termine_quand = shorten(m.termine_quand, 25)
+        m.refs = _short_list(m.refs, 6, 4)
+    out.deja_en_ordre = _short_list(out.deja_en_ordre, 4, 25)
+    out.nous_corrigeons = _short_list(out.nous_corrigeons, 5, 25)
+    out.le_saviez_vous = shorten(out.le_saviez_vous, 60)
+    out.lexique = [e for e in out.lexique[:5] if e.mot.strip()]
+    for e in out.lexique:
+        e.sens = shorten(e.sens, 25)
     out.highlights = out.highlights[:3]
     for h in out.highlights:
         h.title = shorten(h.title, 16)
         h.detail = shorten(h.detail, 35)
-    out.checklist = out.checklist[:30]
+    out.checklist = out.checklist[:40]
     for c in out.checklist:
         c.patients = shorten(c.patients, 8)
         c.check = shorten(c.check, 20)
+        c.colonne = shorten(c.colonne, 10)
+        c.valeur = shorten(c.valeur, 10)
     amap = out.analysis_map
     amap.realisable = _short_list(amap.realisable, 6, 18)
     amap.avec_reserves = _short_list(amap.avec_reserves, 6, 18)
@@ -127,6 +152,10 @@ def tidy_output(out: Llm2Output) -> Llm2Output:
         d.options = _short_list(d.options, 5, 9)
         d.consequence_fr = shorten(d.consequence_fr, 45)
         d.recommendation_fr = shorten(d.recommendation_fr, 45)
+        d.choices = d.choices[:3]
+        for ch in d.choices:
+            ch.label = shorten(ch.label, 25)
+            ch.consequence = shorten(ch.consequence, 30)
     if out.exploitability_verdict is not None:
         out.exploitability_verdict.label = shorten(out.exploitability_verdict.label, 12)
         out.exploitability_verdict.justification_fr = shorten(
@@ -153,13 +182,17 @@ def identifying_values(df: Any, profiling: dict) -> set[str]:
     return values
 
 
+# Numéro de dossier hospitalier au format « 220/2026 » : masqué même s'il n'est dans
+# aucune colonne repérée comme identifiante (contrôle demandé par Hamza, bilan v3).
+_DOSSIER_RE = r"(?<![\w/])\d{3,}/(?:19|20)\d\d(?![\w/])"
+
+
 def redact_output(out: Llm2Output, secrets: set[str]) -> Llm2Output:
-    """Remplace dans tous les textes de LLM-2 chaque valeur identifiante par
-    « [masqué] » (en place)."""
-    if not secrets:
-        return out
-    pattern = re.compile("|".join(
-        rf"(?<![\w/]){re.escape(s)}(?![\w/])" for s in sorted(secrets, key=len, reverse=True)))
+    """Remplace dans tous les textes de LLM-2 chaque valeur identifiante, et tout numéro
+    de dossier au format « 220/2026 », par « [masqué] » (en place)."""
+    alternatives = [rf"(?<![\w/]){re.escape(s)}(?![\w/])"
+                    for s in sorted(secrets, key=len, reverse=True)] + [_DOSSIER_RE]
+    pattern = re.compile("|".join(alternatives))
 
     def scrub(value: Any) -> Any:
         if isinstance(value, str):
@@ -174,3 +207,19 @@ def redact_output(out: Llm2Output, secrets: set[str]) -> Llm2Output:
 
     scrub(out)
     return out
+
+
+_DOSSIER_PATTERN = re.compile(_DOSSIER_RE)
+
+
+def mask_dossier_numbers(value: Any) -> Any:
+    """Copie de `value` (dict, liste, texte) où tout numéro de dossier au format
+    « 220/2026 » est remplacé par « [masqué] ». Appliqué aussi à la lecture : les audits
+    produits avant ce filet en contiennent parfois."""
+    if isinstance(value, str):
+        return _DOSSIER_PATTERN.sub("[masqué]", value)
+    if isinstance(value, list):
+        return [mask_dossier_numbers(v) for v in value]
+    if isinstance(value, dict):
+        return {k: mask_dossier_numbers(v) for k, v in value.items()}
+    return value

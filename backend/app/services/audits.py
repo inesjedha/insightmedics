@@ -27,6 +27,7 @@ from ..pipeline.report_client_xlsx import build_client_workbook
 from ..pipeline.report_docx import build_report
 from ..pipeline.report_xlsx import build_workbook
 from ..pipeline.runner import run_preview
+from ..pipeline.student_text import mask_dossier_numbers
 
 logger = logging.getLogger(__name__)
 
@@ -277,7 +278,8 @@ def _deliverable_content(audit: Audit, kind: DeliverableKind, for_client: bool) 
         return build_report(audit.profiling, audit.score_detail, audit.ai_audit)
     if kind is DeliverableKind.WORKBOOK and for_client:
         # L'étudiant reçoit le classeur court en 4 onglets ; l'admin garde le classeur expert.
-        return build_client_workbook(audit.profiling, audit.score_detail, audit.ai_audit)
+        return build_client_workbook(audit.profiling, audit.score_detail,
+                                     mask_dossier_numbers(audit.ai_audit))
     cleaning = _cleaning(audit)
     if kind is DeliverableKind.WORKBOOK:  # sans fichier source : classeur sans les bases
         return build_workbook(audit.profiling, audit.score_detail, audit.ai_audit,
