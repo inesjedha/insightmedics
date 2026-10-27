@@ -26,4 +26,6 @@ export const siteConfig = {
   social: {
     facebook: "https://www.facebook.com/profile.php?id=61580783536688",
   },
+  /** WhatsApp de Dr Hamza (numéro public de la page Facebook), format international. */
+  whatsapp: "21696389570",
 } as const;

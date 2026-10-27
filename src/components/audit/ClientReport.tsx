@@ -9,8 +9,9 @@
  */
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, Download, FileSpreadsheet, Database } from "lucide-react";
+import { ChevronDown, Download, FileSpreadsheet, Database, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 import type {
   AiAssessment,
@@ -23,6 +24,10 @@ import type {
 } from "@/lib/api/types";
 
 const ANALYSIS_PRICE = "500 DT";
+// Message prérempli, sans aucune donnée de l'étudiant ni de son audit.
+const WHATSAPP_MESSAGE =
+  "Bonjour Dr Hamza, je viens de recevoir l'audit de ma base sur Insight Medics et je souhaite l'analyse statistique de ma thèse.";
+const WHATSAPP_URL = `https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
 function fr(n: number | string): string {
   return String(n).replace(".", ",");
@@ -451,7 +456,9 @@ export function AnalysisOffer({ needsHumanReview }: { needsHumanReview: boolean 
           variant="outline"
           className="border-transparent bg-background text-brand hover:bg-background/90"
         >
-          <Link to="/contact">Demander l'analyse</Link>
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+            <MessageCircle /> Parler à Dr Hamza sur WhatsApp
+          </a>
         </Button>
         <Button
           asChild
@@ -461,6 +468,12 @@ export function AnalysisOffer({ needsHumanReview }: { needsHumanReview: boolean 
         >
           <Link to="/tarifs">Voir les offres</Link>
         </Button>
+        <Link
+          to="/contact"
+          className="text-center text-sm underline decoration-brand-foreground/60 underline-offset-4 hover:decoration-brand-foreground"
+        >
+          ou par le formulaire de contact
+        </Link>
       </div>
     </section>
   );
