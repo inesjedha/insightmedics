@@ -20,6 +20,8 @@ export const Route = createFileRoute("/guides/$slug")({
       ogTitle: g.title,
       description: g.description,
       ogType: "article",
+      // Image générée par scripts/og-images.mjs (une par guide).
+      ogImage: `/og/guides/${g.slug}.jpg`,
       jsonLd: [
         articleLd({
           path,

@@ -15,6 +15,23 @@ type JsonLd = Record<string, unknown>;
 const URL = siteConfig.url;
 export const absoluteUrl = (path: string) => `${URL}${path === "/" ? "/" : path}`;
 
+/** Version des images d'aperçu : à incrémenter quand on les regénère, pour que WhatsApp et
+ * Facebook ne resservent pas l'ancienne (ils gardent l'image en cache par URL). */
+const OG_VERSION = "2";
+/** Image d'aperçu des liens partagés (1200 × 630, générée par scripts/og-images.mjs). */
+const ogImageUrl = (path = "/og-image.jpg") => `${URL}${path}?v=${OG_VERSION}`;
+
+/** Balises de l'image d'aperçu (Open Graph et Twitter). */
+export const ogImageMeta = (path: string | undefined, alt: string) => [
+  { property: "og:image", content: ogImageUrl(path) },
+  { property: "og:image:secure_url", content: ogImageUrl(path) },
+  { property: "og:image:type", content: "image/jpeg" },
+  { property: "og:image:width", content: "1200" },
+  { property: "og:image:height", content: "630" },
+  { property: "og:image:alt", content: alt },
+  { name: "twitter:image", content: ogImageUrl(path) },
+];
+
 const ORG_ID = `${URL}/#organisation`;
 const SITE_ID = `${URL}/#site`;
 
@@ -31,6 +48,7 @@ export function pageHead({
   description,
   ogTitle,
   ogType = "website",
+  ogImage,
   jsonLd = [],
 }: {
   path: string;
@@ -40,6 +58,8 @@ export function pageHead({
   description: string;
   ogTitle?: string;
   ogType?: "website" | "article";
+  /** Chemin de l'image d'aperçu propre à la page (public/og/…) ; sinon l'image du site. */
+  ogImage?: string;
   jsonLd?: JsonLd[];
 }) {
   const url = absoluteUrl(path);
@@ -53,6 +73,7 @@ export function pageHead({
       { property: "og:type", content: ogType },
       { name: "twitter:title", content: ogTitle ?? title },
       { name: "twitter:description", content: description },
+      ...ogImageMeta(ogImage, ogTitle ?? title),
     ],
     links: [{ rel: "canonical", href: url }],
     scripts: jsonLd.map(ldScript),
@@ -86,7 +107,7 @@ export const organizationLd: JsonLd = {
   name: siteConfig.name,
   url: absoluteUrl("/"),
   logo: absoluteUrl("/icon-512.png"),
-  image: absoluteUrl("/og-image.jpg"),
+  image: ogImageUrl(),
   email: siteConfig.email,
   description:
     "Accompagnement en statistiques et en rédaction de thèses de médecine, mémoires et articles, par une équipe de médecins et de biostatisticiens. L'étudiant reste l'auteur : nous analysons et rédigeons avec lui.",
@@ -207,7 +228,7 @@ export function articleLd(a: {
     inLanguage: "fr",
     author: { "@id": ORG_ID },
     publisher: { "@id": ORG_ID },
-    image: absoluteUrl("/og-image.jpg"),
+    image: ogImageUrl(),
   };
 }
 

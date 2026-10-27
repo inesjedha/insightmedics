@@ -5,7 +5,8 @@ import type { GuideMeta } from "@/content/guides/types";
 
 type Guide = GuideMeta & { Body: ComponentType };
 
-/** Les guides publiés, du plus récent au plus ancien (ajouter aussi l'URL au sitemap). */
+/** Les guides publiés, du plus récent au plus ancien (ajouter aussi l'URL au sitemap, et son
+ * image d'aperçu dans scripts/og-images.mjs). */
 export const GUIDES: Guide[] = [quelTest, regressionLogistique].map((m) => ({
   ...m.meta,
   Body: m.Body,

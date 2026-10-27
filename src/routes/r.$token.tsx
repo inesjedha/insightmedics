@@ -17,6 +17,7 @@ import {
   TechnicalDetails,
   WorkbookDownload,
 } from "@/components/audit/ClientReport";
+import { ogImageMeta } from "@/lib/seo";
 import { getClientResult, getClientDetail, clientDownloadUrl, ApiError } from "@/lib/api/client";
 import type { AiAssessment, AuditResult, ScoreDetail } from "@/lib/api/types";
 
@@ -25,6 +26,14 @@ export const Route = createFileRoute("/r/$token")({
     meta: [
       { title: "Votre audit · Insight Medics" },
       { name: "robots", content: "noindex, nofollow" },
+      // Aperçu quand l'étudiant envoie son lien à son directeur : rien de son audit.
+      { property: "og:title", content: "Audit de la base d'une thèse de médecine" },
+      {
+        property: "og:description",
+        content:
+          "Rapport privé Insight Medics : qualité de la base, points à corriger avant l'analyse, questions pour le directeur de thèse.",
+      },
+      ...ogImageMeta("/og/rapport.jpg", "Rapport d'audit privé Insight Medics"),
     ],
   }),
   component: ClientResultPage,
