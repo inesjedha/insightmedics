@@ -22,6 +22,7 @@ export const Route = createFileRoute("/audit")({
   head: () =>
     pageHead({
       path: "/audit",
+      ogImage: "/og/audit.jpg",
       title: "Testez gratuitement votre base de thèse | Insight Medics",
       description: `Score sur 100 et anomalies de votre base SPSS, Excel ou CSV en quelques minutes, sans inscription. Audit complet et livrables à ${FULL_AUDIT_PRICE_LABEL}.`,
       jsonLd: [breadcrumbLd([["Test gratuit", "/audit"]])],

@@ -12,6 +12,7 @@ export const Route = createFileRoute("/guides/")({
   head: () =>
     pageHead({
       path: "/guides",
+      ogImage: "/og/guides.jpg",
       title: "Guides de statistiques pour thèse de médecine | Insight Medics",
       description:
         "Choisir son test, interpréter un odds ratio, rédiger ses méthodes : des guides clairs et chiffrés pour la partie statistique de votre thèse de médecine.",

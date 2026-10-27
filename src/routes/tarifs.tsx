@@ -15,6 +15,7 @@ export const Route = createFileRoute("/tarifs")({
   head: () =>
     pageHead({
       path: "/tarifs",
+      ogImage: "/og/tarifs.jpg",
       title: "Tarifs aide thèse de médecine en Tunisie | Insight Medics",
       description: `Test gratuit, audit complet ${FULL_AUDIT_PRICE_LABEL}, analyses + résultats ${getOffer("analyses").priceLabel}, discussion ${getOffer("discussion").priceLabel}, thèse complète ${getOffer("these").priceLabel}. Prix fixé avant de commencer.`,
       jsonLd: [servicesLd, breadcrumbLd([["Tarifs", "/tarifs"]])],

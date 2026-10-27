@@ -10,8 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { ldScript, organizationLd, websiteLd } from "@/lib/seo";
-import { siteConfig } from "@/lib/site-config";
+import { ldScript, ogImageMeta, organizationLd, websiteLd } from "@/lib/seo";
 
 import appCss from "../styles.css?url";
 
@@ -93,15 +92,21 @@ export const Route = createRootRoute({
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "fr_FR" },
       { name: "twitter:card", content: "summary_large_image" },
-      // Image d'aperçu des partages (Facebook, WhatsApp, LinkedIn) : URL absolue exigée.
-      { property: "og:image", content: `${siteConfig.url}/og-image.jpg` },
-      { property: "og:image:width", content: "1200" },
-      { property: "og:image:height", content: "630" },
+      // Aperçu par défaut des liens partagés (WhatsApp, Facebook, LinkedIn) ; chaque page
+      // publique précise les siens via pageHead.
       {
-        property: "og:image:alt",
-        content: "Insight Medics — Votre thèse de médecine, des statistiques à la soutenance.",
+        property: "og:title",
+        content: "Insight Medics — Statistiques et rédaction de thèse en médecine",
       },
-      { name: "twitter:image", content: `${siteConfig.url}/og-image.jpg` },
+      {
+        property: "og:description",
+        content:
+          "Analyses statistiques, résultats et thèse complète, avec des médecins et des biostatisticiens. Test de votre base gratuit.",
+      },
+      ...ogImageMeta(
+        undefined,
+        "Insight Medics — Votre thèse de médecine, des statistiques à la soutenance.",
+      ),
     ],
     scripts: [ldScript(organizationLd), ldScript(websiteLd)],
     links: [
