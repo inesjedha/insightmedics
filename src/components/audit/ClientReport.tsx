@@ -28,6 +28,19 @@ function fr(n: number | string): string {
   return String(n).replace(".", ",");
 }
 
+/** Audits antérieurs au format court : on ne garde que le début d'un long texte
+ * (phrases entières, environ `maxWords` mots). */
+function firstSentences(text: string, maxWords: number): string {
+  const sentences = text.match(/[^.!?]+[.!?]+(\s|$)/g) ?? [text];
+  let out = "";
+  for (const s of sentences) {
+    const next = (out + s).trim();
+    if (out && next.split(/\s+/).length > maxWords) break;
+    out = next + " ";
+  }
+  return out.trim();
+}
+
 /** Points bloquants : ceux de l'IA, sinon les 3 premières anomalies critiques. */
 function blockingPoints(assessment: AiAssessment | null): BlockingPoint[] {
   if (assessment?.blocking_points?.length) return assessment.blocking_points;
@@ -36,9 +49,9 @@ function blockingPoints(assessment: AiAssessment | null): BlockingPoint[] {
     .slice(0, 3)
     .map((f) => ({
       title: f.title_fr,
-      what: f.explanation_fr,
+      what: firstSentences(f.explanation_fr, 45),
       why: "",
-      todo: f.proposed_correction ?? "",
+      todo: firstSentences(f.proposed_correction ?? "", 30),
       refs: [],
     }));
 }
@@ -56,8 +69,10 @@ export function ReportHero({
 }) {
   const headline = assessment?.headline;
   const verdict = assessment?.exploitability_verdict;
-  const title = headline?.title || verdict?.label || "Votre audit est prêt";
-  const subtitle = headline?.subtitle || verdict?.justification_fr || "";
+  // Ancien format : libellé « Partiellement exploitable — critère principal… » → on
+  // garde la partie avant le tiret, et deux phrases de justification au plus.
+  const title = headline?.title || verdict?.label.split(" — ")[0] || "Votre audit est prêt";
+  const subtitle = headline?.subtitle || firstSentences(verdict?.justification_fr ?? "", 40);
   const findings = assessment?.findings ?? [];
   const nCritical = findings.filter((f) => f.severity === "critique").length;
   const cap = scoreDetail?.plafonds_appliques?.[0];
