@@ -966,6 +966,18 @@ export function OfferNudge() {
 
 /* ------------------------------------------------------ 4. dossiers à ouvrir */
 
+/** Ce qu'il faut regarder : « Colonne « Sexe » · aujourd'hui : M ». Pour une paire de
+ * lignes jumelles (colonne « toutes »), on dit simplement ce que les deux lignes ont en
+ * commun. */
+function checkDetail(item: ChecklistItem): string {
+  const colonne = (item.colonne ?? "").trim();
+  const valeur = (item.valeur ?? "").trim();
+  if (!colonne || /^(toutes?|all)$/i.test(colonne)) {
+    return valeur ? `Les deux lignes : ${valeur}` : "Les deux lignes sont presque identiques";
+  }
+  return valeur ? `Colonne « ${colonne} » · aujourd'hui : ${valeur}` : `Colonne « ${colonne} »`;
+}
+
 export function RecordsToOpen({
   assessment,
   storageKey,
@@ -1020,11 +1032,7 @@ export function RecordsToOpen({
                 <span className="leading-relaxed">
                   {item.check}
                   {(item.colonne || item.valeur) && (
-                    <span className="block text-sm text-muted-foreground">
-                      {[item.colonne, item.valeur && `valeur actuelle : ${item.valeur}`]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
+                    <span className="block text-sm text-muted-foreground">{checkDetail(item)}</span>
                   )}
                 </span>
               </span>
@@ -1466,7 +1474,7 @@ export function TechnicalDetails({
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-card">
       {scoreDetail && (
-        <Fold title="Votre note, domaine par domaine">
+        <Fold title="Votre note, point par point">
           {cap && (
             <p className="mb-4 text-sm text-muted-foreground">
               Les 8 points totalisent {fr(scoreDetail.score_brut)}/100, mais la note ne peut pas
