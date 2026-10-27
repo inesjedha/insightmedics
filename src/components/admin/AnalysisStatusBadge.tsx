@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import type { AnalysisStatus } from "@/lib/api/types";
 
 const LABELS: Record<AnalysisStatus, string> = {
-  awaiting_base: "En attente de la base corrigée",
+  awaiting_base: "À préparer",
   planning: "Plan en préparation",
   plan_ready: "Plan à valider",
   computing: "Calculs et rédaction en cours",

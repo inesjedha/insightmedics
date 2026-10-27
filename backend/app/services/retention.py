@@ -52,7 +52,8 @@ def purge_expired(db: Session, now: datetime | None = None) -> PurgeReport:
     now = now or datetime.now(UTC)
     candidates = (db.query(Audit)
                   .filter(Audit.purged_at.is_(None), Audit.expires_at.is_not(None),
-                          Audit.status != AuditStatus.PROCESSING)
+                          Audit.status != AuditStatus.PROCESSING,
+                          Audit.job_id.is_(None))  # ni déblocage ni relance en cours
                   .all())
     purged = 0
     for audit in candidates:
@@ -64,7 +65,7 @@ def purge_expired(db: Session, now: datetime | None = None) -> PurgeReport:
         marked = execute_update(db, (
             update(Audit)
             .where(Audit.id == audit.id, Audit.purged_at.is_(None),
-                   Audit.status != AuditStatus.PROCESSING,
+                   Audit.status != AuditStatus.PROCESSING, Audit.job_id.is_(None),
                    Audit.expires_at == audit.expires_at)
             .values(profiling=None, ai_audit=None, purged_at=utcnow_iso())))
         db.commit()

@@ -34,6 +34,9 @@ CE QUE TU PRODUIS
   (100 mots au plus) : description des variables, tests utilisés (d'après "methods" de
   chaque analyse), seuil de significativité de 0,05, logiciel non nommé (« analyses
   réalisées par l'équipe Insight Medics »).
+  Si "base_nettoyee" n'est pas vide, une phrase dit que la base a été contrôlée et
+  nettoyée avant l'analyse (codes de valeur manquante, valeurs impossibles laissées
+  manquantes, formats harmonisés, sans aucune imputation), sans détail chiffré.
 - "flow_paragraph" : la population étudiée, d'après le diagramme de flux (lignes de la
   base, exclusions et motifs, patients analysés), 60 mots au plus.
 - "sections" : une par analyse, dans l'ordre fourni (l'analyse principale d'abord) :

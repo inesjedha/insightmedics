@@ -160,6 +160,17 @@ def _xl_table(ws: Any, row: int, title: str, columns: list[str], rows: list[list
     return row + 2
 
 
+CORRECTION_LABEL = {
+    "trim": "Espaces retirés",
+    "missing_codes": "Code de case vide → vide",
+    "harmonize": "Réponses écrites de la même façon",
+    "to_number": "Texte → nombre",
+    "to_date": "Texte → date",
+    "set_missing": "Valeur impossible → vide",
+    "set_value": "Valeur corrigée (dossier)",
+}
+
+
 def build_results_xlsx(base: pd.DataFrame, pii_columns: set[str], flow: list[dict[str, Any]],
                        results: list[dict[str, Any]], derived_log: list[dict[str, Any]],
                        plan: dict[str, Any]) -> bytes:
@@ -192,6 +203,27 @@ def build_results_xlsx(base: pd.DataFrame, pii_columns: set[str], flow: list[dic
         cell.font = Font(bold=True)
     ws.freeze_panes = "B2"
 
+    corrections = [d for d in derived_log if d.get("step") == "correction"]
+    derived_log = [d for d in derived_log if d.get("step") != "correction"]
+    if corrections:
+        ws = wb.create_sheet("Journal des corrections")
+        _xl_table(ws, 1, "Corrections apportées à la base (votre fichier d'origine n'est pas "
+              "modifié)", ["Colonne", "Correction", "Motif", "Cellules", "Lignes du fichier",
+                           "Exemples", "Remarques"],
+              [[d["column"], CORRECTION_LABEL.get(d["kind"], d["kind"]), d.get("reason", ""),
+                d.get("n", 0), ", ".join(str(n) for n in d.get("lines") or [])
+                + (" …" if d.get("n", 0) > len(d.get("lines") or []) and d.get("lines") else ""),
+                "\n".join(d.get("examples") or []),
+                "; ".join(filter(None, [
+                    f"source : {d['source']}" if d.get("source") else "",
+                    "illisibles, laissées vides : lignes "
+                    + ", ".join(str(n) for n in d["illisibles"]) if d.get("illisibles") else "",
+                    f"{d['censored']} valeur(s) « > » ou « < » laissée(s) vide(s)"
+                    if d.get("censored") else ""]))]
+               for d in corrections])
+        for col, width in zip("ABCDEFG", (22, 24, 48, 10, 26, 34, 40), strict=True):
+            ws.column_dimensions[col].width = width
+
     ws = wb.create_sheet("Colonnes calculées")
     rationale = {d.get("name"): d.get("rationale", "") for d in plan.get("derived") or []}
     _xl_table(ws, 1, "Colonnes ajoutées à la base d'analyse",
@@ -199,7 +231,7 @@ def build_results_xlsx(base: pd.DataFrame, pii_columns: set[str], flow: list[dic
               [[d["name"], d.get("label", ""), d.get("kind", ""), rationale.get(d["name"], ""),
                 d.get("n_renseignes", ""),
                 "; ".join(f"{k} : {v}" for k, v in d.items()
-                          if k not in {"name", "label", "kind", "n_renseignes"})]
+                          if k not in {"name", "label", "kind", "n_renseignes", "step"})]
                for d in derived_log])
     ws.column_dimensions["A"].width = 18
     ws.column_dimensions["D"].width = 50

@@ -52,7 +52,7 @@ export const ADMIN_UNAUTHORIZED_EVENT = "im:admin-unauthorized";
 // --- Requêtes ---
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH" | "PUT";
+  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   /** Objet sérialisé en JSON, ou FormData envoyé tel quel (upload). */
   body?: unknown;
   /** Ajoute l'en-tête X-Admin-Key. */

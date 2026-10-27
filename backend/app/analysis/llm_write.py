@@ -165,7 +165,9 @@ def build_context(plan: dict[str, Any], flow: list[dict[str, Any]],
         "diagramme_de_flux": flow,
         "analyses": [{k: r.get(k) for k in ("id", "title", "primary", "n", "methods", "table",
                                             "facts", "warnings", "error")} for r in results],
-        "colonnes_calculees": derived_log,
+        "colonnes_calculees": [d for d in derived_log if d.get("step") != "correction"],
+        "base_nettoyee": [{k: d.get(k) for k in ("kind", "column", "reason", "n")}
+                          for d in derived_log if d.get("step") == "correction"],
         "not_supported": plan.get("not_supported") or [],
     }
 

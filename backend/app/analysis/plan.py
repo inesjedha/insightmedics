@@ -8,6 +8,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from .clean import Correction, correction_problems
 from .expr import ExprError, columns_used
 
 VarType = Literal["quantitative", "categorical", "binary"]
@@ -107,8 +108,18 @@ class Groups(BaseModel):
     label: str = ""
 
 
+class ToCheck(BaseModel):
+    """Point que seul le dossier peut trancher : l'analyse se fait avec la valeur
+    actuelle, et l'étudiant le vérifie (affiché à Dr Hamza avec le plan)."""
+    lines: list[int] = []                            # lignes du fichier Excel
+    column: str = ""
+    question: str
+
+
 class AnalysisPlan(BaseModel):
     title: str = "Plan d'analyse"
+    corrections: list[Correction] = []               # nettoyage, avant tout le reste
+    to_check: list[ToCheck] = []                     # à vérifier au dossier par l'étudiant
     population: Population = Population()
     derived: list[Derived] = []
     groups: Groups | None = None
@@ -147,6 +158,7 @@ def plan_problems(plan: AnalysisPlan, columns: list[str]) -> list[str]:
         except ExprError as exc:
             problems.append(f"{where} : {exc}")
 
+    problems.extend(correction_problems(plan.corrections, columns))
     for e in plan.population.exclusions:
         check_expr(e.expr, f"exclusion « {e.label} »")
     for d in plan.derived:

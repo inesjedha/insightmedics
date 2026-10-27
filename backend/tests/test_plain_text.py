@@ -89,3 +89,13 @@ def test_sans_cle_api_rien_ne_change(monkeypatch):
     # remplacements sûrs du filet déterministe seulement
     assert out.headline is not None and out.headline.title == "Base partiellement utilisable"
     assert out.missions[0].vu == "La colonne « Sexe » diffère entre les lignes 6 et 36."
+
+
+def test_controles_par_texte():
+    from app.pipeline.plain_text import problems
+    before = "Vérifiez les lignes 6 et 36 de la colonne « Sexe »."
+    assert problems("k", before, "Vérifiez ces lignes de la colonne « Sexe ».")
+    assert problems("k", before, "Vérifiez les lignes 6 et 36 de la colonne « Âge ».")
+    assert problems("k", "3 patients.", "2 patients.")
+    assert not problems("k", "Deux patients.", "2 patients.")
+    assert not problems("k", before, "Ouvrez les lignes 6 et 36, colonne « Sexe ».")
