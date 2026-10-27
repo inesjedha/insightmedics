@@ -238,3 +238,70 @@ export interface ClientDetail {
   scoreDetail: ScoreDetail | null;
   assessment: AiAssessment | null;
 }
+
+// --- Chaîne « Analyses + résultats » (offre à 500 DT), voir docs/analyse-resultats.md ---
+
+export type AnalysisStatus =
+  "awaiting_base" | "planning" | "plan_ready" | "computing" | "review" | "delivered" | "failed";
+
+export interface AnalysisSummary {
+  id: string;
+  auditId: string;
+  createdAt: string;
+  updatedAt: string;
+  status: AnalysisStatus;
+  fileName: string | null;
+  auditFileName: string | null;
+  error: string | null;
+}
+
+/** Une analyse calculée par le moteur (tableau, tests, avertissements). */
+export interface AnalysisResultBlock {
+  id: string;
+  kind: string;
+  title: string;
+  primary: boolean;
+  n: number;
+  methods: string[];
+  table: { columns: string[]; rows: string[][] };
+  warnings: string[];
+  error?: string;
+}
+
+export interface AnalysisDetail extends AnalysisSummary {
+  instructions: string;
+  /** Contre-audit de la base corrigée (clés en snake_case, telles que calculées). */
+  recheck: {
+    before: Record<string, number>;
+    after: Record<string, number>;
+    checked_values: {
+      patients: string;
+      colonne: string;
+      avant: string;
+      maintenant: string;
+      statut: string;
+    }[];
+  } | null;
+  plan: Record<string, unknown> | null;
+  planNotes: string[] | null;
+  planValidatedAt: string | null;
+  flow: { label: string; n?: number; excluded?: number; remaining?: number }[] | null;
+  derivedLog: Record<string, unknown>[] | null;
+  results: AnalysisResultBlock[] | null;
+  text: {
+    methods_paragraph: string;
+    flow_paragraph: string;
+    sections: { analysis_id: string; heading: string; table_title: string; paragraphs: string[] }[];
+    missing: string[];
+  } | null;
+  deliveredAt: string | null;
+  events: AuditEvent[] | null;
+  auditToken: string | null;
+}
+
+/** Ce que voit l'étudiant sur son lien privé : l'analyse livrée et ses fichiers. */
+export interface ClientAnalysis {
+  status: AnalysisStatus;
+  deliveredAt: string | null;
+  files: string[];
+}

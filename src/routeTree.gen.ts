@@ -25,6 +25,8 @@ import { Route as AdminAuditsRouteImport } from './routes/admin.audits'
 import { Route as GuidesIndexRouteImport } from './routes/guides.index'
 import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
 import { Route as RTokenRouteImport } from './routes/r.$token'
+import { Route as AdminAnalysesIndexRouteImport } from './routes/admin.analyses.index'
+import { Route as AdminAnalysesIdRouteImport } from './routes/admin.analyses.$id'
 import { Route as AdminLeadsIndexRouteImport } from './routes/admin.leads.index'
 import { Route as AdminLeadsIdRouteImport } from './routes/admin.leads.$id'
 
@@ -108,6 +110,16 @@ const RTokenRoute = RTokenRouteImport.update({
   path: '/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAnalysesIndexRoute = AdminAnalysesIndexRouteImport.update({
+  id: '/analyses/',
+  path: '/analyses/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAnalysesIdRoute = AdminAnalysesIdRouteImport.update({
+  id: '/analyses/$id',
+  path: '/analyses/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLeadsIndexRoute = AdminLeadsIndexRouteImport.update({
   id: '/leads/',
   path: '/leads/',
@@ -136,7 +148,9 @@ export interface FileRoutesByFullPath {
   '/r/$token': typeof RTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guides/': typeof GuidesIndexRoute
+  '/admin/analyses/$id': typeof AdminAnalysesIdRoute
   '/admin/leads/$id': typeof AdminLeadsIdRoute
+  '/admin/analyses/': typeof AdminAnalysesIndexRoute
   '/admin/leads/': typeof AdminLeadsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -155,7 +169,9 @@ export interface FileRoutesByTo {
   '/r/$token': typeof RTokenRoute
   '/admin': typeof AdminIndexRoute
   '/guides': typeof GuidesIndexRoute
+  '/admin/analyses/$id': typeof AdminAnalysesIdRoute
   '/admin/leads/$id': typeof AdminLeadsIdRoute
+  '/admin/analyses': typeof AdminAnalysesIndexRoute
   '/admin/leads': typeof AdminLeadsIndexRoute
 }
 export interface FileRoutesById {
@@ -176,7 +192,9 @@ export interface FileRoutesById {
   '/r/$token': typeof RTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guides/': typeof GuidesIndexRoute
+  '/admin/analyses/$id': typeof AdminAnalysesIdRoute
   '/admin/leads/$id': typeof AdminLeadsIdRoute
+  '/admin/analyses/': typeof AdminAnalysesIndexRoute
   '/admin/leads/': typeof AdminLeadsIndexRoute
 }
 export interface FileRouteTypes {
@@ -198,7 +216,9 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/admin/'
     | '/guides/'
+    | '/admin/analyses/$id'
     | '/admin/leads/$id'
+    | '/admin/analyses/'
     | '/admin/leads/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -217,7 +237,9 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/admin'
     | '/guides'
+    | '/admin/analyses/$id'
     | '/admin/leads/$id'
+    | '/admin/analyses'
     | '/admin/leads'
   id:
     | '__root__'
@@ -237,7 +259,9 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/admin/'
     | '/guides/'
+    | '/admin/analyses/$id'
     | '/admin/leads/$id'
+    | '/admin/analyses/'
     | '/admin/leads/'
   fileRoutesById: FileRoutesById
 }
@@ -372,6 +396,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/analyses/': {
+      id: '/admin/analyses/'
+      path: '/analyses'
+      fullPath: '/admin/analyses/'
+      preLoaderRoute: typeof AdminAnalysesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/analyses/$id': {
+      id: '/admin/analyses/$id'
+      path: '/analyses/$id'
+      fullPath: '/admin/analyses/$id'
+      preLoaderRoute: typeof AdminAnalysesIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/leads/': {
       id: '/admin/leads/'
       path: '/leads'
@@ -392,14 +430,18 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAuditsRoute: typeof AdminAuditsRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminAnalysesIdRoute: typeof AdminAnalysesIdRoute
   AdminLeadsIdRoute: typeof AdminLeadsIdRoute
+  AdminAnalysesIndexRoute: typeof AdminAnalysesIndexRoute
   AdminLeadsIndexRoute: typeof AdminLeadsIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditsRoute: AdminAuditsRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminAnalysesIdRoute: AdminAnalysesIdRoute,
   AdminLeadsIdRoute: AdminLeadsIdRoute,
+  AdminAnalysesIndexRoute: AdminAnalysesIndexRoute,
   AdminLeadsIndexRoute: AdminLeadsIndexRoute,
 }
 

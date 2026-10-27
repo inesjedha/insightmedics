@@ -81,3 +81,46 @@ class Audit(Base):
     score_detail: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     ai_audit: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     events: Mapped[list | None] = mapped_column(JSON, nullable=True)
+
+
+class AnalysisStatus(StrEnum):
+    """Chaîne « Analyses + résultats » (docs/analyse-resultats.md)."""
+
+    AWAITING_BASE = "awaiting_base"  # commandée, en attente de la base corrigée
+    PLANNING = "planning"            # contre-audit puis plan proposé par l'IA, en cours
+    PLAN_READY = "plan_ready"        # plan à valider par Dr Hamza
+    COMPUTING = "computing"          # calculs puis rédaction par l'IA, en cours
+    REVIEW = "review"                # résultats rédigés, à relire avant livraison
+    DELIVERED = "delivered"          # livré sur le lien privé de l'étudiant
+    FAILED = "failed"
+
+
+class Analysis(Base):
+    __tablename__ = "analyses"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    audit_id: Mapped[str] = mapped_column(String, index=True)
+    created_at: Mapped[str] = mapped_column(String, default=utcnow_iso)
+    updated_at: Mapped[str] = mapped_column(String, default=utcnow_iso)
+    status: Mapped[str] = mapped_column(String, default=AnalysisStatus.AWAITING_BASE)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Base corrigée renvoyée par l'étudiant (le fichier de l'audit reste intact)
+    file_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    stored_path: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Consignes de l'équipe : réponses du directeur, définitions validées, demandes
+    instructions: Mapped[str] = mapped_column(Text, default="")
+    # Verrou à bail de l'étape IA en cours (même mécanisme que l'audit)
+    job_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    job_started_at: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Contenu, étape par étape
+    recheck: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    plan: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    plan_notes: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    plan_validated_at: Mapped[str | None] = mapped_column(String, nullable=True)
+    flow: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    derived_log: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    results: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    text: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    delivered_at: Mapped[str | None] = mapped_column(String, nullable=True)
+    purged_at: Mapped[str | None] = mapped_column(String, nullable=True)
+    events: Mapped[list | None] = mapped_column(JSON, nullable=True)

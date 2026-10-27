@@ -11,11 +11,13 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..models import Audit
+from ..models import AnalysisStatus, Audit
 from ..pipeline.student_text import mask_dossier_numbers
-from ..schemas import AuditResult
+from ..schemas import AuditResult, ClientAnalysis
+from ..services import analyses
 from ..services import audits as service
 from ..services.audits import DeliverableKind
+from .analyses import file_response
 from .downloads import deliverable_response
 
 router = APIRouter(prefix="/r", tags=["client"])
@@ -50,6 +52,26 @@ def client_assessment(audit: Audit = Depends(paid_audit)) -> dict[str, Any]:
     if not assessment:
         raise HTTPException(404, "Jugement IA indisponible")
     return mask_dossier_numbers(assessment)
+
+
+@router.get("/{token}/analysis", response_model=ClientAnalysis, response_model_by_alias=True)
+def client_analysis(audit: Audit = Depends(paid_audit), db: Session = Depends(get_db)
+                    ) -> ClientAnalysis:
+    """L'analyse statistique livrée (offre Analyses + résultats), si elle existe."""
+    analysis = analyses.for_audit(db, audit.id)
+    if not analysis or analysis.status != AnalysisStatus.DELIVERED:
+        raise HTTPException(404, "Aucune analyse livrée")
+    return ClientAnalysis(status="delivered", delivered_at=analysis.delivered_at,
+                          files=sorted(analyses.DELIVERABLES))
+
+
+@router.get("/{token}/analysis/{kind}")
+def client_analysis_file(kind: str, audit: Audit = Depends(paid_audit),
+                         db: Session = Depends(get_db)) -> Response:
+    analysis = analyses.for_audit(db, audit.id)
+    if not analysis or analysis.status != AnalysisStatus.DELIVERED:
+        raise HTTPException(404, "Aucune analyse livrée")
+    return file_response(analysis, kind)
 
 
 @router.get("/{token}/{kind}")

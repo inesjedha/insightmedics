@@ -55,5 +55,5 @@ testpaths = ["tests"]
 addopts = "-q"
 
 [[tool.mypy.overrides]]
-module = ["pandas.*", "pyreadstat.*", "openpyxl.*", "docx.*", "matplotlib.*"]
+module = ["pandas.*", "pyreadstat.*", "openpyxl.*", "docx.*", "matplotlib.*", "scipy.*", "statsmodels.*"]
 ignore_missing_imports = true

@@ -145,3 +145,52 @@ class AuditEvent(CamelModel):
     ts: str
     level: EventLevel
     message: str
+
+
+AnalysisStatusValue = Literal["awaiting_base", "planning", "plan_ready", "computing", "review",
+                              "delivered", "failed"]
+
+
+class AnalysisOut(CamelModel):
+    """Analyse (offre Analyses + résultats), vue admin."""
+
+    id: str
+    audit_id: str
+    created_at: str
+    updated_at: str
+    status: AnalysisStatusValue
+    error: str | None = None
+    file_name: str | None = None
+    instructions: str = ""
+    recheck: dict[str, Any] | None = None
+    plan: dict[str, Any] | None = None
+    plan_notes: list[str] | None = None
+    plan_validated_at: str | None = None
+    flow: list[dict[str, Any]] | None = None
+    derived_log: list[dict[str, Any]] | None = None
+    results: list[dict[str, Any]] | None = None
+    text: dict[str, Any] | None = None
+    delivered_at: str | None = None
+    events: list[dict[str, Any]] | None = None
+    # Rappel de l'audit d'origine
+    audit_file_name: str | None = None
+    audit_token: str | None = None
+
+
+class AnalysisSummary(CamelModel):
+    id: str
+    audit_id: str
+    created_at: str
+    updated_at: str
+    status: AnalysisStatusValue
+    file_name: str | None = None
+    audit_file_name: str | None = None
+    error: str | None = None
+
+
+class ClientAnalysis(CamelModel):
+    """Ce que voit l'étudiant : l'analyse livrée et ses fichiers."""
+
+    status: AnalysisStatusValue
+    delivered_at: str | None = None
+    files: list[str] = []
