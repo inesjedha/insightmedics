@@ -27,9 +27,24 @@ def _values(ws):
     return [v for row in ws.iter_rows(values_only=True) for v in row if v not in (None, "")]
 
 
-def test_quatre_onglets_dans_l_ordre():
-    assert _wb(NEW_FIELDS).sheetnames == ["À lire d'abord", "Anomalies à vérifier",
+def test_cinq_onglets_dans_l_ordre():
+    assert _wb(NEW_FIELDS).sheetnames == ["À lire d'abord", "Dossiers à ouvrir",
+                                          "Anomalies à vérifier",
                                           "Questions pour votre directeur", "Score détaillé"]
+
+
+def test_dossiers_a_ouvrir_depuis_la_checklist_ou_les_anomalies():
+    with_list = _wb({**NEW_FIELDS, "checklist": [{"patients": "4 et 34",
+                                                  "check": "Même patient ou deux patients ?"}]})
+    assert "4 et 34" in _values(with_list["Dossiers à ouvrir"])
+    old = _wb()  # SYNTH_AI : F002 demande une vérification au dossier
+    assert "Modalité rare" in _values(old["Dossiers à ouvrir"])
+
+
+def test_score_en_clair_sans_motifs_internes():
+    vals = " ".join(str(v) for v in _values(_wb(NEW_FIELDS)["Score détaillé"]))
+    for token in ("statut :", "M5", "hash"):
+        assert token not in vals
 
 
 def test_a_lire_d_abord_verdict_et_points_bloquants():
@@ -67,4 +82,4 @@ def test_identifiants_masques_si_la_colonne_identifiant_est_identifiante():
 def test_questions_et_score():
     wb = _wb(NEW_FIELDS)
     assert "Fusionner les doublons ?" in _values(wb["Questions pour votre directeur"])
-    assert any(v == "Total du domaine" for v in _values(wb["Score détaillé"]))
+    assert "Votre note, domaine par domaine" in _values(wb["Score détaillé"])

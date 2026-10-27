@@ -102,8 +102,13 @@ def compute_score(profiling: dict[str, Any],
                f"{n_missing_id} identifiant(s) manquant(s) sur {n_rows}")
         uniq_ratio = s["n_unique_ids"] / max(n_rows, 1)
         dup_ids = s["duplicates"]["duplicate_ids"]
-        d1.add("Identifiants uniques ou répétitions documentées", 3, 3 * uniq_ratio,
-               "" if dup_ids == 0 else f"{dup_ids} identifiant(s) dupliqué(s) non documenté(s)")
+        reasons = [f"{dup_ids} identifiant(s) dupliqué(s) non documenté(s)"] if dup_ids else []
+        # Autre identifiant (n° de dossier) répété : un même patient sous deux inclusions.
+        for sec in s["duplicates"].get("secondary_id_duplicates") or []:
+            uniq_ratio = min(uniq_ratio, 1 - sec["n_duplicated"] / max(n_rows, 1))
+            reasons.append(f"{sec['n_duplicated']} valeur(s) répétée(s) dans « {sec['column']} »")
+        d1.add("Identifiants uniques ou répétitions documentées", 3, 3 * max(0.0, uniq_ratio),
+               " ; ".join(reasons))
     else:
         d1.add("Identifiant présent pour toutes les observations", 3, 0,
                "aucune colonne identifiant détectée")
@@ -144,8 +149,12 @@ def compute_score(profiling: dict[str, Any],
     elif cjp_missing is not None:
         avail = 100 - cjp_missing
         pts = _grid(avail, [(99, 5), (95, 4), (90, 3), (80, 2), (60, 1)], 0)
-        d2.add("Complétude du critère principal", 5, pts,
-               f"{avail:.1f}% de données disponibles sur le critère principal")
+        reason = f"{avail:.1f}% de données disponibles sur le critère principal"
+        if si.get("primary_endpoint_operationally_defined") is False and pts > 3:
+            # Critère non défini : la variable mesurée n'est qu'une candidate (audit v2
+            # d'Amine : 3/5).
+            pts, reason = 3, reason + " ; critère non défini, variable seulement candidate"
+        d2.add("Complétude du critère principal", 5, pts, reason)
     else:
         d2.add("Complétude du critère principal", 5, 2.5,
                "critère principal non identifié — " + INEV, True)
@@ -190,9 +199,15 @@ def compute_score(profiling: dict[str, Any],
            f"{n_bad_labels} variable(s) avec valeurs hors libellés déclarés")
     n_codes = sum(1 for c in cols if c["suspected_missing_codes"])
     n_num = max(1, sum(1 for c in cols if c.get("numeric_stats")))
-    d3.add("Valeurs quantitatives dans les bornes", 3, 3 * (1 - min(1, n_codes / n_num)),
-           "" if n_codes == 0 else
-           f"{n_codes} variable(s) avec codes suspects (999, -1…) hors distribution")
+    # Valeurs impossibles trouvées par les règles portant sur une seule variable (bornes
+    # théoriques : PaO2/FiO2 > 713, SpO2 > 100 %…) : 1 point par variable touchée.
+    n_impossible = sum(1 for r in (si.get("rule_violations") or {}).get("results", [])
+                       if r.get("kind") == "valeur" and r.get("n_violations"))
+    bounds_reasons = [txt for n, txt in (
+        (n_codes, f"{n_codes} variable(s) avec codes suspects (999, -1…) hors distribution"),
+        (n_impossible, f"{n_impossible} variable(s) avec valeurs impossibles")) if n]
+    d3.add("Valeurs quantitatives dans les bornes", 3,
+           3 * (1 - min(1, n_codes / n_num)) - n_impossible, " ; ".join(bounds_reasons))
     units = si.get("units_consistent")
     if units is None:
         d3.add("Unités définies et homogènes", 2, 1, INEV, True)
@@ -210,8 +225,13 @@ def compute_score(profiling: dict[str, Any],
     # ---- Domaine 4 — Cohérence interne et inter-variables (15) ----
     d4 = Domain(4, "Cohérence interne et inter-variables", 15)
     chrono_ok = n_bad_dates == 0
-    d4.add("Cohérence chronologique", 3, 3 if chrono_ok else 1.5,
-           "" if chrono_ok else "dates impossibles détectées ; ordre inter-dates vérifié au M4")
+    has_dates = bool(profiling["dates_audit"])
+    if not has_dates:
+        # Sans aucune date, la chronologie ne peut pas être vérifiée : points partiels.
+        d4.add("Cohérence chronologique", 3, 1.5, "aucune date dans la base : non vérifiable")
+    else:
+        d4.add("Cohérence chronologique", 3, 3 if chrono_ok else 1.5,
+               "" if chrono_ok else "dates impossibles détectées")
     violations = si.get("rule_violations")  # fourni par le moteur de règles (M4)
     if violations is None:
         d4.add("Cohérence entre variables cliniquement liées", 4, 2,
@@ -289,8 +309,12 @@ def compute_score(profiling: dict[str, Any],
     else:
         d6.add("Scores cliniques vérifiables et conformes", 2,
                {"fiable": 2, "reserves": 1, "non_fiable": 0}.get(rel, 1), f"statut : {rel}")
-    d6.add("Durées et délais cohérents", 2, 2 if chrono_ok else 1,
-           "" if chrono_ok else "dates suspectes — durées à recalculer au M4")
+    if not has_dates:
+        d6.add("Durées et délais cohérents", 2, 1,
+               "aucune date pour recalculer les durées saisies")
+    else:
+        d6.add("Durées et délais cohérents", 2, 2 if chrono_ok else 1,
+               "" if chrono_ok else "dates suspectes : durées à recalculer")
     d6.add("Variables composites conformes", 1, 0.5 if rel is None else
            {"fiable": 1, "reserves": 0.5, "non_fiable": 0}.get(rel, 0.5),
            INEV if rel is None else "", rel is None)

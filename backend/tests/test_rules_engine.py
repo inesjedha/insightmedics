@@ -78,3 +78,12 @@ def test_op_all_toutes_les_sous_regles():
     r = res["results"][0]
     assert r["n_tested"] == 3          # la ligne sans « a » n'est pas testable
     assert r["n_violations"] == 1 and r["row_ids"] == ["1"]
+
+
+
+def test_type_de_regle_valeur_ou_relation():
+    from app.pipeline.rules_engine import _kind
+    assert _kind({"op": "bounds", "col": "a", "max": 1}) == "valeur"
+    assert _kind({"op": "lte", "left": {"col": "a"}, "right": {"value": 713}}) == "valeur"
+    assert _kind({"op": "lte", "left": {"col": "a"}, "right": {"col": "b"}}) == "relation"
+    assert _kind({"op": "implies", "if": {}, "then": {}}) == "relation"

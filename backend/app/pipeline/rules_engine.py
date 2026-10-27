@@ -133,6 +133,18 @@ def _satisfied(node: dict, df: pd.DataFrame) -> pd.Series:
     raise ValueError(f"op inconnu : {op}")
 
 
+def _kind(node: dict) -> str:
+    """« valeur » : règle sur une seule variable comparée à des constantes (bornes) ;
+    « relation » : règle entre plusieurs variables."""
+    op = node.get("op")
+    if op == "bounds":
+        return "valeur"
+    if op in _CMP:
+        sides = [s for s in (node.get("left", {}), node.get("right", {})) if "col" in s]
+        return "valeur" if len(sides) == 1 else "relation"
+    return "relation"
+
+
 def execute_rules(rules: list[dict], df: pd.DataFrame,
                   id_series: pd.Series) -> dict[str, Any]:
     """rules : liste de {id, description, severity, category, rule(DSL)}."""
@@ -149,6 +161,7 @@ def execute_rules(rules: list[dict], df: pd.DataFrame,
         n_viol = int(viol_mask.sum())
         results.append({
             "rule_id": r["id"], "description": r["description"],
+            "kind": _kind(r["rule"]),
             "severity": r["severity"], "category": r["category"],
             "n_tested": int(testable.sum()), "n_violations": n_viol,
             "violation_rate": round(n_viol / max(int(testable.sum()), 1) * 100, 1),

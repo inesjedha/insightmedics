@@ -27,6 +27,7 @@ from .llm2 import run_llm2
 from .profile import profile
 from .rules_engine import execute_rules
 from .score_engine import compute_score
+from .student_text import identifying_values, redact_output
 
 LogFn = Callable[[str, str], None]
 
@@ -108,6 +109,9 @@ def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: st
         log("warn", "Jugement IA (LLM-2) non produit : " + "; ".join(llm2_notes))
         return ai_audit
 
+    # Aucun numéro de dossier ni téléphone dans ce que l'étudiant lira (ni dans un lien
+    # partagé) : filet après le prompt, qui l'interdit déjà.
+    redact_output(llm2_out, identifying_values(df, profiling))
     scoring_inputs.update(llm2_out.scoring_inputs.model_dump(exclude_none=True))
     ai_audit["assessment"] = {
         "findings": [f.model_dump() for f in llm2_out.findings],
@@ -117,6 +121,8 @@ def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: st
         if llm2_out.exploitability_verdict else None,
         "headline": llm2_out.headline.model_dump() if llm2_out.headline else None,
         "blocking_points": [b.model_dump() for b in llm2_out.blocking_points],
+        "highlights": [h.model_dump() for h in llm2_out.highlights],
+        "checklist": [c.model_dump() for c in llm2_out.checklist],
         "analysis_map": llm2_out.analysis_map.model_dump(),
         "executive_summary_fr": llm2_out.executive_summary_fr,
         "report_sections_fr": llm2_out.report_sections_fr.model_dump(),
