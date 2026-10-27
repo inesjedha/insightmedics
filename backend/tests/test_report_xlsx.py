@@ -126,17 +126,3 @@ def test_decisions_affichent_la_priorite():
     # ancien audit sans priorité : affiché « Importante »
     ws_old = load_workbook(io.BytesIO(build_workbook(prof, score, SYNTH_AI)))["Décisions à valider"]
     assert ws_old["A2"].value == "Importante"
-
-
-def test_classeur_client_sans_les_bases():
-    prof = _profiling_min()
-    score = compute_score(CLEAN, FULL_SI)
-    import pandas as pd
-    cleaning = {"base_analyse": pd.DataFrame({"a": [1]}), "source_anonymisee": pd.DataFrame({"a": [1]}),
-                "journal": []}
-    full = load_workbook(io.BytesIO(build_workbook(prof, score, SYNTH_AI, cleaning=cleaning)))
-    client_wb = load_workbook(io.BytesIO(build_workbook(prof, score, SYNTH_AI, cleaning=cleaning,
-                                                        include_data=False)))
-    assert "Base analyse" in full.sheetnames
-    assert "Base analyse" not in client_wb.sheetnames
-    assert "Source anonymisée" not in client_wb.sheetnames

@@ -99,7 +99,7 @@ export async function getClientDetail(token: string): Promise<ClientDetail> {
 
 /** Livrable téléchargeable par l'étudiant : le classeur seul (la base nettoyée est remise
  * avec l'analyse statistique ; les autres formats restent accessibles depuis l'admin). */
-export type ClientDeliverable = "workbook.xlsx";
+type ClientDeliverable = "workbook.xlsx";
 
 export function clientDownloadUrl(token: string, kind: ClientDeliverable): string {
   return apiUrl(`/r/${encodeURIComponent(token)}/${kind}`);

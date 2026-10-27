@@ -1,7 +1,8 @@
-"""Jalon M6 — Classeur Excel d'audit, au format du livrable de Hamza (10 onglets).
+"""Jalon M6 — Classeur Excel d'audit expert, au format du livrable de Hamza (10 onglets).
 
-Assemble, à partir des sorties du pipeline (profiling, score_detail, ai_audit), le
-classeur que le client reçoit : Résumé, Registre anomalies, Dictionnaire, Concordance
+Téléchargeable depuis l'admin ; l'étudiant reçoit le classeur court en 4 onglets
+(report_client_xlsx.py). Assemble, à partir des sorties du pipeline (profiling,
+score_detail, ai_audit), les onglets : Résumé, Registre anomalies, Dictionnaire, Concordance
 protocole, Journal corrections, Variables exclues, Décisions à valider, Plan analyse.
 Les deux onglets de données (Base analyse, Source anonymisée) sont produits au jalon M8
 (nettoyage) ; ici on écrit une note tant qu'ils ne sont pas disponibles.
@@ -330,10 +331,8 @@ def _sheet_data(wb: Workbook, title: str, df, note: str, max_rows: int = 500) ->
 # ---------------------------------------------------------------- entrée
 
 def build_workbook(profiling: dict, score_detail: dict,
-                   ai_audit: dict | None, cleaning: dict | None = None,
-                   include_data: bool = True) -> bytes:
-    """`include_data=False` : classeur remis au client avec l'audit, sans les bases
-    nettoyées, qui sont livrées avec l'analyse statistique."""
+                   ai_audit: dict | None, cleaning: dict | None = None) -> bytes:
+    """Classeur expert (admin). L'étudiant reçoit le classeur court de report_client_xlsx."""
     wb = Workbook()
     wb.remove(wb.active)  # retire la feuille vide par défaut
     _sheet_resume(wb, profiling, score_detail, ai_audit)
@@ -345,7 +344,7 @@ def build_workbook(profiling: dict, score_detail: dict,
     _sheet_decisions(wb, ai_audit)
     _sheet_plan(wb, ai_audit)
     # Onglets de données produits au jalon M8 (nettoyage). Ajoutés seulement si dispo.
-    if cleaning and include_data:
+    if cleaning:
         _sheet_data(wb, "Base analyse", cleaning["base_analyse"],
                     "Copie nettoyée et anonymisée ; original inchangé.")
         _sheet_data(wb, "Source anonymisée", cleaning["source_anonymisee"],

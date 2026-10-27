@@ -89,6 +89,10 @@ class AuditResult(CamelModel):
     column_count: int
     missing_pct: float
     duplicates_pct: float
+    # Chiffres lus par l'étudiant : patients réels (sans lignes modèles ni vides) et lignes
+    # saisies deux fois (doublons stricts + recopiées sauf l'identifiant).
+    patient_count: int = 0
+    duplicated_rows: int = 0
     issues: list[AuditIssue]
     needs_human_review: bool
     # Parcours aperçu → paiement : statut, accès privé, déblocage
@@ -109,12 +113,17 @@ class AuditResult(CamelModel):
         - client : déjà authentifié par son jeton ;
         - admin : jeton (pour envoyer le lien), erreur et état de purge en plus."""
         from .models import AuditStatus
+        from .pipeline.summary import key_counts
+
+        counts = key_counts(a.profiling)
 
         return cls(
             id=a.id, file_name=a.file_name, file_size=a.file_size,
             started_at=a.started_at, finished_at=a.finished_at,
             score=a.score or 0, row_count=a.row_count or 0, column_count=a.column_count or 0,
             missing_pct=a.missing_pct or 0, duplicates_pct=a.duplicates_pct or 0,
+            patient_count=counts["patients"] or (a.row_count or 0),
+            duplicated_rows=counts["duplicated_rows"],
             issues=[AuditIssue(**i) for i in a.issues or []],
             needs_human_review=bool(a.needs_human_review),
             status=a.status,  # type: ignore[arg-type]  # colonne String, valeurs AuditStatus
