@@ -52,6 +52,10 @@ export interface AuditResult {
   columnCount: number;
   missingPct: number;
   duplicatesPct: number;
+  /** Patients réels : lignes de la base moins lignes modèles et lignes vides. */
+  patientCount: number;
+  /** Lignes saisies deux fois : doublons stricts + lignes recopiées sauf l'identifiant. */
+  duplicatedRows: number;
   issues: AuditIssue[];
   needsHumanReview: boolean;
   // Parcours aperçu → paiement → audit complet
@@ -107,10 +111,15 @@ export interface Finding {
   severity: "critique" | "majeure" | "moderee" | "mineure";
   certainty: "certain" | "probable" | "possible";
   column: string | null;
+  affected_columns?: string[];
   observed: string | null;
   rule_violated: string | null;
   title_fr: string;
   explanation_fr: string;
+  /** Ce que l'étudiant vérifie dans le dossier (audits à partir du 27/10/2026). */
+  check_fr?: string;
+  /** Inclusions concernées, en clair. */
+  rows_fr?: string;
   proposed_correction: string | null;
   requires_source_verification: boolean;
 }
@@ -119,9 +128,34 @@ export interface Verdict {
   label: string;
   justification_fr: string;
 }
+export interface BlockingPoint {
+  title: string;
+  what: string;
+  why: string;
+  todo: string;
+  refs: string[];
+}
+export interface AnalysisMap {
+  realisable: string[];
+  avec_reserves: string[];
+  apres_decisions: string[];
+  impossible: string[];
+}
+export interface ClientDecision {
+  question_fr: string;
+  options: string[];
+  consequence_fr: string;
+  recommendation_fr: string;
+  priority?: "avant_analyse" | "importante" | "facultative";
+}
 export interface AiAssessment {
   findings: Finding[];
   exploitability_verdict: Verdict | null;
+  /** Format court (audits à partir du 27/10/2026) ; absent des audits antérieurs. */
+  headline?: { title: string; subtitle: string } | null;
+  blocking_points?: BlockingPoint[];
+  analysis_map?: AnalysisMap;
+  client_decisions?: ClientDecision[];
   executive_summary_fr: string;
   report_sections_fr: {
     limites: string;

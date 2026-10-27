@@ -133,6 +133,8 @@ change l'effectif, un groupe, le critère principal ou une analyse (doublons à 
 codes ambigus, valeurs à vérifier au dossier source, définition manquante). N'interrogez
 jamais sur ce que les entrées disent déjà.
 - Une question = une seule décision, en langage clinique, sans jargon statistique.
+- Longueurs : question 25 mots au plus ; chaque option 6 mots au plus ; conséquence et
+  recommandation 25 mots au plus chacune.
 - Regroupez les cas de même nature en une question (ex. tous les doublons possibles en
   une seule question listant les identifiants) plutôt qu'une question par ligne.
 - Pour chacune : question, variable, identifiants, options possibles, conséquence de
@@ -182,19 +184,57 @@ que si le critère principal est absent : votre verdict porte sur l'exploitabili
 être sévère même quand le score reste moyen, mais il doit être justifié par les faits.
 
 ================================================================================
-6. RÉDACTION FRANÇAISE — factuelle, chiffrée, vérifiable
+6. RESTITUTION À L'ÉTUDIANT — courte, concrète, pédagogique
 ================================================================================
-Public : un médecin de niveau débutant à intermédiaire en statistiques, rapport devant
-pouvoir être vérifié par un biostatisticien. Interdites, les formulations vagues comme
-« la base semble correcte », « quelques valeurs manquent », « certaines incohérences » :
-indiquez toujours la variable, l'effectif, le pourcentage, la conséquence méthodologique.
-- "executive_summary_fr" : résumé exécutif (fichiers, effectifs, doublons, manquants,
-  anomalies critiques/majeures, principales limites) — les chiffres viennent des entrées.
-- "report_sections_fr" : {"limites": str, "plan_action": str,
-  "plan_analyse_conditionnel": str} (analyses réalisables / avec réserves / conditionnées /
-  impossibles avec la base reçue).
+Lecteur : un étudiant en fin de médecine, débutant en statistique, pressé, qui lit sur son
+téléphone et doit savoir en deux minutes ce qui ne va pas et quoi faire. Un biostatisticien
+doit pouvoir vérifier chaque phrase. Toute la rigueur reste dans le registre des anomalies
+et les entrées de score ; ici, on va à l'essentiel.
+
+Règles d'écriture, pour TOUS les textes :
+- Phrases courtes (20 mots au plus), vocabulaire clinique, aucun terme statistique non
+  expliqué. Chaque fait est chiffré (variable, nombre de patients, valeur).
+- Les patients sont désignés par leur numéro d'inclusion (ou de ligne si la base n'en a
+  pas), jamais par un nom, des initiales ou un numéro de dossier.
+- AUCUN code interne : pas de « F02 », « R018 », « C01 », « op_id », « décision client
+  n° 5 », « le dictionnaire », « LLM », « profiling », « scoring_inputs », ni de nom de
+  champ JSON. On écrit « la question n° 2 » si besoin.
+- Ne répétez pas la même information d'un champ à l'autre : chaque champ a son rôle.
+- Respectez les longueurs maximales indiquées (en mots) : au-delà, le texte est coupé.
+
+Champs :
+- "headline" : {"title": le verdict en 8 mots au plus, positif quand c'est possible
+  (ex. « Exploitable après 3 vérifications », « Pas encore exploitable », « Prête pour
+  l'analyse ») ; "subtitle": 40 mots au plus, ce que la base permet et ce qui bloque}.
+- "blocking_points" : les 3 points (au plus) qui empêchent d'analyser la base, du plus grave
+  au moins grave. Ce sont des regroupements d'anomalies du registre, pas des anomalies en
+  plus. Pour chacun :
+  · "title" (12 mots au plus, dit le problème concret : « 14 patients semblent avoir été
+    saisis deux fois ») ;
+  · "what" (45 mots au plus, les faits chiffrés) ;
+  · "why" (25 mots au plus, la conséquence pour la thèse ou devant le jury) ;
+  · "todo" (25 mots au plus, l'action concrète, qui la fait) ;
+  · "refs" (6 au plus, très courts : inclusions ou paires concernées, ex. « 4 ↔ 34 »).
+  S'il n'y a aucun point bloquant, liste vide.
+- "analysis_map" : ce que la base permet, en éléments de 12 mots au plus (6 par liste au
+  plus), formulés comme des résultats de thèse (« Description de vos patients », « Taux de
+  complications ») :
+  · "realisable" : faisable dès que les points bloquants sont réglés ;
+  · "avec_reserves" : faisable avec une limite à écrire (précisez-la entre parenthèses) ;
+  · "apres_decisions" : dépend d'une question posée au client ;
+  · "impossible" : impossible avec cette base (précisez pourquoi entre parenthèses).
+  Uniquement des tests usuels ; aucun objectif inventé.
+- Dans chaque anomalie ("findings") : "title_fr" 12 mots au plus ; "explanation_fr" 40 mots
+  au plus ; "check_fr" (12 mots au plus) = ce que l'étudiant doit vérifier dans le dossier,
+  ou « Rien à faire de votre côté » ; "rows_fr" = les inclusions concernées en clair
+  (« 4 à 17 et 34 à 47 », « 24 », « toutes ») ; "proposed_correction" 25 mots au plus.
+- "exploitability_verdict" : "label" 8 mots au plus ; "justification_fr" 40 mots au plus.
+- "executive_summary_fr" : 80 mots au plus, pour l'équipe Insight Medics (pas pour
+  l'étudiant) : effectif, doublons, critère principal, verdict.
+- "report_sections_fr" : laissez les trois champs vides ("") : la carte des analyses et
+  les points bloquants les remplacent.
 - "pii_assessment" : pour chaque candidat PII fourni : {column, risk "eleve|modere|faible",
-  recommendation_fr}.
+  recommendation_fr (25 mots au plus)}.
 
 ================================================================================
 SORTIE — uniquement le JSON conforme (aucun texte autour, aucun bloc markdown)
@@ -207,6 +247,7 @@ SORTIE — uniquement le JSON conforme (aucun texte autour, aucun bloc markdown)
                 "row_ids": [str],
                 "observed": str|null, "rule_violated": str|null,
                 "title_fr": str, "explanation_fr": str,
+                "check_fr": str, "rows_fr": str,
                 "proposed_correction": str|null,
                 "requires_source_verification": bool}],
   "scoring_inputs": { ... enum ci-dessus ... },
@@ -216,6 +257,11 @@ SORTIE — uniquement le JSON conforme (aucun texte autour, aucun bloc markdown)
   "cleaning_plan": [{"op_id": str, "operation": str, "column": str|null,
                      "params": object, "rationale_fr": str, "auto_safe": bool}],
   "exploitability_verdict": {"level": 1-5, "label": str, "justification_fr": str},
+  "headline": {"title": str, "subtitle": str},
+  "blocking_points": [{"title": str, "what": str, "why": str, "todo": str,
+                       "refs": [str]}],
+  "analysis_map": {"realisable": [str], "avec_reserves": [str],
+                   "apres_decisions": [str], "impossible": [str]},
   "executive_summary_fr": str,
   "report_sections_fr": {"limites": str, "plan_action": str,
                          "plan_analyse_conditionnel": str},

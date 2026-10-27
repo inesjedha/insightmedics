@@ -16,6 +16,7 @@ from typing import Literal
 from pydantic import BaseModel, field_validator
 
 from .llm_client import call_and_validate
+from .student_text import tidy_output
 
 PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "llm2_system.md"
 
@@ -35,8 +36,33 @@ class Finding(BaseModel):
     rule_violated: str | None = None
     title_fr: str
     explanation_fr: str
+    check_fr: str = ""                 # ce que l'étudiant vérifie dans le dossier
+    rows_fr: str = ""                  # inclusions concernées, en clair (« 4 à 17 »)
     proposed_correction: str | None = None
     requires_source_verification: bool = False
+
+
+class Headline(BaseModel):
+    """Verdict tel que l'étudiant le lit en haut de page."""
+    title: str
+    subtitle: str = ""
+
+
+class BlockingPoint(BaseModel):
+    """Un des 3 points qui empêchent d'analyser la base (regroupe des anomalies)."""
+    title: str
+    what: str = ""
+    why: str = ""
+    todo: str = ""
+    refs: list[str] = []
+
+
+class AnalysisMap(BaseModel):
+    """Ce que la base permet, en résultats de thèse."""
+    realisable: list[str] = []
+    avec_reserves: list[str] = []
+    apres_decisions: list[str] = []
+    impossible: list[str] = []
 
 
 class ScoringInputs(BaseModel):
@@ -124,6 +150,9 @@ class Llm2Output(BaseModel):
     client_decisions: list[ClientDecision] = []
     cleaning_plan: list[CleaningOp] = []
     exploitability_verdict: Verdict | None = None
+    headline: Headline | None = None
+    blocking_points: list[BlockingPoint] = []
+    analysis_map: AnalysisMap = AnalysisMap()
     executive_summary_fr: str = ""
     report_sections_fr: ReportSections = ReportSections()
     pii_assessment: list[PiiAssessment] = []
@@ -173,6 +202,7 @@ def run_llm2(profiling: dict, ai_audit: dict) -> tuple[Llm2Output | None, list[s
         out.cleaning_plan = [op for op in out.cleaning_plan if op.operation in CLEANING_OPS]
         dropped = before - len(out.cleaning_plan)
         out.client_decisions, n_cut = prioritize_decisions(out.client_decisions)
+        tidy_output(out)  # jargon interne retiré, textes trop longs coupés
         n_crit = sum(1 for f in out.findings if f.severity == "critique")
         extra = [f"{len(out.findings)} anomalie(s) classée(s) dont {n_crit} critique(s), "
                  f"verdict niveau {out.exploitability_verdict.level if out.exploitability_verdict else '?'}"]

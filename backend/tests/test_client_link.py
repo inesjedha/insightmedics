@@ -58,3 +58,16 @@ def test_client_ne_recoit_que_le_classeur():
         expires_at=(datetime.now(UTC) + timedelta(days=10)).isoformat())
     for kind in ("base_analyse.csv", "base_analyse.sav", "report.docx"):
         assert client.get(f"/r/toklivrables/{kind}").status_code == 404, kind
+
+
+def test_resultat_expose_patients_et_lignes_en_double():
+    _mk("tokchiffres", paid=True, status="done",
+        expires_at=(datetime.now(UTC) + timedelta(days=10)).isoformat())
+    db = SessionLocal()
+    audit = db.get(Audit, "audit_tokchiffres")
+    audit.profiling = {"structure": {"n_rows": 51, "template_rows": {"n": 1},
+                                     "duplicates": {"exact_rows": 0, "n_suspect_copy_rows": 14}}}
+    db.commit()
+    db.close()
+    body = client.get("/r/tokchiffres").json()
+    assert body["patientCount"] == 50 and body["duplicatedRows"] == 14

@@ -1,23 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Link2Off, Clock, Download, FileSpreadsheet, Database } from "lucide-react";
+import { Loader2, Link2Off, Clock } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
 import {
-  VerdictBanner,
-  ExecutiveSummaryCard,
-  FindingsCard,
-  DomainsCard,
-  AuditScoreCard,
-  HumanAlert,
-} from "@/components/audit/ResultCards";
-import {
-  getClientResult,
-  getClientDetail,
-  clientDownloadUrl,
-  ApiError,
-  type ClientDeliverable,
-} from "@/lib/api/client";
+  ReportHero,
+  BlockingPoints,
+  AnalysisMapCard,
+  DirectorQuestions,
+  ActionPlan,
+  AnalysisOffer,
+  TechnicalDetails,
+  WorkbookDownload,
+} from "@/components/audit/ClientReport";
+import { getClientResult, getClientDetail, clientDownloadUrl, ApiError } from "@/lib/api/client";
 import type { AiAssessment, AuditResult, ScoreDetail } from "@/lib/api/types";
 
 export const Route = createFileRoute("/r/$token")({
@@ -38,6 +34,7 @@ function ClientResultPage() {
   const [result, setResult] = useState<AuditResult | null>(null);
   const [scoreDetail, setScoreDetail] = useState<ScoreDetail | null>(null);
   const [assessment, setAssessment] = useState<AiAssessment | null>(null);
+  const workbookHref = clientDownloadUrl(token, "workbook.xlsx");
 
   useEffect(() => {
     let alive = true;
@@ -68,8 +65,8 @@ function ClientResultPage() {
         <SectionHeader
           as="h1"
           eyebrow="Rapport privé"
-          title="Votre audit complet."
-          description="Ce lien privé reste valable 30 jours après la livraison : pensez à enregistrer vos fichiers. Ne le partagez qu'avec des personnes de confiance, votre directeur de thèse par exemple."
+          title="Votre audit."
+          description="Lien privé valable 30 jours : enregistrez votre classeur, et ne partagez ce lien qu'avec votre directeur de thèse."
         />
 
         {phase === "loading" && (
@@ -101,19 +98,21 @@ function ClientResultPage() {
         )}
 
         {phase === "ready" && result && (
-          <div className="mt-8 space-y-6">
-            {assessment?.exploitability_verdict && scoreDetail && (
-              <VerdictBanner
-                verdict={assessment.exploitability_verdict}
-                scoreDetail={scoreDetail}
-              />
-            )}
-            <AuditScoreCard result={result} scoreDetail={scoreDetail} preview={false} />
-            {assessment?.executive_summary_fr && <ExecutiveSummaryCard assessment={assessment} />}
-            {assessment?.findings?.length ? <FindingsCard findings={assessment.findings} /> : null}
-            {scoreDetail && <DomainsCard scoreDetail={scoreDetail} />}
-            {result.needsHumanReview && <HumanAlert context="client" />}
-            <DeliverablesDownload token={token} />
+          <div className="mt-8 space-y-8">
+            <ReportHero result={result} scoreDetail={scoreDetail} assessment={assessment} />
+            <BlockingPoints assessment={assessment} />
+            <AnalysisMapCard map={assessment?.analysis_map} />
+            <DirectorQuestions
+              decisions={assessment?.client_decisions}
+              workbookHref={workbookHref}
+            />
+            <ActionPlan
+              findings={assessment?.findings ?? []}
+              nQuestions={assessment?.client_decisions?.length ?? 0}
+            />
+            <AnalysisOffer needsHumanReview={result.needsHumanReview} />
+            <TechnicalDetails scoreDetail={scoreDetail} findings={assessment?.findings ?? []} />
+            <WorkbookDownload href={workbookHref} />
           </div>
         )}
       </Section>
@@ -129,62 +128,6 @@ function StateCard({ icon, title, body }: { icon: React.ReactNode; title: string
       </div>
       <h3 className="font-sans text-lg font-bold">{title}</h3>
       <p className="text-sm leading-relaxed text-muted-foreground">{body}</p>
-    </div>
-  );
-}
-
-const DELIVERABLES: {
-  kind: ClientDeliverable;
-  label: string;
-  hint: string;
-  icon: React.ReactNode;
-}[] = [
-  {
-    kind: "workbook.xlsx",
-    label: "Classeur d'audit (Excel)",
-    hint: "Anomalies ligne par ligne, questions à trancher et score détaillé.",
-    icon: <FileSpreadsheet className="h-5 w-5" />,
-  },
-];
-
-function DeliverablesDownload({ token }: { token: string }) {
-  return (
-    <div className="rounded-md border border-border bg-card p-6 sm:p-8">
-      <h3 className="flex items-center gap-2 font-sans text-lg font-bold">
-        <Download className="h-5 w-5 text-brand" />
-        Vos livrables
-      </h3>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Les noms, initiales et numéros de dossier n'apparaissent pas dans le classeur.
-      </p>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {DELIVERABLES.map((d) => (
-          <a
-            key={d.kind}
-            href={clientDownloadUrl(token, d.kind)}
-            className="group flex items-start gap-3 rounded-md border border-border bg-surface/50 p-4 transition-colors hover:border-brand/40 hover:bg-brand/5"
-          >
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
-              {d.icon}
-            </span>
-            <span className="min-w-0">
-              <span className="flex items-center gap-1.5 font-medium text-foreground">
-                {d.label}
-                <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-brand" />
-              </span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">{d.hint}</span>
-            </span>
-          </a>
-        ))}
-      </div>
-      <p className="mt-5 flex items-start gap-2 text-sm text-foreground/80">
-        <Database className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-        <span>
-          La base nettoyée, prête pour vos tests statistiques, vous est remise avec l'analyse
-          statistique, une fois les points bloquants ci-dessus vérifiés : l'analyser avant
-          fausserait vos résultats.
-        </span>
-      </p>
     </div>
   );
 }

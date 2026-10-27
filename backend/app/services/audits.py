@@ -23,6 +23,7 @@ from ..models import Audit, AuditStatus, utcnow_iso
 from ..pipeline.cleaning import clean, to_csv_bytes, to_sav_bytes
 from ..pipeline.docs_extract import extract_text
 from ..pipeline.ingest import IngestError, ingest
+from ..pipeline.report_client_xlsx import build_client_workbook
 from ..pipeline.report_docx import build_report
 from ..pipeline.report_xlsx import build_workbook
 from ..pipeline.runner import run_preview
@@ -274,10 +275,13 @@ def _deliverable_content(audit: Audit, kind: DeliverableKind, for_client: bool) 
     assert audit.profiling is not None and audit.score_detail is not None
     if kind is DeliverableKind.REPORT:
         return build_report(audit.profiling, audit.score_detail, audit.ai_audit)
+    if kind is DeliverableKind.WORKBOOK and for_client:
+        # L'étudiant reçoit le classeur court en 4 onglets ; l'admin garde le classeur expert.
+        return build_client_workbook(audit.profiling, audit.score_detail, audit.ai_audit)
     cleaning = _cleaning(audit)
     if kind is DeliverableKind.WORKBOOK:  # sans fichier source : classeur sans les bases
         return build_workbook(audit.profiling, audit.score_detail, audit.ai_audit,
-                              cleaning=cleaning, include_data=not for_client)
+                              cleaning=cleaning)
     if cleaning is None:
         raise DeliverableUnavailableError("Fichier source indisponible pour le nettoyage")
     if kind is DeliverableKind.BASE_CSV:

@@ -115,6 +115,9 @@ def _run_ai_audit(profiling: dict[str, Any], df: pd.DataFrame, protocol_text: st
         "cleaning_plan": [c.model_dump() for c in llm2_out.cleaning_plan],
         "exploitability_verdict": llm2_out.exploitability_verdict.model_dump()
         if llm2_out.exploitability_verdict else None,
+        "headline": llm2_out.headline.model_dump() if llm2_out.headline else None,
+        "blocking_points": [b.model_dump() for b in llm2_out.blocking_points],
+        "analysis_map": llm2_out.analysis_map.model_dump(),
         "executive_summary_fr": llm2_out.executive_summary_fr,
         "report_sections_fr": llm2_out.report_sections_fr.model_dump(),
         "pii_assessment": [p.model_dump() for p in llm2_out.pii_assessment],

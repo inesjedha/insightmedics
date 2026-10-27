@@ -43,6 +43,12 @@ def _fig_scores(score: dict) -> io.BytesIO:
     return buf
 
 
+# Carte des analyses (LLM-2) : libellé de chaque groupe, dans l'ordre d'affichage.
+ANALYSIS_GROUPS = [("Réalisable", "realisable"), ("Avec réserves", "avec_reserves"),
+                   ("Après vos décisions", "apres_decisions"),
+                   ("Impossible avec cette base", "impossible")]
+
+
 def _h(doc: DocxDocument, text: str) -> None:
     p = doc.add_heading(text, level=1)
     for run in p.runs:
@@ -214,8 +220,17 @@ def build_report(profiling: dict, score: dict, ai_audit: dict | None) -> bytes:
 
     # 10. Plan d'analyse statistique conditionnel
     _h(doc, "10. Plan d'analyse statistique conditionnel")
-    _p(doc, rs.get("plan_analyse_conditionnel")
-       or "Le plan d'analyse conditionnel est produit avec l'audit IA.")
+    amap = assess.get("analysis_map") or {}
+    groups = [(label, amap.get(key) or []) for label, key in ANALYSIS_GROUPS]
+    if any(items for _, items in groups):
+        for label, items in groups:
+            if items:
+                _p(doc, label)
+                for item in items:
+                    doc.add_paragraph(item, style="List Bullet")
+    else:
+        _p(doc, rs.get("plan_analyse_conditionnel")
+           or "Le plan d'analyse conditionnel est produit avec l'audit IA.")
 
     # 11. Livrables et limites
     _h(doc, "11. Livrables et limites")
