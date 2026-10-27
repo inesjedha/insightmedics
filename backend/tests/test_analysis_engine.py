@@ -6,7 +6,14 @@ import pandas as pd
 import pytest
 
 from app.analysis.expr import ExprError, columns_used, evaluate
-from app.analysis.llm_write import ResultsText, Section, allowed_numbers, normalize, unknown_numbers
+from app.analysis.llm_write import (
+    ResultsText,
+    Section,
+    allowed_numbers,
+    inconsistencies,
+    normalize,
+    unknown_numbers,
+)
 from app.analysis.plan import AnalysisPlan, plan_problems
 from app.analysis.prepare import INCLUDED, REASON, analysed, prepare
 from app.analysis.stats import fmt_p, holm, run_plan, wilson
@@ -123,16 +130,73 @@ def test_outils_statistiques():
 
 
 def test_controle_des_chiffres_rediges():
-    context = {"analyses": [{"table": {"rows": [["Succès", "31/36 (86,1 %)", "[71,3 − 93,9] %"]]}}],
+    context = {"analyses": [{"facts": [{"variable": "Ptx", "level": "Oui", "n": 1, "N": 36,
+                                        "pct": "2,8"},
+                                       {"event": "1", "k": 31, "n": 36, "pct": "86,1"}],
+                             "table": {"columns": ["Temps", "SpO2", "n"],
+                                       "rows": [["J0 → J3", "p < 0,001", "Wilcoxon"]]}}],
                "diagramme_de_flux": [{"label": "Lignes", "n": 2183}]}
-    allowed = allowed_numbers(context)
     assert normalize("2 183") == "2183" and normalize("15,0") == "15"
-    ok = ResultsText(sections=[Section(analysis_id="a", heading="Succès", table_title="Tableau 1",
-                                       paragraphs=["31 patients sur 36 (86,1 %), base de 2 183 lignes."])])
-    assert unknown_numbers(ok, allowed, 1) == []
-    bad = ResultsText(sections=[Section(analysis_id="a", heading="h",
-                                        paragraphs=["Taux de 87,4 % chez 12 patients."])])
-    assert unknown_numbers(bad, allowed, 1) == ["12", "87.4"]
+
+    def text(*paragraphs: str) -> ResultsText:
+        return ResultsText(sections=[Section(analysis_id="a", heading="Succès",
+                                             table_title="Tableau 1", paragraphs=list(paragraphs))])
+
+    ok = text("Succès chez 31 patients sur 36 (86,1 %, IC 95 % [71,3 − 93,9]), base de 2 183 "
+              "lignes ; pneumothorax chez 1 patient (2,8 %) ; amélioration (p < 0,001).")
+    ctx_ok = {**context, "analyses": [{**context["analyses"][0],
+                                       "table": {**context["analyses"][0]["table"],
+                                                 "rows": [["J0", "71,3", "93,9"],
+                                                          ["J0 → J3", "p < 0,001", ""]]}}]}
+    assert inconsistencies(ok, ctx_ok) == []
+    assert unknown_numbers(text("Taux de 87,4 % chez 12 patients."),
+                           allowed_numbers(context)) == ["12", "87.4"]
+    # chiffres existants, mais pas ensemble : refusé
+    assert inconsistencies(text("Pneumothorax chez 31 patients (2,8 %)."), context)
+    assert inconsistencies(text("Succès : 1/36 (86,1 %)."), context)
+    # p mal recopié (« = 0,001 » au lieu de « < 0,001 ») : refusé
+    assert any("p = 0,001" in p for p in inconsistencies(text("Évolution (p = 0,001)."), context))
+    # « 5 % » n'est plus permis d'office
+    assert unknown_numbers(text("5 % de femmes."), allowed_numbers(context)) == ["5"]
+
+
+def test_cas_limites_signales_par_la_relecture():
+    """Retours de la relecture statistique du 27/10/2026."""
+    from app.analysis.plan import Logistic, Variable
+    from app.analysis.prepare import _parse_number
+    from app.analysis.stats import run_logistic, test_cat
+
+    df = pd.DataFrame({"debut": ["03/04/2024"], "fin": ["05/04/2024"], "v": [0.0], "w": [5.0],
+                       "n": [34.0]})
+    assert evaluate('days_between(col("debut"), col("fin"))', df).tolist() == [2]   # jj/mm
+    assert pd.isna(evaluate('col("w") / col("v")', df).iloc[0])                    # pas d'infini
+    assert evaluate('isin(col("n"), [33, 34])', df).tolist() == [True]
+    assert evaluate('col("n") == "34"', df).tolist() == [True]
+    with pytest.raises(ExprError):
+        evaluate('"a" * 99999999', df)
+    with pytest.raises(ExprError):
+        evaluate("-" * 1500 + "1", df)
+
+    parsed, counts = _parse_number(pd.Series(["1 200 mL", "10-15", "7 jours", ">400"]))
+    assert parsed.tolist()[0] == 1200 and pd.isna(parsed.tolist()[1]) and parsed.tolist()[2] == 7
+    assert counts == {"censored": 1, "unreadable": 1}
+
+    # Chi² de Pearson sans correction de Yates (comme SPSS)
+    p, test = test_cat(pd.DataFrame([[12, 8], [5, 15]]))
+    assert test == "Chi²" and round(p, 3) == 0.025          # Yates donnerait 0,054
+
+    # Événement mal écrit, ou troisième réponse : erreur, jamais un OR faux
+    base = pd.DataFrame({"y": ["Oui", "Non", "NSP"] * 10, "x": range(30)})
+    lg = Logistic(kind="logistic", id="l", title="t", outcome="y", event="Oui",
+                  covariates=[Variable(name="x", type="quantitative")])
+    with pytest.raises(ValueError):
+        run_logistic(lg, base, AnalysisPlan())
+    # Séparation complète : « non estimable » et un avertissement, pas un OR géant
+    sep = pd.DataFrame({"y": [1] * 15 + [0] * 15, "x": ["a"] * 15 + ["b"] * 15})
+    out = run_logistic(Logistic(kind="logistic", id="l", title="t", outcome="y", event=1,
+                                covariates=[Variable(name="x", type="categorical")]),
+                       sep, AnalysisPlan())
+    assert out["table"]["rows"][0][1] == "non estimable" and out["warnings"]
 
 
 def test_plan_ia_incoherent_renvoye_au_modele(monkeypatch):

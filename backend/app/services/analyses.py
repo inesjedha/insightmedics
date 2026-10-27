@@ -29,7 +29,7 @@ from ..analysis.llm_plan import run_plan_llm
 from ..analysis.llm_write import build_context, run_write_llm
 from ..analysis.plan import AnalysisPlan, plan_problems
 from ..analysis.prepare import analysed as included_rows
-from ..analysis.prepare import prepare
+from ..analysis.prepare import dry_run, prepare
 from ..analysis.recheck import recheck
 from ..analysis.report import build_results_docx, build_results_xlsx
 from ..analysis.stats import run_plan
@@ -138,7 +138,7 @@ def save_plan(db: Session, analysis: Analysis, raw: dict[str, Any]) -> Analysis:
     except ValidationError as exc:
         raise AnalysisError(f"Plan invalide : {exc.errors()[:3]}") from exc
     df, _ = _load_base(analysis)
-    problems = plan_problems(plan, [str(c) for c in df.columns])
+    problems = plan_problems(plan, [str(c) for c in df.columns]) or dry_run(df, plan)
     if problems:
         raise AnalysisError("Plan incohérent : " + " ; ".join(problems[:8]))
     analysis.plan = plan.model_dump(mode="json")

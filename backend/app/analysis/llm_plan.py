@@ -12,6 +12,7 @@ import pandas as pd
 
 from ..pipeline.llm_client import call_and_validate, client_content
 from .plan import AnalysisPlan, plan_problems
+from .prepare import dry_run
 
 PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "analysis_plan.md"
 MAX_LEVELS = 15
@@ -76,7 +77,7 @@ def run_plan_llm(df: pd.DataFrame, profiling: dict[str, Any], audit_ai: dict[str
     columns = [str(c) for c in df.columns]
 
     def _post(plan: AnalysisPlan) -> tuple[AnalysisPlan, list[str]]:
-        problems = plan_problems(plan, columns)
+        problems = plan_problems(plan, columns) or dry_run(df, plan)
         if problems:
             raise ValueError("plan incohérent : " + " ; ".join(problems[:10]))
         return plan, [f"{len(plan.analyses)} analyse(s), {len(plan.derived)} colonne(s) "

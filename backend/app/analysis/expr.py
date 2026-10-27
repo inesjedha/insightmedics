@@ -38,10 +38,26 @@ _CMP: dict[type, Callable[[Any, Any], Any]] = {
     ast.LtE: operator.le, ast.Gt: operator.gt, ast.GtE: operator.ge,
 }
 MAX_EXPR_CHARS = 2000
+MAX_DEPTH = 40
 
 
 def _num(s: Any) -> Any:
+    if isinstance(s, str):
+        raise ExprError("calcul sur un texte non autorisé")
     return pd.to_numeric(s, errors="coerce") if isinstance(s, pd.Series) else s
+
+
+def _finite(s: Any) -> Any:
+    """Une division par zéro donne une valeur manquante, jamais l'infini."""
+    if isinstance(s, pd.Series):
+        return s.replace([np.inf, -np.inf], np.nan)
+    if isinstance(s, float) and not np.isfinite(s):
+        return np.nan
+    return s
+
+
+def _numeric_like(s: pd.Series) -> bool:
+    return pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s)
 
 
 def _as_bool(s: Any, index: pd.Index) -> pd.Series:
@@ -52,9 +68,25 @@ def _as_bool(s: Any, index: pd.Index) -> pd.Series:
 
 
 def _compare(op: type, left: Any, right: Any, index: pd.Index) -> pd.Series:
-    # Comparaison numérique si l'un des côtés est un nombre, textuelle sinon.
+    # Comparaison numérique si l'un des côtés est un nombre (ou une colonne numérique
+    # comparée à un texte qui est un nombre : col("n") == "34"), textuelle sinon.
+    def as_number(x: Any) -> Any:
+        if isinstance(x, str):
+            try:
+                return float(x.replace(",", "."))
+            except ValueError:
+                return x
+        return x
+
+    if isinstance(left, pd.Series) and _numeric_like(left):
+        right = as_number(right)
+    if isinstance(right, pd.Series) and _numeric_like(right):
+        left = as_number(left)
     if isinstance(left, (int, float)) or isinstance(right, (int, float)):
-        left, right = _num(left), _num(right)
+        if isinstance(left, str) or isinstance(right, str):
+            raise ExprError("comparaison d'un nombre et d'un texte")
+        left = pd.to_numeric(left, errors="coerce") if isinstance(left, pd.Series) else left
+        right = pd.to_numeric(right, errors="coerce") if isinstance(right, pd.Series) else right
     elif isinstance(left, pd.Series) and isinstance(right, str):
         left = left.astype("string").str.strip()
     elif isinstance(right, pd.Series) and isinstance(left, str):
@@ -75,47 +107,64 @@ def evaluate(expr: str, df: pd.DataFrame) -> Any:
         raise ExprError("expression trop longue")
     try:
         tree = ast.parse(expr.strip(), mode="eval")
-    except SyntaxError as exc:
+    except (SyntaxError, RecursionError, MemoryError) as exc:
         raise ExprError(f"syntaxe invalide : {expr[:80]}") from exc
     index = df.index
 
-    def walk(node: ast.AST) -> Any:
+    def walk(node: ast.AST, depth: int = 0) -> Any:
+        if depth > MAX_DEPTH:
+            raise ExprError("expression trop imbriquée")
+        return _walk(node, depth)
+
+    def _walk(node: ast.AST, depth: int) -> Any:
+        d = depth + 1
         if isinstance(node, ast.Expression):
-            return walk(node.body)
+            return walk(node.body, d)
         if isinstance(node, ast.Constant) and isinstance(node.value, (int, float, str)) \
                 and not isinstance(node.value, bool):
             return node.value
         if isinstance(node, ast.List):
-            return [walk(e) for e in node.elts]
+            return [walk(e, d) for e in node.elts]
         if isinstance(node, ast.UnaryOp):
             if isinstance(node.op, ast.USub):
-                return -_num(walk(node.operand))
+                return -_num(walk(node.operand, d))
             if isinstance(node.op, ast.Not):
-                return ~_as_bool(walk(node.operand), index)
+                return ~_as_bool(walk(node.operand, d), index)
         if isinstance(node, ast.BinOp) and type(node.op) in _ARITH:
-            return _ARITH[type(node.op)](_num(walk(node.left)), _num(walk(node.right)))
+            # une division par zéro donne une valeur manquante, jamais l'infini
+            left, right = _num(walk(node.left, d)), _num(walk(node.right, d))
+            try:
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    return _finite(_ARITH[type(node.op)](left, right))
+            except ZeroDivisionError:
+                return np.nan
         if isinstance(node, ast.BoolOp):
-            values = [_as_bool(walk(v), index) for v in node.values]
+            values = [_as_bool(walk(v, d), index) for v in node.values]
             out = values[0]
             for v in values[1:]:
                 out = (out & v) if isinstance(node.op, ast.And) else (out | v)
             return out
         if isinstance(node, ast.Compare):
-            left = walk(node.left)
+            left = walk(node.left, d)
             result: pd.Series | None = None
             for op, comparator in zip(node.ops, node.comparators, strict=True):
                 if type(op) not in _CMP:
                     raise ExprError("comparaison non autorisée")
-                right = walk(comparator)
+                right = walk(comparator, d)
                 part = _compare(type(op), left, right, index)
                 result = part if result is None else (result & part)
                 left = right
             return result
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-            return _call(node.func.id, [walk(a) for a in node.args], df)
+            if node.keywords:
+                raise ExprError("arguments nommés non autorisés")
+            return _call(node.func.id, [walk(a, d) for a in node.args], df)
         raise ExprError(f"élément non autorisé : {type(node).__name__}")
 
-    return walk(tree)
+    try:
+        return walk(tree)
+    except (RecursionError, MemoryError) as exc:
+        raise ExprError("expression trop complexe") from exc
 
 
 def _call(name: str, args: list[Any], df: pd.DataFrame) -> Any:
@@ -144,15 +193,19 @@ def _call(name: str, args: list[Any], df: pd.DataFrame) -> Any:
         s = _num(args[0])
         return np.log(s.where(s > 0))
     if name == "days_between":
-        start = pd.to_datetime(args[0], errors="coerce")
-        end = pd.to_datetime(args[1], errors="coerce")
+        # Dates à la française : jour d'abord (03/04/2024 = 3 avril).
+        start = pd.to_datetime(args[0], errors="coerce", dayfirst=True)
+        end = pd.to_datetime(args[1], errors="coerce", dayfirst=True)
         return (end - start).dt.days.astype("Float64")
     if name == "isin":
         s, values = args
         if not isinstance(values, list):
             raise ExprError("isin() attend une liste")
-        norm = {str(v).strip().lower() for v in values}
-        out = s.astype("string").str.strip().str.lower().isin(norm).astype("boolean")
+        if _numeric_like(s) and all(isinstance(v, (int, float)) for v in values):
+            out = s.isin([float(v) for v in values]).astype("boolean")
+        else:
+            norm = {str(v).strip().lower() for v in values}
+            out = s.astype("string").str.strip().str.lower().isin(norm).astype("boolean")
         out[s.isna().to_numpy()] = pd.NA
         return out
     if name == "lower":

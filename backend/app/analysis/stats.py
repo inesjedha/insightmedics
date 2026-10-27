@@ -112,6 +112,9 @@ def summary_quant(s: pd.Series, normal: bool, digits: int) -> str:
 
 def _levels(s: pd.Series) -> list[Any]:
     """Modalités dans un ordre stable : numérique croissant, sinon par effectif."""
+    if isinstance(s.dtype, pd.CategoricalDtype):
+        present = set(s.dropna().tolist())
+        return [c for c in s.cat.categories if c in present]
     values = s.dropna()
     try:
         return sorted(values.unique().tolist())
@@ -129,11 +132,12 @@ def _num(s: pd.Series) -> pd.Series:
 
 # ---------------------------------------------------------------- tests
 
-def test_quant(groups: list[pd.Series]) -> tuple[float | None, str]:
+def test_quant(groups: list[pd.Series], normal: bool | None = None) -> tuple[float | None, str]:
     groups = [g.dropna().astype(float) for g in groups if len(g.dropna()) > 0]
     if len(groups) < 2 or any(len(g) < 2 for g in groups):
         return None, "effectifs insuffisants"
-    normal = all(is_normal(g) for g in groups)
+    if normal is None:
+        normal = all(is_normal(g) for g in groups)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         if len(groups) == 2:
@@ -151,7 +155,8 @@ def test_cat(table: pd.DataFrame) -> tuple[float | None, str]:
         return None, "une seule modalité observée"
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        chi2 = stats.chi2_contingency(table.to_numpy())
+        # Chi² de Pearson sans correction de Yates : celui que donne SPSS par défaut.
+        chi2 = stats.chi2_contingency(table.to_numpy(), correction=False)
     small = bool((chi2.expected_freq < 5).any())
     if table.shape == (2, 2) and small:
         return float(stats.fisher_exact(table.to_numpy()).pvalue), "Fisher"
@@ -170,11 +175,12 @@ def wilson(k: int, n: int, z: float = 1.959964) -> tuple[float, float]:
 
 
 def holm(pvalues: list[float]) -> list[float]:
-    order = np.argsort(pvalues)
-    m = len(pvalues)
-    adjusted = [0.0] * m
+    """Correction de Holm ; un p manquant reste manquant et ne compte pas."""
+    valid = [i for i, p in enumerate(pvalues) if p is not None and math.isfinite(p)]
+    adjusted = [float("nan")] * len(pvalues)
+    m = len(valid)
     running = 0.0
-    for rank, i in enumerate(order):
+    for rank, i in enumerate(sorted(valid, key=lambda k: pvalues[k])):
         running = max(running, min(1.0, (m - rank) * pvalues[i]))
         adjusted[i] = running
     return adjusted
@@ -204,7 +210,10 @@ def run_describe(a: Describe, df: pd.DataFrame, plan: AnalysisPlan) -> dict[str,
         label = _label(v, v.name)
         if v.type == "quantitative":
             x = _num(s)
-            normal = is_normal(x)
+            # Même règle pour la présentation et le test : normalité dans chaque groupe
+            # quand on compare, sur l'ensemble sinon.
+            normal = (all(is_normal(x[g == lv]) for lv in levels) if group
+                      else is_normal(x))
             d = _digits(x.dropna())
             missing = int(x.isna().sum())
             row = [label + (f" (manquant : {missing})" if missing else ""),
@@ -214,7 +223,10 @@ def run_describe(a: Describe, df: pd.DataFrame, plan: AnalysisPlan) -> dict[str,
             if group:
                 parts = [x[g == lv] for lv in levels]
                 row += [summary_quant(p, normal, d) for p in parts]
-                p, test = test_quant(parts)
+                p, test = test_quant(parts, normal)
+                empty = sum(1 for part in parts if part.dropna().empty)
+                if empty:
+                    test += f" ({empty} groupe(s) sans valeur exclu(s))"
                 row += [fmt_p(p), test]
                 methods.add(test)
                 fact.update({"p": fmt_p(p), "test": test})
@@ -254,6 +266,9 @@ def run_proportion(a: Proportion, df: pd.DataFrame, _: AnalysisPlan) -> dict[str
                 or (_is_number(v) and _is_number(a.event) and float(v) == float(a.event))
                 for v in s))
     n = len(s)
+    warn = ([f"Aucune ligne ne vaut « {a.event} » (0 %) : vérifier que c'est bien la "
+             f"réponse qui code l'événement (réponses présentes : "
+             f"{', '.join(sorted({str(v) for v in s})[:6])})."] if k == 0 else [])
     lo, hi = wilson(k, n)
     text = f"{k}/{n} ({pct(k, n)} %)"
     ci = f"[{fmt(100 * lo)} − {fmt(100 * hi)}]"
@@ -262,7 +277,7 @@ def run_proportion(a: Proportion, df: pd.DataFrame, _: AnalysisPlan) -> dict[str
             "facts": [{"event": str(a.event), "k": k, "n": n, "pct": pct(k, n),
                        "ci_low": fmt(100 * lo), "ci_high": fmt(100 * hi),
                        "missing": int(df[a.variable].isna().sum())}],
-            "methods": ["IC 95 % de Wilson"], "n": n}
+            "methods": ["IC 95 % de Wilson"], "n": n, "warnings": warn}
 
 
 def _is_number(v: Any) -> bool:
@@ -305,7 +320,7 @@ def run_paired(a: Paired, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, Any]:
     facts: list[dict[str, Any]] = []
     for t in a.times:
         summary = summary_quant(complete[t], diffs_normal, d)
-        rows.append([t, summary, str(int(data[t].notna().sum()))])
+        rows.append([t, summary, str(n)])  # n des patients complets, ceux du résumé
         facts.append({"time": t, "summary": summary})
     methods: list[str] = []
     with warnings.catch_warnings():
@@ -315,7 +330,7 @@ def run_paired(a: Paired, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, Any]:
             if diffs_normal:
                 p, test = float(stats.ttest_rel(x, y).pvalue), "t de Student apparié"
             else:
-                p, test = float(stats.wilcoxon(x, y).pvalue), "Wilcoxon apparié"
+                p, test = _wilcoxon_p(x, y), "Wilcoxon apparié"
             methods.append(test)
             facts.append({"comparison": f"{a.times[0]} → {a.times[1]}", "p": fmt_p(p),
                           "test": test})
@@ -325,8 +340,7 @@ def run_paired(a: Paired, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, Any]:
             methods.append("Friedman")
             facts.append({"comparison": "global", "p": fmt_p(p), "test": "Friedman"})
             rows.append(["Évolution globale", p_phrase(p), "Friedman"])
-            raw = [float(stats.wilcoxon(complete[a.times[0]], complete[t]).pvalue)
-                   for t in a.times[1:]]
+            raw = [_wilcoxon_p(complete[a.times[0]], complete[t]) for t in a.times[1:]]
             for t, padj in zip(a.times[1:], holm(raw), strict=True):
                 facts.append({"comparison": f"{a.times[0]} → {t}", "p": fmt_p(padj),
                               "test": "Wilcoxon apparié, correction de Holm"})
@@ -341,6 +355,16 @@ def run_paired(a: Paired, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, Any]:
                        "values": [float(complete[t].mean() if diffs_normal
                                         else complete[t].median()) for t in a.times],
                        "stat": "moyenne" if diffs_normal else "médiane"}}
+
+
+def _wilcoxon_p(x: pd.Series, y: pd.Series) -> float:
+    """p du Wilcoxon apparié ; manquant si toutes les différences sont nulles."""
+    if bool(((x - y) == 0).all()):
+        return float("nan")
+    try:
+        return float(stats.wilcoxon(x, y).pvalue)
+    except ValueError:
+        return float("nan")
 
 
 def run_correlation(a: Correlation, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, Any]:
@@ -360,6 +384,29 @@ def run_correlation(a: Correlation, df: pd.DataFrame, _: AnalysisPlan) -> dict[s
                       "rows": [[f"{a.x} × {a.y}", fmt(r, 2), fmt_p(p), str(n)]]},
             "facts": [{"r": fmt(r, 2), "p": fmt_p(p), "n": n, "test": test}],
             "methods": [f"corrélation de {test}"], "n": n}
+
+
+def fmt_or(o: float, lo: float, hi: float) -> str:
+    """OR [IC 95 %] ; 3 décimales près de 1 (OR par unité : 1,006 [1,001 − 1,012]), pour
+    qu'un IC significatif ne s'affiche pas « 1,00 − 1,01 »."""
+    digits = 3 if 0.9 <= o <= 1.1 else 2
+    return f"{fmt(o, digits)} [{fmt(lo, digits)} − {fmt(hi, digits)}]"
+
+
+def _binary_outcome(s: pd.Series, event: Any) -> pd.Series:
+    """1 = événement, 0 = l'autre réponse ; exige exactement deux réponses dont l'événement,
+    sinon erreur (une 3e réponse, « NSP », ne doit pas devenir un non-événement)."""
+    def is_event(v: Any) -> bool:
+        return (str(v).strip().lower() == str(event).strip().lower()
+                or (_is_number(v) and _is_number(event) and float(v) == float(event)))
+    values = s.dropna()
+    levels = {str(v).strip().lower() for v in values}
+    if not any(is_event(v) for v in values):
+        raise ValueError(f"aucune ligne ne vaut « {event} » : vérifiez la valeur de l'événement")
+    if len(levels) != 2:
+        raise ValueError(f"le critère doit avoir exactement deux réponses (trouvé : "
+                         f"{', '.join(sorted(levels)[:6])}) : recodez-le d'abord")
+    return s.map(lambda v: np.nan if pd.isna(v) else float(is_event(v)))
 
 
 def _design(df: pd.DataFrame, covariates: list[Variable]) -> tuple[pd.DataFrame, list[str]]:
@@ -387,10 +434,7 @@ def _design(df: pd.DataFrame, covariates: list[Variable]) -> tuple[pd.DataFrame,
 def run_logistic(a: Logistic, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, Any]:
     import statsmodels.api as sm
 
-    y_raw = df[a.outcome]
-    y = y_raw.map(lambda v: np.nan if pd.isna(v) else float(
-        str(v).strip().lower() == str(a.event).strip().lower()
-        or (_is_number(v) and _is_number(a.event) and float(v) == float(a.event))))
+    y = _binary_outcome(df[a.outcome], a.event)
     X, labels = _design(df, a.covariates)
     data = pd.concat([y.rename("_y"), X], axis=1).dropna()
     n, events = len(data), int(data["_y"].sum()) if len(data) else 0
@@ -401,10 +445,18 @@ def run_logistic(a: Logistic, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, An
     epv = (min(events, n - events) / k) if k else 0.0
 
     def fit(cols: list[str]) -> Any:
+        """Modèle estimé, ou ValueError s'il ne converge pas ou si un coefficient est
+        infini ou démesuré (séparation complète : statsmodels ne le signale plus)."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            return sm.Logit(data["_y"], sm.add_constant(data[cols], has_constant="add")).fit(
+            r = sm.Logit(data["_y"], sm.add_constant(data[cols], has_constant="add")).fit(
                 disp=0, maxiter=200)
+        bse = np.asarray(r.bse, dtype=float)
+        if not r.mle_retvals.get("converged", False) or not np.all(np.isfinite(bse)) \
+                or float(np.max(np.abs(np.asarray(r.params, dtype=float)))) > 15 \
+                or float(np.max(bse)) > 10:
+            raise ValueError("séparation complète ou modèle non convergent")
+        return r
 
     crude: dict[str, tuple[str, str]] = {}
     for col in X.columns:
@@ -412,17 +464,19 @@ def run_logistic(a: Logistic, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, An
             r = fit([col])
             o, (lo, hi), p = (math.exp(r.params[col]),
                               np.exp(r.conf_int().loc[col]).tolist(), float(r.pvalues[col]))
-            crude[col] = (f"{fmt(o, 2)} [{fmt(lo, 2)} − {fmt(hi, 2)}]", fmt_p(p))
+            crude[col] = (fmt_or(o, lo, hi), fmt_p(p))
         except Exception:  # noqa: BLE001 — séparation complète, matrice singulière
             crude[col] = ("non estimable", "—")
+            warnings_.append(f"OR brut non estimable pour « {col} » (séparation complète : "
+                             "une modalité n'a que des événements ou aucun).")
     adjusted: dict[str, tuple[str, str]] = {}
     if k and epv >= HARD_MIN_EPV and k > 1:
         try:
             r = fit(list(X.columns))
             ci = np.exp(r.conf_int())
             for col in X.columns:
-                adjusted[col] = (f"{fmt(math.exp(r.params[col]), 2)} [{fmt(ci.loc[col, 0], 2)}"
-                                 f" − {fmt(ci.loc[col, 1], 2)}]", fmt_p(float(r.pvalues[col])))
+                adjusted[col] = (fmt_or(math.exp(r.params[col]), ci.loc[col, 0], ci.loc[col, 1]),
+                                 fmt_p(float(r.pvalues[col])))
         except Exception:  # noqa: BLE001
             warnings_.append("Modèle ajusté non estimable (séparation complète ou "
                              "variables redondantes).")

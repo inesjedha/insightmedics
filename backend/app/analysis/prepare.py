@@ -19,6 +19,8 @@ from .plan import AnalysisPlan, Derived
 INCLUDED = "INCLUS_ANALYSE"
 REASON = "MOTIF_EXCLUSION"
 _NUMBER_RE = re.compile(r"[-+]?\d+(?:[.,]\d+)?")
+# « 1 200 », « 1 200,5 » : milliers séparés par une espace (simple, insécable ou fine).
+_THOUSANDS_RE = re.compile(r"(?<!\d)(\d{1,3}(?:[ \u00a0\u202f]\d{3})+)(?:[.,](\d+))?(?!\d)")
 _CENSORED_RE = re.compile(r"^\s*[<>≤≥]")
 
 
@@ -43,9 +45,14 @@ def _parse_number(s: pd.Series) -> tuple[pd.Series, dict[str, int]]:
             censored += 1
             out.append(np.nan)
             continue
-        m = _NUMBER_RE.search(text)
-        if m:
-            out.append(float(m.group().replace(",", ".")))
+        t = _THOUSANDS_RE.search(text)
+        if t:
+            text = text[:t.start()] + re.sub(r"[ \u00a0\u202f]", "", t.group(1)) \
+                + (f".{t.group(2)}" if t.group(2) else "") + text[t.end():]
+        found = _NUMBER_RE.findall(text)
+        # Un seul nombre attendu : « 10-15 », « 2 ou 3 » sont ambigus, donc illisibles.
+        if len(found) == 1:
+            out.append(float(found[0].replace(",", ".")))
         else:
             unreadable += 1
             out.append(np.nan)
@@ -73,8 +80,12 @@ def _derive(d: Derived, df: pd.DataFrame) -> tuple[pd.Series, dict[str, Any]]:
             note["n_non_prevues"] = int(sum(_key(v) not in mapping for v in src.dropna()))
     elif d.kind == "bins":
         assert d.source is not None
-        out = pd.cut(pd.to_numeric(df[d.source], errors="coerce"), bins=d.cuts,
-                     labels=d.labels, right=False).astype("object")
+        values = pd.to_numeric(df[d.source], errors="coerce")
+        # Catégorie ordonnée : les tableaux suivent l'ordre des classes, pas l'alphabet.
+        out = pd.cut(values, bins=d.cuts, labels=d.labels, right=False)
+        outside = int((values.notna() & out.isna()).sum())
+        if outside:
+            note["hors_classes"] = outside
     elif d.kind == "parse_number":
         assert d.source is not None
         out, counts = _parse_number(df[d.source])
@@ -84,7 +95,12 @@ def _derive(d: Derived, df: pd.DataFrame) -> tuple[pd.Series, dict[str, Any]]:
         follow = pd.to_numeric(df[d.follow_up], errors="coerce")
         out = (follow - base) / base.where(base != 0) * 100
     if d.type == "quantitative" and d.kind != "bins":
-        out = pd.to_numeric(out, errors="coerce")
+        converted = pd.to_numeric(out, errors="coerce")
+        lost = int((out.notna() & converted.isna()).sum())
+        if lost and d.kind in ("formula", "recode"):
+            raise ValueError(f"colonne « {d.name} » : {lost} valeur(s) non numériques ; "
+                             "déclarez-la qualitative (type categorical)")
+        out = converted
     note["n_renseignes"] = int(out.notna().sum())
     return out, note
 
@@ -131,3 +147,13 @@ def prepare(df: pd.DataFrame, plan: AnalysisPlan,
 def analysed(base: pd.DataFrame) -> pd.DataFrame:
     """Les lignes incluses dans l'analyse."""
     return base[base[INCLUDED] == 1]
+
+
+def dry_run(df: pd.DataFrame, plan: AnalysisPlan) -> list[str]:
+    """Applique le plan à blanc (colonnes calculées et exclusions) ; retourne les erreurs
+    (colonne déclarée quantitative qui contient du texte, expression invalide…)."""
+    try:
+        prepare(df, plan)
+    except ValueError as exc:  # ExprError hérite de ValueError
+        return [str(exc)]
+    return []
