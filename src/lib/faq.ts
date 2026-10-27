@@ -1,4 +1,4 @@
-import { FULL_AUDIT_PRICE_LABEL, getOffer, weeksLabel } from "@/lib/offers";
+import { FULL_AUDIT_PRICE_LABEL, getExtraOffer, getOffer, weeksLabel } from "@/lib/offers";
 
 type FaqItem = { question: string; answer: string };
 
@@ -21,7 +21,11 @@ export const FAQ: FaqItem[] = [
     answer: `Chez Insight Medics, en dinars tunisiens : le test de votre base est gratuit, l'audit complet coûte ${FULL_AUDIT_PRICE_LABEL}, les analyses statistiques avec la partie « Résultats » ${analyses.priceLabel} (${weeksLabel(analyses.delayWeeks)}), la discussion ${discussion.priceLabel} (${weeksLabel(discussion.delayWeeks)}) et l'accompagnement de la thèse complète ${these.priceLabel} (${weeksLabel(these.delayWeeks)}). Le prix est fixé avant de commencer et se règle au lancement.`,
   },
   {
-    question: "Que fait un biostatisticien pour une thèse de médecine ?",
+    question: "Mes données sont sur fiches papier ou en PDF : pouvez-vous les saisir ?",
+    answer: `Oui. Nous saisissons vos fiches papier, scans ou PDF dans une base Excel ou SPSS structurée, une ligne par patient, prête pour l'audit et l'analyse. Le prix dépend du nombre de fiches et de données par fiche : nous vous envoyons un devis gratuit avant de commencer. Pour la soutenance, nous préparons aussi votre présentation PowerPoint (${getExtraOffer("soutenance").priceLabel}).`,
+  },
+  {
+    question: "Que fait un biostatisticien pour une thèse de médecine ?",
     answer:
       "Il traduit votre question de recherche en plan d'analyse, choisit les tests adaptés (comparaison de groupes, régression, survie, courbe ROC), vérifie leurs conditions d'application, réalise les calculs et vous aide à interpréter et présenter les résultats. Chez Insight Medics, chaque analyse est validée par un biostatisticien et relue par un médecin pour la cohérence clinique.",
   },

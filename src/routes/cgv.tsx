@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
-import { FULL_AUDIT_PRICE_LABEL, OFFERS, weeksLabel } from "@/lib/offers";
+import { EXTRA_OFFERS, FULL_AUDIT_PRICE_LABEL, OFFERS, weeksLabel } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 import { LegalBlock } from "@/components/site/LegalBlock";
 
@@ -60,6 +60,16 @@ function CgvPage() {
                   {"\u00a0"}: {o.priceLabel}.
                 </li>
               ))}
+              {EXTRA_OFFERS.map((o) => (
+                <li key={o.id}>
+                  <strong>{o.title}</strong>
+                  {"\u00a0"}:{" "}
+                  {o.price === null
+                    ? "sur devis, selon le nombre de fiches et de données par fiche, établi avant le début du travail"
+                    : `${o.priceLabel}`}
+                  .
+                </li>
+              ))}
             </ul>
             <p>
               Les devis pour articles, mémoires ou périmètres spécifiques sont établis sur demande
@@ -85,6 +95,10 @@ function CgvPage() {
                 </li>
               ))}
             </ul>
+            <p>
+              Saisie de fiches et présentation de soutenance : délai convenu avec le client lors de
+              l'échange préalable, selon le volume et la date de soutenance.
+            </p>
             <p>
               Les délais peuvent être ajustés selon la qualité initiale de la base et le volume de
               retravaux nécessaires. Toute évolution est communiquée au client avant impact.

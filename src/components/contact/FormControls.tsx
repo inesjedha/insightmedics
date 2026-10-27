@@ -15,7 +15,9 @@ import { cn } from "@/lib/utils";
 
 export type ServiceOffer = {
   id: string;
-  number: number;
+  /** Numéro des trois formules ; les services complémentaires portent une étiquette. */
+  number?: number;
+  tag?: string;
   name: string;
   price: string;
   delay: string;
@@ -351,7 +353,7 @@ export function OffersField({
                 <Check className={cn("h-3 w-3", !selected && "opacity-0")} strokeWidth={3} />
               </span>
               <span aria-hidden className="font-hand text-2xl leading-none text-brand">
-                {offer.number}.
+                {offer.number ? `${offer.number}.` : offer.tag}
               </span>
               <span className="mt-1.5 pr-6 text-[15px] font-semibold leading-snug">
                 {offer.name}

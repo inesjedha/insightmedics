@@ -6,6 +6,7 @@ import { PageHero } from "@/components/site/PageHero";
 import { FinalCTA } from "@/components/site/FinalCTA";
 import { OFFER_GRID, OfferCard } from "@/components/site/OfferCard";
 import { OrderSteps } from "@/components/site/OrderSteps";
+import { ExtraOffers } from "@/components/site/ExtraOffers";
 import { TestBanner } from "@/components/site/TestBanner";
 import { OFFERS } from "@/lib/offers";
 
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/services")({
       path: "/services",
       title: "Analyses statistiques et rédaction de thèse | Insight Medics",
       description:
-        "Test gratuit de votre base, analyses + résultats, discussion ou thèse complète : des formules claires en dinars, par des médecins et des biostatisticiens.",
+        "Test gratuit de votre base, analyses + résultats, discussion ou thèse complète, saisie de vos fiches papier et présentation de soutenance : des prix clairs en dinars.",
       jsonLd: [servicesLd, breadcrumbLd([["Services", "/services"]])],
     }),
   component: ServicesPage,
@@ -62,6 +63,7 @@ function ServicesPage() {
             />
           ))}
         </div>
+        <ExtraOffers className="mt-14" />
       </Section>
 
       <OrderSteps />

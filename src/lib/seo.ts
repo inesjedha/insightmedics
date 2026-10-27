@@ -1,7 +1,7 @@
 import film16x9 from "@/assets/film/insight-medics-film-16x9.mp4";
 import poster16x9 from "@/assets/film/poster-16x9.jpg";
 import { FAQ } from "@/lib/faq";
-import { FULL_AUDIT_PRICE_LABEL, OFFERS } from "@/lib/offers";
+import { EXTRA_OFFERS, FULL_AUDIT_PRICE_LABEL, OFFERS } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 
 /**
@@ -180,6 +180,21 @@ export const servicesLd: JsonLd = {
         "@type": "Service",
         name: o.title,
         description: `${o.description} ${o.delay}.`,
+        serviceType: "Accompagnement de thèse de médecine",
+        areaServed: { "@type": "Country", name: "Tunisie" },
+        provider: { "@id": ORG_ID },
+      },
+    })),
+    // Services complémentaires : la saisie est sur devis (pas de prix publié).
+    ...EXTRA_OFFERS.map((o) => ({
+      "@type": "Offer",
+      name: o.title,
+      ...(o.price === null ? {} : { price: o.price, priceCurrency: "TND" }),
+      url: absoluteUrl(`/contact?offre=${o.id}`),
+      itemOffered: {
+        "@type": "Service",
+        name: o.title,
+        description: `${o.description} ${o.priceNote}`,
         serviceType: "Accompagnement de thèse de médecine",
         areaServed: { "@type": "Country", name: "Tunisie" },
         provider: { "@id": ORG_ID },
