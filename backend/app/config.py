@@ -5,6 +5,9 @@ from typing import Literal
 
 from pydantic_settings import BaseSettings
 
+# Profondeur de raisonnement de Claude (seul réglage de la réflexion sur Opus 5.5).
+Effort = Literal["low", "medium", "high", "xhigh", "max"]
+
 
 class Settings(BaseSettings):
     # SQLite par défaut (dev) ; en prod, DATABASE_URL Postgres fournie par Railway.
@@ -26,7 +29,10 @@ class Settings(BaseSettings):
     llm_model: str = "claude-opus-5-5"
     # Profondeur de raisonnement : low | medium | high | xhigh | max (seul réglage de la
     # réflexion sur Opus 5.5, toujours active). Plus haut = plus fin, plus lent, plus cher.
-    llm_effort: Literal["low", "medium", "high", "xhigh", "max"] = "xhigh"
+    llm_effort: Effort = "xhigh"
+    # Relecture « mots simples » des textes de l'étudiant : une réécriture, pas un jugement,
+    # d'où un effort plus bas (moins cher, plus rapide).
+    llm_plain_effort: Effort = "medium"
     # Plafond de sortie par appel : couvre la réflexion ET la réponse JSON. On prend le
     # maximum d'Opus 5.5 (128k) : à l'effort xhigh, 64k ne suffisaient pas pour une base de
     # 71 variables (dictionnaire tronqué, audit du 27/10/2026). Seuls les jetons réellement

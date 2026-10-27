@@ -6,6 +6,8 @@ import { Section, SectionHeader } from "@/components/site/Section";
 import {
   ReportHero,
   SpottedInBase,
+  ReadingGuide,
+  PatientCount,
   BlockingPoints,
   OfferNudge,
   RecordsToOpen,
@@ -142,6 +144,8 @@ function ClientResultPage() {
               assessment={assessment}
               workbookHref={workbookHref}
             />
+            <ReadingGuide assessment={assessment} />
+            <PatientCount result={result} />
             <SpottedInBase
               copies={result.copies}
               highlights={assessment?.highlights}

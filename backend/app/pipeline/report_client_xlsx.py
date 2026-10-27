@@ -3,10 +3,10 @@
 - « À lire d'abord » : verdict, note, chiffres clés, les points qui bloquent, mode d'emploi ;
 - « Dossiers à ouvrir » : la feuille de route aux archives, un dossier ou une paire par
   ligne, avec une colonne pour noter ce qu'on y trouve ;
-- « Anomalies à vérifier » : une ligne par anomalie, avec ce qu'il faut vérifier et une
+- « Points à vérifier » : une ligne par point, avec ce qu'il faut vérifier et une
   colonne « Votre décision » à remplir (listes déroulantes) ;
 - « Questions pour votre directeur » : les décisions à prendre, par priorité ;
-- « Score détaillé » : la grille en 8 domaines, en clair, et le plafond éventuel.
+- « Votre note en détail » : la grille en 8 domaines, en clair, et le plafond éventuel.
 
 Le classeur expert (10 onglets, report_xlsx.py) reste disponible dans l'admin. Les
 patients sont désignés par leur numéro d'inclusion ; si la colonne identifiant est une
@@ -54,7 +54,7 @@ PRIORITY_FILL = {"avant_analyse": PatternFill("solid", fgColor="FBE4E1"),
                  "importante": PatternFill("solid", fgColor="FDF0D8"),
                  "facultative": PatternFill("solid", fgColor="EEF0F4")}
 DECISION_CHOICES = ["À vérifier", "Vérifié : c'est correct", "Corrigé dans la base",
-                    "Même patient (doublon)", "Patients différents", "Introuvable dans le dossier"]
+                    "Même patient saisi deux fois", "Patients différents", "Introuvable dans le dossier"]
 
 
 def _table(ws: Worksheet, row: int, headers: list[str], widths: list[int],
@@ -149,7 +149,7 @@ def _sheet_read_first(wb: Workbook, prof: dict, score: dict, assess: dict, n_fin
     caps = score.get("plafonds_appliques") or []
     if caps:
         row = _text(ws, row, f"Note limitée à {_fr(score.get('score_final'))} : {caps[0]['defaut']}. "
-                             f"Sans ce plafond, les 8 domaines totalisent {_fr(score.get('score_brut'))}.",
+                             f"Sans ce problème, les 8 points totaliseraient {_fr(score.get('score_brut'))}.",
                     MUTED)
     row += 1
 
@@ -161,7 +161,7 @@ def _sheet_read_first(wb: Workbook, prof: dict, score: dict, assess: dict, n_fin
     n_red = sum(1 for m in missions if m.get("feu") == "rouge")
     tiles = [("Patients", patients),
              ("Saisis deux fois ?", counts["duplicated_rows"]),
-             ("Données manquantes", f"{_fr(counts['missing_useful_pct'])} %"),
+             ("Cases vides", f"{_fr(counts['missing_useful_pct'])} %"),
              ("Missions", f"{len(missions)} (dont {n_red} rouges)") if missions
              else ("Points bloquants", n_points)]
     for j, (label, value) in enumerate(tiles, start=1):
@@ -218,7 +218,7 @@ def _sheet_read_first(wb: Workbook, prof: dict, score: dict, assess: dict, n_fin
         "1. Onglet « Dossiers à ouvrir » : la liste des dossiers à sortir des archives, et ce "
         "qu'il faut y relever. Notez ce que vous trouvez dans la colonne jaune.",
         "2. Onglet « Questions pour votre directeur » : apportez-les à votre prochain rendez-vous.",
-        "3. Onglet « Anomalies à vérifier » : le détail de chaque point, si vous voulez comprendre.",
+        "3. Onglet « Points à vérifier » : le détail de chaque point, si vous voulez comprendre.",
         f"4. Renvoyez-nous ce classeur rempli avec votre base corrigée : nous réalisons "
         f"{ANALYSIS_OFFER} et vous remettons la base nettoyée, les tableaux et les tests.",
         f"Dr Hamza sur WhatsApp : {WHATSAPP_DISPLAY} · {CONTACT_EMAIL}",
@@ -228,12 +228,12 @@ def _sheet_read_first(wb: Workbook, prof: dict, score: dict, assess: dict, n_fin
 
 
 def _sheet_findings(wb: Workbook, findings: list[dict], hide_ids: bool) -> None:
-    ws = wb.create_sheet("Anomalies à vérifier")
+    ws = wb.create_sheet("Points à vérifier")
     ws.sheet_view.showGridLines = False
-    ws.cell(row=1, column=1, value="Anomalies à vérifier dans vos dossiers").font = TITLE
+    ws.cell(row=1, column=1, value="Points à vérifier dans vos dossiers").font = TITLE
     ws.cell(row=2, column=1, value="Une ligne par point. Remplissez « Votre décision », puis "
             "renvoyez-nous le classeur avec votre base corrigée.").font = MUTED
-    headers = ["N°", "Priorité", "Inclusion(s)", "Variable", "Ce qui ne va pas", "Détail",
+    headers = ["N°", "Priorité", "Inclusion(s)", "Colonne", "Ce qui ne va pas", "Détail",
                "Ce qu'il faut vérifier", "Votre décision", "Fait"]
     row = _table(ws, 4, headers, [6, 16, 18, 22, 38, 52, 32, 26, 8], input_cols=(8, 9))
     if not findings:
@@ -295,19 +295,26 @@ def _sheet_questions(wb: Workbook, decisions: list[dict]) -> None:
 _INTERNAL_MOTIF = ("statut :", "M4", "M5", "jalon", "hash", "inévaluable", "points accordés")
 
 
+# Les 8 domaines de la grille, en mots simples (même libellés que la page d'audit).
+DOMAIN_PLAIN = {1: "Chaque patient compté une seule fois", 2: "Des cases remplies",
+                3: "Des valeurs possibles", 4: "Des colonnes qui ne se contredisent pas",
+                5: "Un tableau fidèle à votre protocole", 6: "Un critère principal mesurable",
+                7: "Des colonnes expliquées", 8: "Prêt pour les calculs prévus"}
+
+
 def _sheet_score(wb: Workbook, score: dict) -> None:
-    ws = wb.create_sheet("Score détaillé")
+    ws = wb.create_sheet("Votre note en détail")
     ws.sheet_view.showGridLines = False
-    ws.cell(row=1, column=1, value="Votre note, domaine par domaine").font = TITLE
+    ws.cell(row=1, column=1, value="Votre note, point par point").font = TITLE
     ws.cell(row=2, column=1, value=f"Note : {_fr(score.get('score_final'))}/100 — "
-            f"{score.get('niveau_qualite', '')}. Total des 8 domaines : "
+            f"{score.get('niveau_qualite', '')}. Total des 8 points : "
             f"{_fr(score.get('score_brut'))}/100.").font = NORM
     row = 3
     for cap in score.get("plafonds_appliques") or []:
-        ws.cell(row=row, column=1, value=f"Note limitée à {cap['plafond']}/100 : "
-                f"{cap['defaut'].lower()}.").font = MUTED
+        ws.cell(row=row, column=1, value=f"La note ne peut pas dépasser {cap['plafond']}/100 "
+                f"tant que ce problème reste : {cap['defaut'].lower()}.").font = MUTED
         row += 1
-    row = _table(ws, row + 1, ["Domaine", "Points", "Ce qui coûte des points"], [44, 12, 90])
+    row = _table(ws, row + 1, ["Ce que nous vérifions", "Points", "Ce qui coûte des points"], [44, 12, 90])
     for d in score.get("domaines") or []:
         losses = []
         for c in d.get("criteres") or []:
@@ -318,7 +325,8 @@ def _sheet_score(wb: Workbook, score: dict) -> None:
                 motif = ""
             losses.append(f"{c['critere']} ({_fr(c['obtenu'])}/{c['max']})"
                           + (f" : {motif}" if motif else ""))
-        _row(ws, row, [f"{d['domaine']}. {d['nom']}", f"{_fr(d['obtenu'])} / {d['max']}",
+        name = DOMAIN_PLAIN.get(d["domaine"], d["nom"])
+        _row(ws, row, [f"{d['domaine']}. {name}", f"{_fr(d['obtenu'])} / {d['max']}",
                        "\n".join(losses) or "Rien à signaler"])
         ws.cell(row=row, column=1).font = BOLD
         row += 1

@@ -177,3 +177,56 @@ def test_audit_paye_sans_jugement_ia_passe_en_echec(audit_id: str, monkeypatch):
     unlock_jobs.run(audit_id, _claim(audit_id))
     audit = _status(audit_id)
     assert audit.status == "failed" and not audit.paid and "IA" in audit.error
+
+
+# ---------------------------------------------------- relance d'un audit livré
+
+def test_relance_audit_livre_lien_client_garde_pendant_la_relance(audit_id: str, ai_calls,
+                                                                   admin_headers):
+    client = TestClient(app)
+    client.post(f"/audit/{audit_id}/unlock", headers=admin_headers)
+    before = _status(audit_id)
+    with SessionLocal() as db:
+        job = unlock_jobs.claim_rerun(db, db.get(Audit, audit_id))
+        again = unlock_jobs.claim_rerun(db, db.get(Audit, audit_id))
+    assert job is not None and again is None                 # une seule relance à la fois
+    # Pendant la relance : toujours livré, le lien client répond.
+    assert _status(audit_id).status == "done"
+    assert client.get(f"/r/{before.token}").status_code == 200
+    listed = {a["id"]: a for a in client.get("/audit", headers=admin_headers).json()}
+    assert listed[audit_id]["rerunning"] is True
+    unlock_jobs.run(audit_id, job, rerun=True)
+    after = _status(audit_id)
+    assert len(ai_calls) == 2 and after.job_id is None and after.status == "done"
+    assert after.expires_at == before.expires_at and after.token == before.token
+
+
+def test_relance_en_echec_garde_l_ancien_bilan(audit_id: str, monkeypatch, admin_headers):
+    client = TestClient(app)
+    client.post(f"/audit/{audit_id}/unlock", headers=admin_headers)
+    score = _status(audit_id).score
+
+    def boom(*_args):
+        raise RuntimeError("API saturée")
+
+    monkeypatch.setattr(unlock_jobs, "run_audit", boom)
+    assert client.post(f"/audit/{audit_id}/rerun", headers=admin_headers).status_code == 202
+    audit = _status(audit_id)
+    assert audit.status == "done" and audit.score == score and audit.job_id is None
+    assert "ancien bilan conservé" in audit.error
+
+
+def test_relance_refusee_si_audit_pas_livre(audit_id: str, admin_headers):
+    assert TestClient(app).post(f"/audit/{audit_id}/rerun",
+                                headers=admin_headers).status_code == 409
+
+
+def test_relance_interrompue_liberee(audit_id: str, admin_headers):
+    TestClient(app).post(f"/audit/{audit_id}/unlock", headers=admin_headers)
+    with SessionLocal() as db:
+        unlock_jobs.claim_rerun(db, db.get(Audit, audit_id))
+    later = datetime.now(UTC) + timedelta(minutes=settings.unlock_lease_minutes + 1)
+    with SessionLocal() as db:
+        assert unlock_jobs.release_stale_claims(db, now=later) >= 1
+    audit = _status(audit_id)
+    assert audit.status == "done" and audit.job_id is None and "interrompue" in audit.error

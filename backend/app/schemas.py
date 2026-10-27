@@ -108,6 +108,7 @@ class AuditResult(CamelModel):
     error: str | None = None
     purged: bool = False
     expires_at: str | None = None
+    rerunning: bool = False       # relance de l'audit IA en cours (audit déjà livré)
 
     @classmethod
     def from_audit(cls, a: Audit, *, view: AuditView) -> AuditResult:
@@ -138,6 +139,8 @@ class AuditResult(CamelModel):
             error=a.error if view == "admin" else None,
             purged=bool(a.purged_at) if view == "admin" else False,
             expires_at=a.expires_at if view == "admin" else None,
+            rerunning=(view == "admin" and a.status == AuditStatus.DONE
+                       and a.job_id is not None),
         )
 
 

@@ -213,7 +213,7 @@ def test_plan_ia_incoherent_renvoye_au_modele(monkeypatch):
     answers = [json.dumps({**PLAN, "groups": {"variable": "Inexistante"}}), json.dumps(PLAN)]
     prompts: list[str] = []
 
-    def fake(system: str, user: str) -> str:
+    def fake(system: str, user: str, effort: str | None = None) -> str:
         prompts.append(user)
         return answers.pop(0)
 
@@ -240,7 +240,7 @@ def test_redaction_ia_refusee_si_chiffre_invente(monkeypatch):
     bad = {**good, "sections": [{**good["sections"][0], "paragraphs": ["32 patients (88 %)."]}]}
     answers = [json.dumps(bad), json.dumps(good)]
     monkeypatch.setattr(settings, "anthropic_api_key", "test")
-    monkeypatch.setattr(llm_client, "call_llm", lambda s, u: answers.pop(0))
+    monkeypatch.setattr(llm_client, "call_llm", lambda s, u, e=None: answers.pop(0))
     out, notes = llm_write.run_write_llm(ctx)
     assert out is not None and out.sections[0].paragraphs == ["31 patients sur 36 (86,1 %)."]
     assert any("tentative 2" in n for n in notes)

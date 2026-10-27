@@ -84,6 +84,15 @@ export function unlockAudit(id: string): Promise<AuditResult> {
   });
 }
 
+/** Relance l'audit IA d'un audit déjà livré (prompts améliorés) : coûte un audit IA. Le
+ * lien client affiche l'ancien bilan jusqu'à ce que le nouveau soit prêt. */
+export function rerunAudit(id: string): Promise<AuditResult> {
+  return request<AuditResult>(`/audit/${encodeURIComponent(id)}/rerun`, {
+    method: "POST",
+    admin: true,
+  });
+}
+
 // --- Espace client (lien privé /r/:token, sans compte) ---
 
 /** Lève ApiError 404 (lien invalide) ou 410 (lien expiré). */

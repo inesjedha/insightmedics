@@ -287,11 +287,7 @@ export function ReportHero({
           hint={result.duplicatedRows ? "à vérifier au dossier" : "aucune copie repérée"}
           alert={result.duplicatedRows > 0}
         />
-        <Tile
-          label="Données manquantes"
-          value={`${fr(missing)} %`}
-          hint="dans les colonnes utilisées"
-        />
+        <Tile label="Cases vides" value={`${fr(missing)} %`} hint="dans les colonnes utiles" />
         {missions.length ? (
           <Tile
             label="Missions"
@@ -338,6 +334,167 @@ function Tile({
       </dd>
       <dd className="text-xs text-muted-foreground">{hint}</dd>
     </div>
+  );
+}
+
+/* ------------------------------------------- vos 3 étapes (sommaire) */
+
+/** Sommaire de la page : ce que l'étudiant a à faire, en 3 étapes cliquables. */
+export function ReadingGuide({ assessment }: { assessment: AiAssessment | null }) {
+  const nMissions = assessment?.missions?.length || blockingPoints(assessment).length;
+  const nRecords = checklistItems(assessment).length;
+  const nQuestions = assessment?.client_decisions?.length ?? 0;
+  const steps = [
+    {
+      href: "#points-bloquants",
+      verb: "Comprendre",
+      what: `${nMissions} ${assessment?.missions?.length ? "mission" : "point"}${nMissions > 1 ? "s" : ""}`,
+      detail: "ce qui ne va pas, du plus urgent au moins urgent",
+      n: nMissions,
+    },
+    {
+      href: "#archives",
+      verb: "Vérifier aux archives",
+      what: `${nRecords} dossier${nRecords > 1 ? "s" : ""} à ouvrir`,
+      detail: "avec, pour chacun, la case à regarder",
+      n: nRecords,
+    },
+    {
+      href: "#questions",
+      verb: "Décider avec votre directeur",
+      what: `${nQuestions} question${nQuestions > 1 ? "s" : ""}`,
+      detail: "à trancher ensemble, par écrit",
+      n: nQuestions,
+    },
+  ].filter((step) => step.n > 0);
+  if (!steps.length) return null;
+  return (
+    <nav aria-label="Ce que vous avez à faire" className="space-y-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        Ce que vous avez à faire
+      </p>
+      <ol className="grid gap-3 sm:grid-cols-3">
+        {steps.map((step, i) => (
+          <li key={step.href}>
+            <a
+              href={step.href}
+              className="group flex h-full items-start gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-brand/50"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-brand-foreground">
+                {i + 1}
+              </span>
+              <span className="min-w-0 space-y-0.5">
+                <span className="block text-sm font-semibold text-muted-foreground">
+                  {step.verb}
+                </span>
+                <span className="block text-lg font-bold leading-snug group-hover:text-brand">
+                  {step.what}
+                </span>
+                <span className="block text-sm text-foreground/70">{step.detail}</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+/* ------------------------------------ combien de patients compte la thèse */
+
+/** Schéma : les lignes du fichier, réparties entre patients sûrs, lignes peut-être
+ * recopiées et lignes à retirer. Affiché seulement s'il y a un écart à expliquer. */
+export function PatientCount({ result }: { result: AuditResult }) {
+  const rows = result.rowCount;
+  const patients = Math.min(result.patientCount || rows, rows);
+  const sure = Math.min(result.patientMin ?? patients, patients);
+  const maybe = patients - sure;
+  const extra = rows - patients;
+  if ((!maybe && !extra) || rows <= 0) return null;
+  const s = (n: number) => (n > 1 ? "s" : "");
+  const parts = [
+    {
+      n: sure,
+      label: `${sure} patient${s(sure)}`,
+      hint: "aucune copie repérée",
+      bar: "bg-brand",
+      dot: "bg-brand",
+    },
+    {
+      n: maybe,
+      label: `${maybe} ligne${s(maybe)} peut-être recopiée${s(maybe)}`,
+      hint: "le dossier dira s'il s'agit de vrais patients",
+      bar: "bg-amber-400 bg-[repeating-linear-gradient(135deg,transparent_0_6px,rgb(255_255_255/0.45)_6px_10px)]",
+      dot: "bg-amber-400",
+    },
+    {
+      n: extra,
+      label: `${extra} ligne${s(extra)} à retirer`,
+      hint: "lignes vides ou fiche vierge : ce ne sont pas des patients",
+      bar: "bg-muted-foreground/30",
+      dot: "bg-muted-foreground/40",
+    },
+  ].filter((part) => part.n > 0);
+  return (
+    <section className="space-y-4 rounded-xl border border-border bg-card p-5 sm:p-7">
+      <SectionTitle
+        title="Combien de patients compte votre thèse ?"
+        intro="C'est le chiffre de départ de tous vos pourcentages. Voici ce que contiennent les lignes de votre tableau."
+      />
+      <div>
+        <p className="mb-1.5 text-sm font-semibold">
+          {rows} ligne{s(rows)} dans votre tableau
+        </p>
+        <div
+          className="flex h-10 overflow-hidden rounded-lg"
+          role="img"
+          aria-label={parts.map((part) => part.label).join(", ")}
+        >
+          {parts.map((part) => (
+            <span
+              key={part.label}
+              className={cn(
+                "flex items-center justify-center border-r-2 border-card text-sm font-bold last:border-r-0",
+                part.bar,
+                part.bar === "bg-brand" ? "text-brand-foreground" : "text-foreground",
+              )}
+              style={{ width: `${(part.n / rows) * 100}%` }}
+            >
+              {part.n / rows >= 0.08 ? part.n : ""}
+            </span>
+          ))}
+        </div>
+      </div>
+      <ul className="grid gap-3 sm:grid-cols-3">
+        {parts.map((part) => (
+          <li key={part.label} className="flex items-start gap-2.5 text-sm">
+            <span className={cn("mt-1 h-3 w-3 shrink-0 rounded-sm", part.dot)} />
+            <span>
+              <span className="font-bold">{part.label}</span>
+              <span className="block text-foreground/70">{part.hint}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="rounded-lg bg-accent px-4 py-3 leading-relaxed text-accent-foreground">
+        {maybe ? (
+          <>
+            <strong>
+              Votre thèse compte entre {sure} et {patients} patients.
+            </strong>{" "}
+            Si les lignes en orange sont des copies, chaque pourcentage change. C'est la première
+            chose à vérifier aux archives.
+          </>
+        ) : (
+          <>
+            <strong>
+              Votre thèse compte {patients} patient{s(patients)}, pas {rows}.
+            </strong>{" "}
+            Nous retirons pour vous les lignes qui ne sont pas des patients.
+          </>
+        )}
+      </p>
+    </section>
   );
 }
 
@@ -434,8 +591,8 @@ function CopiesVisual({ copies }: { copies: CopiesView }) {
             />
           )}
           <p className="text-xs text-muted-foreground">
-            Part des valeurs identiques entre deux lignes. Seul le dossier dira s'il s'agit de
-            copies ou de vrais patients.
+            Part des cases identiques entre deux lignes. Seul le dossier dira s'il s'agit de copies
+            ou de vrais patients.
           </p>
         </div>
       )}
@@ -631,7 +788,7 @@ function Missions({ missions, storageKey }: { missions: Mission[]; storageKey: s
       <SectionTitle
         title="Vos missions"
         note={`${nDone} terminée${nDone > 1 ? "s" : ""} sur ${missions.length}`}
-        intro="Une mission par problème, de la plus urgente à la moins urgente. Les rouges d'abord : tant qu'elles ne sont pas terminées, aucune analyse n'est fiable."
+        intro="Une mission par problème, de la plus urgente à la moins urgente. Commencez par les rouges : tant qu'elles ne sont pas terminées, aucun résultat de votre thèse n'est fiable."
       />
       {missions.map((m, i) => {
         const done = !!checks[i];
@@ -794,8 +951,8 @@ export function OfferNudge() {
     <aside className="flex flex-wrap items-center gap-4 rounded-xl border border-brand/25 bg-accent px-5 py-4 sm:px-6">
       <p className="min-w-0 flex-[999_1_360px] leading-relaxed text-accent-foreground">
         <strong>Pas le temps de tout reprendre avant la soutenance&nbsp;?</strong> Vous vérifiez les
-        dossiers, Dr Hamza et l'équipe font tout le reste en une semaine&nbsp;: nettoyage, tableaux,
-        tests.
+        dossiers, Dr Hamza et l'équipe font tout le reste en une semaine&nbsp;: correction du
+        tableau, calculs, tableaux de résultats.
       </p>
       <a
         href="#suite"
@@ -823,7 +980,10 @@ export function RecordsToOpen({
   if (!items.length) return null;
   const nDone = items.filter((_, i) => checks[i]).length;
   return (
-    <section className="space-y-4 rounded-xl border border-border bg-card p-5 sm:p-7">
+    <section
+      id="archives"
+      className="scroll-mt-24 space-y-4 rounded-xl border border-border bg-card p-5 sm:p-7"
+    >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <SectionTitle
           title="Demain, aux archives"
@@ -905,7 +1065,10 @@ export function DirectorQuestions({
   const hidden = indexed.length - shownCount;
 
   return (
-    <section className="space-y-4 rounded-xl border border-border bg-card p-5 sm:p-7">
+    <section
+      id="questions"
+      className="scroll-mt-24 space-y-4 rounded-xl border border-border bg-card p-5 sm:p-7"
+    >
       <SectionTitle
         title="À trancher avec votre directeur"
         intro="Apportez ces questions à votre prochain rendez-vous et gardez une trace écrite de ses réponses."
@@ -1122,12 +1285,12 @@ export function NextSteps({
         <TimelineStep n={1} who="Vous, cette semaine">
           {nRecords
             ? "Ouvrir les dossiers de la liste « Demain, aux archives » et noter ce que vous y trouvez."
-            : "Relire les anomalies du classeur et noter vos décisions."}
+            : "Relire les points relevés dans le classeur et noter vos décisions."}
         </TimelineStep>
         <TimelineStep n={2} who="Avec votre directeur">
           {nQuestions
             ? `Trancher les ${nQuestions} questions, en commençant par celles « avant toute analyse ».`
-            : "Valider le plan d'analyse."}
+            : "Valider avec lui ce que vous allez présenter."}
         </TimelineStep>
         <li className="relative">
           <span className="absolute -left-[2.6rem] top-6 flex h-8 w-8 items-center justify-center rounded-full bg-brand text-sm font-bold text-brand-foreground ring-4 ring-background sm:-left-[3.1rem]">
@@ -1141,9 +1304,9 @@ export function NextSteps({
               </h2>
               <ul className="space-y-2">
                 {[
-                  "Votre base nettoyée et recodée, prête pour les tests",
+                  "Votre tableau corrigé, prêt pour les calculs",
                   "Les tableaux et figures de votre partie Résultats",
-                  "Les tests statistiques adaptés à votre protocole, expliqués simplement",
+                  "Les calculs adaptés à votre thèse, expliqués simplement",
                   "Un médecin et un biostatisticien relisent tout",
                 ].map((line) => (
                   <li key={line} className="flex items-start gap-2.5 leading-relaxed">
@@ -1280,13 +1443,13 @@ const SEVERITY_ORDER = ["critique", "majeure", "moderee", "mineure"];
 /** Les 8 domaines de la grille, en mots simples (le nom technique reste affiché en petit). */
 const DOMAIN_PLAIN: Record<number, string> = {
   1: "Chaque patient compté une seule fois",
-  2: "Des données remplies",
-  3: "Des valeurs plausibles",
-  4: "Des variables cohérentes entre elles",
-  5: "Une base conforme à votre protocole",
-  6: "Un critère de jugement calculable",
-  7: "Une base documentée",
-  8: "Prête pour les tests prévus",
+  2: "Des cases remplies",
+  3: "Des valeurs possibles",
+  4: "Des colonnes qui ne se contredisent pas",
+  5: "Un tableau fidèle à votre protocole",
+  6: "Un critère principal mesurable",
+  7: "Des colonnes expliquées",
+  8: "Prêt pour les calculs prévus",
 };
 
 export function TechnicalDetails({
@@ -1306,8 +1469,9 @@ export function TechnicalDetails({
         <Fold title="Votre note, domaine par domaine">
           {cap && (
             <p className="mb-4 text-sm text-muted-foreground">
-              Les 8 domaines totalisent {fr(scoreDetail.score_brut)}/100, mais la note est limitée à{" "}
-              {fr(cap.plafond)}&nbsp;: {cap.defaut.toLowerCase()}.
+              Les 8 points totalisent {fr(scoreDetail.score_brut)}/100, mais la note ne peut pas
+              dépasser {fr(cap.plafond)} tant que ce problème reste&nbsp;:{" "}
+              {cap.defaut.toLowerCase()}.
             </p>
           )}
           <ul className="space-y-3">
@@ -1316,12 +1480,7 @@ export function TechnicalDetails({
               return (
                 <li key={d.domaine}>
                   <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span>
-                      <span className="font-medium">{DOMAIN_PLAIN[d.domaine] ?? d.nom}</span>
-                      {DOMAIN_PLAIN[d.domaine] && (
-                        <span className="ml-2 text-xs text-muted-foreground">{d.nom}</span>
-                      )}
-                    </span>
+                    <span className="font-medium">{DOMAIN_PLAIN[d.domaine] ?? d.nom}</span>
                     <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                       {fr(d.obtenu)}/{d.max}
                     </span>
@@ -1342,7 +1501,7 @@ export function TechnicalDetails({
         </Fold>
       )}
       {sorted.length > 0 && (
-        <Fold title={`Les ${sorted.length} anomalies, une par une`}>
+        <Fold title={`Les ${sorted.length} points relevés, un par un`}>
           <ul className="space-y-3">
             {sorted.map((f) => (
               <li key={f.id} className="rounded-lg border border-border p-4">
@@ -1378,12 +1537,11 @@ export function TechnicalDetails({
       )}
       <Fold title="Comment nous avons audité votre base">
         <p className="text-sm leading-relaxed text-foreground/80">
-          Votre base est contrôlée variable par variable puis patient par patient : doublons et
-          lignes recopiées, valeurs impossibles, cohérence entre variables (dates, scores de
-          gravité, durées), données manquantes et concordance avec votre protocole. La note sur 100
-          suit une grille en 8 domaines conçue par notre équipe médicale et statistique. Votre
-          fichier d'origine n'est jamais modifié et rien n'est inventé&nbsp;: une valeur introuvable
-          reste manquante.
+          Nous relisons votre tableau colonne par colonne, puis patient par patient&nbsp;: patients
+          saisis deux fois, valeurs impossibles, dates dans le mauvais ordre, scores mal calculés,
+          cases vides, et ce que prévoit votre protocole. La note sur 100 suit une grille de 8
+          points conçue par nos médecins et biostatisticiens. Votre fichier d'origine n'est jamais
+          modifié et rien n'est inventé&nbsp;: une case vide reste vide.
         </p>
       </Fold>
     </section>
@@ -1457,8 +1615,8 @@ export function WorkbookDownload({ href }: { href: string }) {
         <div className="min-w-0 flex-[999_1_320px] space-y-1">
           <p className="text-lg font-bold">Votre classeur d'audit (Excel)</p>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            À lire d'abord · Dossiers à ouvrir, avec une colonne pour vos notes · Anomalies à
-            vérifier · Questions pour votre directeur · Score détaillé. Prêt à imprimer.
+            À lire d'abord · Dossiers à ouvrir, avec une colonne pour vos notes · Points à vérifier
+            · Questions pour votre directeur · Votre note en détail. Prêt à imprimer.
           </p>
         </div>
         <Button asChild size="lg" variant="outline">
@@ -1470,8 +1628,8 @@ export function WorkbookDownload({ href }: { href: string }) {
       <p className="flex items-start gap-2 text-sm text-foreground/80">
         <Database className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
         <span>
-          La base nettoyée, prête pour vos tests, vous est remise avec l'analyse statistique, une
-          fois les dossiers vérifiés&nbsp;: l'analyser avant fausserait vos résultats.
+          Le tableau corrigé vous est remis avec l'analyse, une fois les dossiers vérifiés&nbsp;:
+          faire les calculs avant fausserait vos résultats.
         </span>
       </p>
     </section>

@@ -77,6 +77,8 @@ export interface AuditResult {
   purged: boolean;
   /** Date de purge prévue (ISO) : expiration du lien client, ou de l'aperçu. */
   expiresAt: string | null;
+  /** Admin : relance de l'audit IA en cours (audit déjà livré). */
+  rerunning?: boolean;
 }
 
 export interface CopiedBlock {

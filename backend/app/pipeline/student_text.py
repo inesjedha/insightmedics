@@ -46,6 +46,17 @@ _REPLACEMENTS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bopérationnellement\b"), "précisément"),
     (re.compile(r"\bvariables dérivées\b"), "colonnes calculées"),
     (re.compile(r"\bvariable dérivée\b"), "colonne calculée"),
+    # Mots simples (retour de Hamza, 27/10/2026) : formes sûres, même genre et même nombre
+    (re.compile(r"\b((?i:la|une|cette|chaque|les|des|ces|aux|vos|votre|toute|toutes|deux|trois|"
+                r"quatre|cinq|six)|\d+) variable(s?)\b"), r"\1 colonne\2"),
+    (re.compile(r"\bexploitable(s?)\b"), r"utilisable\1"),
+    (re.compile(r"\bExploitable(s?)\b"), r"Utilisable\1"),
+    (re.compile(r"\bdonnées manquantes\b"), "cases vides"),
+    (re.compile(r"\bDonnées manquantes\b"), "Cases vides"),
+    (re.compile(r"\bmodalités\b"), "réponses possibles"),
+    (re.compile(r"\bmodalité\b"), "réponse possible"),
+    (re.compile(r"\bl'effectif\b"), "le nombre de patients"),
+    (re.compile(r"\bL'effectif\b"), "Le nombre de patients"),
 ]
 _SPACE_BEFORE_PUNCT_RE = re.compile(r" +([,.)])")
 _MULTI_SPACE_RE = re.compile(r"[ \t]{2,}")
