@@ -96,3 +96,11 @@ def test_numeros_de_dossier_masques_partout():
     assert "204/2026" not in out.findings[0].explanation_fr
     assert out.highlights[0].title == "Dossier [masqué] porté trois fois"
     assert out.highlights[0].detail == "Age 75 ans."            # mot ordinaire intact
+
+
+def test_mots_simples_formes_sures():
+    from app.pipeline.student_text import clean
+    assert clean("La taille de l'effectif change.") == "La taille du nombre de patients change."
+    assert clean("« Prélèvement exploitable » est exploitable.") == (
+        "« Prélèvement exploitable » est utilisable.")
+    assert clean("Les modalités de prise en charge") == "Les modalités de prise en charge"

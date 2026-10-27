@@ -63,9 +63,12 @@ Reprends TOUS les problèmes de l'audit ("anomalies_de_l_audit", "liste_de_verif
   « dossier vérifié par l'étudiant, consignes du 28/10 »). Jamais une valeur déduite,
   moyenne, recopiée d'une autre ligne ou « probable ».
 "where" est une condition du langage ci-dessous (`col("Âge") < 0`) ; "lines" désigne les
-lignes du fichier Excel (2 = première ligne de données), comme dans la liste de
-vérification de l'audit. Chaque correction a un "reason" d'une phrase, en français
-simple.
+lignes du fichier Excel (2 = première ligne de données ; pour un fichier SPSS, le numéro
+de cas), comme dans la liste de vérification de l'audit. Avec "lines" et "where", seules
+les lignes indiquées qui remplissent la condition sont modifiées. "set_value" se place
+uniquement par "lines", sans "where". Chaque correction a un "reason" d'une phrase, en
+français simple. Après "missing_codes" sur une colonne de texte qui contient des nombres,
+ajoute "to_number" si la colonne est une mesure.
 
 Ce qu'aucune règle ne permet de trancher et que seul le dossier peut dire (deux patients
 ou une copie ? valeur aberrante mais possible ?) : ne corrige pas. Liste-le dans

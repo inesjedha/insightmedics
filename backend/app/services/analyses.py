@@ -34,7 +34,7 @@ from ..analysis.llm_plan import run_plan_llm
 from ..analysis.llm_write import build_context, run_write_llm
 from ..analysis.plan import AnalysisPlan, plan_problems
 from ..analysis.prepare import analysed as included_rows
-from ..analysis.prepare import dry_run, prepare
+from ..analysis.prepare import dry_run, first_data_line, prepare
 from ..analysis.recheck import recheck
 from ..analysis.report import build_results_docx, build_results_xlsx
 from ..analysis.stats import run_plan
@@ -113,7 +113,7 @@ def save_base(db: Session, analysis: Analysis, src: BinaryIO, file_name: str) ->
         dest.unlink(missing_ok=True)
         raise AnalysisError(f"Base illisible : {exc}") from exc
     analysis.file_name, analysis.stored_path = file_name, str(dest)
-    analysis.status, analysis.error = AnalysisStatus.AWAITING_BASE, None
+    analysis.status, analysis.error = AnalysisStatus.AWAITING_BASE, _plan_outdated(analysis)
     analysis.updated_at = utcnow_iso()
     db.commit()
     _event(db, analysis, "info", f"Base corrigée déposée : {file_name} "
@@ -129,11 +129,22 @@ def drop_base(db: Session, analysis: Analysis) -> Analysis:
     for old in _dir(analysis).glob("base_corrigee.*"):
         old.unlink()
     analysis.file_name, analysis.stored_path, analysis.recheck = None, None, None
-    analysis.status, analysis.error = AnalysisStatus.AWAITING_BASE, None
+    analysis.status, analysis.error = AnalysisStatus.AWAITING_BASE, _plan_outdated(analysis)
     analysis.updated_at = utcnow_iso()
     db.commit()
     _event(db, analysis, "info", "Retour à la base de l'audit.")
     return analysis
+
+
+def _plan_outdated(analysis: Analysis) -> str | None:
+    """Base changée : un plan existant ne peut plus être lancé tel quel (ses corrections par
+    numéro de ligne visent peut-être d'autres patients). Il faut le refaire ou le relire et
+    le réenregistrer."""
+    if not analysis.plan:
+        return None
+    analysis.plan_validated_at = None
+    return ("Base changée : refaites le plan, ou relisez-le et réenregistrez-le (les "
+            "corrections par numéro de ligne visent peut-être d'autres patients).")
 
 
 def set_instructions(db: Session, analysis: Analysis, text: str) -> Analysis:
@@ -165,8 +176,9 @@ def save_plan(db: Session, analysis: Analysis, audit: Audit, raw: dict[str, Any]
         plan = AnalysisPlan.model_validate(raw)
     except ValidationError as exc:
         raise AnalysisError(f"Plan invalide : {exc.errors()[:3]}") from exc
-    df, _ = _load_base(analysis, audit)
-    problems = plan_problems(plan, [str(c) for c in df.columns]) or dry_run(df, plan)
+    df, prof = _load_base(analysis, audit)
+    problems = (plan_problems(plan, [str(c) for c in df.columns])
+                or dry_run(df, plan, first_data_line(prof)))
     if problems:
         raise AnalysisError("Plan incohérent : " + " ; ".join(problems[:8]))
     analysis.plan = plan.model_dump(mode="json")
@@ -334,7 +346,7 @@ def compute(analysis: Analysis, audit: Audit) -> tuple[pd.DataFrame, list[dict[s
     profiling (déterministe)."""
     df, prof = _load_base(analysis, audit)
     plan = AnalysisPlan.model_validate(analysis.plan)
-    base, flow, log = prepare(df, plan, auto_exclusions(prof))
+    base, flow, log = prepare(df, plan, auto_exclusions(prof), first_data_line(prof))
     return base, flow, log, run_plan(plan, included_rows(base)), prof
 
 

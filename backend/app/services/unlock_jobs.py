@@ -100,8 +100,8 @@ def claim_rerun(db: Session, audit: Audit) -> str | None:
 def _owned(audit_id: str, job_id: str) -> Any:
     """Condition SQL : l'audit est toujours réservé par cette tâche (identifiant unique ;
     statut `processing` pour un déblocage, `done` pour une relance)."""
-    return (Audit.id == audit_id) & (Audit.job_id == job_id) & Audit.status.in_(
-        [AuditStatus.PROCESSING, AuditStatus.DONE])
+    return ((Audit.id == audit_id) & (Audit.job_id == job_id) & Audit.purged_at.is_(None)
+            & Audit.status.in_([AuditStatus.PROCESSING, AuditStatus.DONE]))
 
 
 def run(audit_id: str, job_id: str, *, rerun: bool = False) -> None:

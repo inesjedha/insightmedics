@@ -85,8 +85,14 @@ def jargon_hits(text: str) -> list[tuple[str, str]]:
 
 _THOUSANDS_RE = re.compile(r"(?<=\d)[   ](?=\d{3}(?!\d))")
 _NUMBER_RE = re.compile(r"\d+(?:[.,]\d+)?")
-# Les petits nombres s'écrivent aussi en lettres (« deux » ↔ « 2 ») : toujours admis.
-_SMALL = {str(i) for i in range(11)}
+# Les petits nombres s'écrivent aussi en lettres (« deux » ↔ « 2 »).
+_WORDS = {"0": r"z[ée]ro", "1": r"une?", "2": "deux", "3": "trois", "4": "quatre",
+          "5": "cinq", "6": "six", "7": "sept", "8": "huit", "9": "neuf", "10": "dix"}
+
+
+def _in_words(text: str) -> set[str]:
+    """Petits nombres écrits en lettres dans le texte (« deux patients » → {"2"})."""
+    return {n for n, w in _WORDS.items() if re.search(rf"\b{w}\b", text, re.I)}
 
 
 def numbers(text: str) -> set[str]:
@@ -175,37 +181,32 @@ def _set(out: Llm2Output, key: str, value: str) -> None:
             setattr(item, rest[0], value)
 
 
-def _group(key: str) -> str:
-    """Bloc d'un texte (« missions.0 », « headline ») : un chiffre peut passer d'un champ
-    à l'autre du même bloc lors de la réécriture."""
-    parts = key.split(".")
-    return ".".join(parts[:2]) if len(parts) > 1 and parts[1].isdigit() else parts[0]
-
-
-def _groups_numbers(texts: dict[str, str]) -> dict[str, set[str]]:
-    by_group: dict[str, set[str]] = {}
-    for k, v in texts.items():
-        by_group.setdefault(_group(k), set()).update(numbers(v))
-    return by_group
-
-
-def problems(key: str, before: str, after: Any, allowed: set[str]) -> list[str]:
-    """Motifs de refus d'un texte réécrit (liste vide : accepté)."""
+def problems(key: str, before: str, after: Any) -> list[str]:
+    """Motifs de refus d'un texte réécrit (liste vide : accepté). Les chiffres doivent
+    rester les mêmes (un petit nombre peut passer en lettres, et inversement) ; les noms de
+    colonnes et valeurs citées entre guillemets restent identiques."""
     if not isinstance(after, str) or not after.strip():
         return ["texte vide ou manquant"]
     if key.endswith(".mot"):
         return []
     found: list[str] = []
-    new_numbers = numbers(after) - allowed - _SMALL
-    if new_numbers:
-        found.append("chiffres absents du texte d'origine : " + ", ".join(sorted(new_numbers)))
+    n_before, n_after = numbers(before), numbers(after)
+    added = n_after - n_before - _in_words(before)
+    if added:
+        found.append("chiffres absents du texte d'origine : " + ", ".join(sorted(added)))
+    dropped = n_before - n_after - _in_words(after)
+    if dropped:
+        found.append("chiffres du texte d'origine disparus : " + ", ".join(sorted(dropped)))
+    if sorted(_QUOTED_RE.findall(before)) != sorted(_QUOTED_RE.findall(after)):
+        found.append("les passages entre guillemets (noms de colonnes, valeurs) doivent "
+                     "rester identiques, sans en ajouter")
     hits = jargon_hits(after)
     if hits:
         found.append("mots à remplacer : " + "; ".join(
             f"« {w} » → {hint}" for w, hint in dict(hits).items()))
-    n_before, n_after = len(before.split()), len(after.split())
-    if n_after > max(n_before * 1.4, n_before + 8):
-        found.append(f"texte trop long ({n_after} mots au lieu de {n_before})")
+    w_before, w_after = len(before.split()), len(after.split())
+    if w_after > max(w_before * 1.4, w_before + 8):
+        found.append(f"texte trop long ({w_after} mots au lieu de {w_before})")
     return found
 
 
@@ -220,7 +221,6 @@ def run_plain_pass(out: Llm2Output) -> list[str]:
     texts = student_texts(out)
     if not texts:
         return []
-    allowed = _groups_numbers(texts)
     last: dict[str, Any] = {}
 
     def check(candidate: _Rewrite) -> tuple[_Rewrite, list[str]]:
@@ -229,7 +229,7 @@ def run_plain_pass(out: Llm2Output) -> list[str]:
         last.update(rewritten)
         missing = [k for k in texts if k not in rewritten]
         errors = [f"{k} : {'; '.join(p)}" for k in texts if k in rewritten
-                  for p in [problems(k, texts[k], rewritten[k], allowed[_group(k)])] if p]
+                  for p in [problems(k, texts[k], rewritten[k])] if p]
         if missing or errors:
             msg = ""
             if missing:
@@ -252,7 +252,7 @@ def run_plain_pass(out: Llm2Output) -> list[str]:
     else:
         # Dernière réponse refusée : on garde chaque texte qui passe les contrôles.
         accepted = {k: v for k, v in last.items()
-                    if k in texts and not problems(k, texts[k], v, allowed[_group(k)])}
+                    if k in texts and not problems(k, texts[k], v)}
         kept = len(texts) - len(accepted)
     for k, v in accepted.items():
         if k in texts and not k.endswith(".mot"):

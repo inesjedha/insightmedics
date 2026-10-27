@@ -76,3 +76,43 @@ def test_les_corrections_passent_avant_colonnes_calculees_et_exclusions():
 def test_correction_sur_colonne_inconnue_signalee():
     plan = AnalysisPlan.model_validate({"corrections": [{"kind": "to_number", "column": "Poids"}]})
     assert any("colonne inconnue" in p for p in plan_problems(plan, ["Age"]))
+
+
+def test_dates_vraies_iso_et_incompletes():
+    import datetime as dt
+    df = pd.DataFrame({"d": [dt.datetime(2023, 4, 3), "2023-12-01", "03/04/2023", "2019",
+                             "03/2023", 45000.0]})
+    base, journal = apply_corrections(df, [Correction(kind="to_date", column="d")])
+    got = base["d"].tolist()
+    assert got[0] == pd.Timestamp(2023, 4, 3) and got[1] == pd.Timestamp(2023, 12, 1)
+    assert got[2] == pd.Timestamp(2023, 4, 3) and got[5] == pd.Timestamp(2023, 3, 15)
+    assert pd.isna(got[3]) and pd.isna(got[4])               # rien d'inventé
+    assert journal[-1]["illisibles"] == [5, 6]
+
+
+def test_valeur_du_dossier_jamais_par_condition():
+    c = Correction(kind="set_value", column="Age", where='col("Age") > 0', value=7,
+                   source="dossier")
+    assert any("sans condition" in p for p in correction_problems([c], ["Age"]))
+    with pytest.raises(ValueError, match="sans condition"):
+        apply_corrections(_df(), [c])
+
+
+def test_lignes_et_condition_se_croisent():
+    c = Correction(kind="set_missing", column="Age", lines=[2, 3], where='col("Age") > 100')
+    base, _ = apply_corrections(_df(), [c])
+    assert base["Age"].tolist()[:2] == [34, None] or np.isnan(base["Age"].iloc[1])
+    assert base["Age"].iloc[0] == 34
+
+
+def test_numero_de_cas_spss():
+    c = Correction(kind="set_missing", column="Age", lines=[2])
+    base, journal = apply_corrections(_df(), [c], first_line=1)
+    assert np.isnan(base["Age"].iloc[1]) and journal[-1]["lines"] == [2]
+
+
+def test_code_a_zero_de_tete_reste_du_texte():
+    df = pd.DataFrame({"Code": ["007", "999", "012"]})
+    base, journal = apply_corrections(df, [Correction(kind="missing_codes", column="Code",
+                                                      values=[999])])
+    assert base["Code"].tolist()[0] == "007" and journal[-1]["n"] == 1

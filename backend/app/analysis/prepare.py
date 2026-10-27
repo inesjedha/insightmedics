@@ -108,13 +108,15 @@ def _derive(d: Derived, df: pd.DataFrame) -> tuple[pd.Series, dict[str, Any]]:
 
 
 def prepare(df: pd.DataFrame, plan: AnalysisPlan,
-            auto_exclusions: list[tuple[str, list[int]]] | None = None
+            auto_exclusions: list[tuple[str, list[int]]] | None = None,
+            first_line: int = 2,
             ) -> tuple[pd.DataFrame, list[dict[str, Any]], list[dict[str, Any]]]:
     """Retourne (base d'analyse complète, diagramme de flux, journal). Le journal liste
     les corrections (`step` = « correction ») puis les colonnes calculées (`step` =
     « derived »). `auto_exclusions` : motifs repérés par le code avant le plan (fiche
-    vierge, lignes vides), en positions de ligne."""
-    base, log = apply_corrections(df, plan.corrections)
+    vierge, lignes vides), en positions de ligne. `first_line` : numéro de la première
+    ligne de données dans le fichier (2 dans Excel, 1 pour un cas SPSS)."""
+    base, log = apply_corrections(df, plan.corrections, first_line)
     for d in plan.derived:
         series, note = _derive(d, base)
         base[d.name] = series
@@ -152,11 +154,17 @@ def analysed(base: pd.DataFrame) -> pd.DataFrame:
     return base[base[INCLUDED] == 1]
 
 
-def dry_run(df: pd.DataFrame, plan: AnalysisPlan) -> list[str]:
+def first_data_line(profiling: dict[str, Any]) -> int:
+    """Numéro de la première ligne de données : 1 pour un cas SPSS, 2 dans Excel ou CSV
+    (même convention que la liste de vérification de l'audit)."""
+    return 1 if (profiling.get("file") or {}).get("format") == "sav" else 2
+
+
+def dry_run(df: pd.DataFrame, plan: AnalysisPlan, first_line: int = 2) -> list[str]:
     """Applique le plan à blanc (colonnes calculées et exclusions) ; retourne les erreurs
     (colonne déclarée quantitative qui contient du texte, expression invalide…)."""
     try:
-        prepare(df, plan)
+        prepare(df, plan, first_line=first_line)
     except ValueError as exc:  # ExprError hérite de ValueError
         return [str(exc)]
     return []

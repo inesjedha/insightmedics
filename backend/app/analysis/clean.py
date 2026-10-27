@@ -18,6 +18,7 @@ Règles (méthodologie de Hamza) :
 
 from __future__ import annotations
 
+import datetime
 import re
 from typing import Any, Literal
 
@@ -66,14 +67,14 @@ def _show(v: Any) -> str:
     return f"« {v} »"
 
 
-def _lines(mask: pd.Series) -> list[int]:
+def _lines(mask: pd.Series, first: int) -> list[int]:
     positions = np.flatnonzero(mask.to_numpy())
-    return [int(p) + FIRST_DATA_LINE for p in positions]
+    return [int(p) + first for p in positions]
 
 
 def _entry(c: Correction | None, column: str, kind: str, reason: str, before: pd.Series,
-           after: pd.Series, mask: pd.Series, **extra: Any) -> dict[str, Any]:
-    lines = _lines(mask)
+           after: pd.Series, mask: pd.Series, first: int, **extra: Any) -> dict[str, Any]:
+    lines = _lines(mask, first)
     examples: list[str] = []
     for pos in np.flatnonzero(mask.to_numpy()):
         ex = f"{_show(before.iloc[pos])} → {_show(after.iloc[pos])}"
@@ -105,19 +106,22 @@ def _changed(before: pd.Series, after: pd.Series) -> pd.Series:
     return pd.Series(out, index=before.index, dtype=bool)
 
 
-def _selection(c: Correction, df: pd.DataFrame) -> pd.Series:
-    """Lignes visées par une correction ponctuelle : condition et/ou lignes du fichier."""
-    mask = pd.Series(False, index=df.index)
+def _selection(c: Correction, df: pd.DataFrame, first: int) -> pd.Series:
+    """Lignes visées par une correction ponctuelle. Avec des lignes ET une condition, seules
+    les lignes indiquées qui remplissent la condition sont visées."""
+    mask = pd.Series(True, index=df.index)
     if c.lines:
-        bad = [n for n in c.lines if not FIRST_DATA_LINE <= n < FIRST_DATA_LINE + len(df)]
+        bad = [n for n in c.lines if not first <= n < first + len(df)]
         if bad:
             raise ValueError(f"correction de « {c.column} » : ligne(s) {bad} hors du fichier "
-                             f"(lignes {FIRST_DATA_LINE} à {FIRST_DATA_LINE + len(df) - 1})")
-        mask.iloc[[n - FIRST_DATA_LINE for n in c.lines]] = True
+                             f"(lignes {first} à {first + len(df) - 1})")
+        by_line = pd.Series(False, index=df.index)
+        by_line.iloc[[n - first for n in c.lines]] = True
+        mask &= by_line
     if c.where:
         res = evaluate(c.where, df)
         cond = (res if isinstance(res, pd.Series) else pd.Series(bool(res), index=df.index))
-        mask |= cond.astype("boolean").fillna(False).astype(bool)
+        mask &= cond.astype("boolean").fillna(False).astype(bool)
     return mask
 
 
@@ -126,18 +130,39 @@ def _is_text(s: pd.Series) -> bool:
     return s.dtype == object or pd.api.types.is_string_dtype(s)
 
 
+_ISO_RE = re.compile(r"^\d{4}-\d{1,2}-\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?$")
+_DMY_RE = re.compile(r"^\d{1,2}[/.\-]\d{1,2}[/.\-](?:\d{2}|\d{4})$")
+_EXCEL_EPOCH = pd.Timestamp(1899, 12, 30)
+
+
+def _parse_date(v: Any, dayfirst: bool) -> pd.Timestamp | Any:
+    """Une date, ou NaT si elle est illisible. Une vraie date du fichier est gardée telle
+    quelle ; le texte n'est lu que s'il est complet (jour, mois, année) : « 2019 » ou
+    « 03/2023 » ne deviennent pas un 1er janvier ou un 1er mars inventés."""
+    if isinstance(v, (pd.Timestamp, datetime.datetime, datetime.date)):
+        return pd.Timestamp(v)
+    if isinstance(v, (int, float, np.integer, np.floating)) and not isinstance(v, bool):
+        f = float(v)  # numéro de série Excel (45000 = 15/03/2023)
+        return _EXCEL_EPOCH + pd.Timedelta(days=f) if 1 <= f < 80000 else pd.NaT
+    text = str(v).strip()
+    if _ISO_RE.match(text):
+        return pd.to_datetime(text, errors="coerce")
+    if _DMY_RE.match(text):
+        return pd.to_datetime(text.replace(".", "/").replace("-", "/"), dayfirst=dayfirst,
+                              errors="coerce")
+    return pd.NaT
+
+
 def _parse_dates(s: pd.Series, dayfirst: bool) -> pd.Series:
     if pd.api.types.is_datetime64_any_dtype(s):
         return s
-    out = []
-    for v in s.tolist():
-        if v is None or (isinstance(v, float) and np.isnan(v)) or str(v).strip() == "":
-            out.append(pd.NaT)
-        elif isinstance(v, pd.Timestamp):
-            out.append(v)
-        else:
-            out.append(pd.to_datetime(str(v).strip(), dayfirst=dayfirst, errors="coerce"))
+    out = [pd.NaT if v is None or (isinstance(v, float) and np.isnan(v)) or v is pd.NaT
+           or str(v).strip() == "" else _parse_date(v, dayfirst) for v in s.tolist()]
     return pd.Series(out, index=s.index, dtype="datetime64[ns]")
+
+
+# Nombre entier ou décimal sans zéro de tête (« 007 » est un code, pas le nombre 7).
+_PLAIN_NUMBER_RE = re.compile(r"^-?(?:0|[1-9]\d*)(?:[.,]\d+)?$")
 
 
 def _trim(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any] | None]:
@@ -162,10 +187,33 @@ def _trim(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any] | None]:
                  "cellules blanches (automatique)", "n": n, "lines": [], "examples": []}
 
 
-def apply_corrections(df: pd.DataFrame, corrections: list[Correction]
+def _set_value(c: Correction, before: pd.Series, target: pd.Series) -> pd.Series:
+    if c.value is None:
+        raise ValueError(f"correction de « {c.column} » : valeur manquante "
+                         "(pour vider une case, utiliser set_missing)")
+    value: Any = c.value
+    if pd.api.types.is_datetime64_any_dtype(before):
+        value = _parse_date(value, True)
+        if value is pd.NaT:
+            raise ValueError(f"correction de « {c.column} » : « {c.value} » n'est pas une "
+                             "date complète")
+        return before.mask(target, value)
+    if pd.api.types.is_numeric_dtype(before):
+        try:
+            value = float(str(value).replace(",", "."))
+        except ValueError:
+            raise ValueError(f"correction de « {c.column} » : « {c.value} » "
+                             "n'est pas un nombre") from None
+        return pd.to_numeric(before.astype("object").mask(target, value))
+    return before.astype("object").mask(target, value)
+
+
+def apply_corrections(df: pd.DataFrame, corrections: list[Correction],
+                      first_line: int = FIRST_DATA_LINE
                       ) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
     """Applique les corrections à une copie ; retourne (base nettoyée, journal). Lève
-    ValueError si une correction est inapplicable (colonne inconnue, ligne hors fichier)."""
+    ValueError si une correction est inapplicable (colonne inconnue, ligne hors fichier).
+    `first_line` : numéro de la première ligne de données (2 dans Excel, 1 dans SPSS)."""
     from .prepare import _parse_number  # même lecture des nombres que les colonnes calculées
 
     base, trim_entry = _trim(df)
@@ -179,10 +227,12 @@ def apply_corrections(df: pd.DataFrame, corrections: list[Correction]
             keys = {_key(v) for v in c.values}
             hit = before.map(lambda v, keys=keys: pd.notna(v) and _key(v) in keys).astype(bool)
             after = before.mask(hit, np.nan)
-            if _is_text(after):
-                numeric = pd.to_numeric(after, errors="coerce")
-                if numeric.notna().sum() == after.notna().sum():
-                    after = numeric       # colonne redevenue entièrement numérique
+            rest = after.dropna()
+            if _is_text(after) and len(rest) and all(
+                    _PLAIN_NUMBER_RE.match(str(v).strip()) for v in rest):
+                # Colonne redevenue entièrement numérique (sans code à zéro de tête).
+                after = pd.to_numeric(after.map(
+                    lambda v: str(v).replace(",", ".") if pd.notna(v) else v))
         elif c.kind == "harmonize":
             mapping = {_key(k): v for k, v in c.mapping.items()}
             after = before.map(
@@ -190,36 +240,26 @@ def apply_corrections(df: pd.DataFrame, corrections: list[Correction]
         elif c.kind == "to_number":
             after, counts = _parse_number(before)
             unreadable = before.notna() & after.isna()
-            extra = {"illisibles": _lines(unreadable)[:MAX_LINES_SHOWN],
+            extra = {"illisibles": _lines(unreadable, first_line)[:MAX_LINES_SHOWN],
                      **{k: v for k, v in counts.items() if v}}
         elif c.kind == "to_date":
             after = _parse_dates(before, c.dayfirst)
             unreadable = before.notna() & after.isna()
-            extra = {"illisibles": _lines(unreadable)[:MAX_LINES_SHOWN]}
-        else:  # set_missing, set_value
+            extra = {"illisibles": _lines(unreadable, first_line)[:MAX_LINES_SHOWN]}
+        elif c.kind == "set_missing":
             if not c.lines and not c.where:
                 raise ValueError(f"correction de « {c.column} » : indiquer les lignes ou la "
                                  "condition")
-            target = _selection(c, base)
-            if c.kind == "set_missing":
-                after = before.mask(target, np.nan)
-            else:
-                if c.value is None:
-                    raise ValueError(f"correction de « {c.column} » : valeur manquante "
-                                     "(pour vider une case, utiliser set_missing)")
-                value: Any = c.value
-                if pd.api.types.is_numeric_dtype(before):
-                    try:
-                        value = float(str(value).replace(",", "."))
-                    except ValueError:
-                        raise ValueError(f"correction de « {c.column} » : « {c.value} » "
-                                         "n'est pas un nombre") from None
-                after = before.astype("object").mask(target, value)
-                if pd.api.types.is_numeric_dtype(before):
-                    after = pd.to_numeric(after)
+            after = before.mask(_selection(c, base, first_line), np.nan)
+        else:  # set_value : une valeur du dossier, pour des lignes précises seulement
+            if not c.lines or c.where:
+                raise ValueError(f"correction de « {c.column} » : une valeur relevée au "
+                                 "dossier se place par numéros de ligne, sans condition")
+            after = _set_value(c, before, _selection(c, base, first_line))
         changed = _changed(before, after)
         base[c.column] = after
-        journal.append(_entry(c, c.column, c.kind, c.reason, before, after, changed, **extra))
+        journal.append(_entry(c, c.column, c.kind, c.reason, before, after, changed,
+                              first_line, **extra))
     return base, journal
 
 
@@ -240,6 +280,9 @@ def correction_problems(corrections: list[Correction], columns: list[str]) -> li
         if c.kind in ("set_missing", "set_value"):
             if not c.lines and not c.where:
                 problems.append(f"{where} : indiquer les lignes ou la condition")
+            if c.kind == "set_value" and (not c.lines or c.where):
+                problems.append(f"{where} : une valeur du dossier se place par numéros de "
+                                "ligne, sans condition")
             if c.kind == "set_value" and (c.value is None or not c.source.strip()):
                 problems.append(f"{where} : valeur et source (dossier vérifié par "
                                 "l'étudiant) obligatoires")

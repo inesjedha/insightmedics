@@ -230,3 +230,14 @@ def test_relance_interrompue_liberee(audit_id: str, admin_headers):
         assert unlock_jobs.release_stale_claims(db, now=later) >= 1
     audit = _status(audit_id)
     assert audit.status == "done" and audit.job_id is None and "interrompue" in audit.error
+
+
+def test_purge_attend_la_fin_d_une_relance(audit_id: str, admin_headers):
+    TestClient(app).post(f"/audit/{audit_id}/unlock", headers=admin_headers)
+    with SessionLocal() as db:
+        unlock_jobs.claim_rerun(db, db.get(Audit, audit_id))
+    later = datetime.now(UTC) + timedelta(days=400)
+    with SessionLocal() as db:
+        purge_expired(db, now=later)
+    audit = _status(audit_id)
+    assert audit.purged_at is None and audit.profiling is not None

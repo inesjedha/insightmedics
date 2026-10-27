@@ -36,9 +36,6 @@ _REPLACEMENTS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bLe dictionnaire\b"), "L'audit"),
     (re.compile(r"\ble dictionnaire\b"), "l'audit"),
     (re.compile(r"\bdu dictionnaire\b"), "de l'audit"),
-    (re.compile(r"«\s*medium\s*»|\bmedium\b"), "moyenne"),
-    (re.compile(r"«\s*high\s*»"), "élevée"),
-    (re.compile(r"«\s*low\s*»"), "faible"),
     # Mots à remplacer du bilan client v3 de Hamza (formes sûres seulement)
     (re.compile(r"\bcritère composite\b"), "critère qui combine plusieurs éléments"),
     (re.compile(r"\b[Ll]a ligne[- ]modèle\b"), "la fiche vierge restée dans le tableau"),
@@ -53,17 +50,37 @@ _REPLACEMENTS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bExploitable(s?)\b"), r"Utilisable\1"),
     (re.compile(r"\bdonnées manquantes\b"), "cases vides"),
     (re.compile(r"\bDonnées manquantes\b"), "Cases vides"),
-    (re.compile(r"\bmodalités\b"), "réponses possibles"),
-    (re.compile(r"\bmodalité\b"), "réponse possible"),
+    (re.compile(r"\b([Dd])e l'effectif\b"), r"\1u nombre de patients"),
+    (re.compile(r"\bà l'effectif\b"), "au nombre de patients"),
     (re.compile(r"\bl'effectif\b"), "le nombre de patients"),
     (re.compile(r"\bL'effectif\b"), "Le nombre de patients"),
+]
+# Niveaux de confiance en anglais, souvent cités entre guillemets : remplacés partout.
+_LEVEL_REPLACEMENTS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"«\s*medium\s*»|\bmedium\b"), "moyenne"),
+    (re.compile(r"«\s*high\s*»"), "élevée"),
+    (re.compile(r"«\s*low\s*»"), "faible"),
 ]
 _SPACE_BEFORE_PUNCT_RE = re.compile(r" +([,.)])")
 _MULTI_SPACE_RE = re.compile(r"[ \t]{2,}")
 
 
+# Noms de colonnes et valeurs citées entre guillemets : jamais réécrits.
+_QUOTED_RE = re.compile(r"(«[^»]*»|\"[^\"]*\"|“[^”]*”)")
+
+
+def _replace_outside_quotes(text: str) -> str:
+    parts = _QUOTED_RE.split(text)
+    for i in range(0, len(parts), 2):  # indices pairs : hors guillemets
+        part = parts[i]
+        for pattern, repl in _REPLACEMENTS:
+            part = pattern.sub(repl, part)
+        parts[i] = part
+    return "".join(parts)
+
+
 def clean(text: str | None) -> str:
-    """Retire le jargon interne d'un texte."""
+    """Retire le jargon interne d'un texte (jamais à l'intérieur des guillemets)."""
     if not text:
         return ""
     # Un code isolé au milieu d'une phrase n'est pas retiré (la phrase deviendrait
@@ -71,8 +88,9 @@ def clean(text: str | None) -> str:
     out = _PAREN_CODES_RE.sub("", text)
     out = _PAREN_OPS_PREFIX_RE.sub("(", out)
     out = _OPS_RE.sub("opérations de nettoyage proposées", out)
-    for pattern, repl in _REPLACEMENTS:
+    for pattern, repl in _LEVEL_REPLACEMENTS:
         out = pattern.sub(repl, out)
+    out = _replace_outside_quotes(out)
     out = _SPACE_BEFORE_PUNCT_RE.sub(r"\1", out)
     out = _MULTI_SPACE_RE.sub(" ", out)
     return out.strip()
@@ -102,6 +120,12 @@ def shorten(text: str | None, max_words: int) -> str:
         kept.append(sentence)
         n_words += n
     return " ".join(kept)
+
+
+def _clip(text: str | None, max_words: int) -> str:
+    """Coupe un nom ou une valeur trop long sans en changer un mot."""
+    words = (text or "").split()
+    return " ".join(words[:max_words]) + (" …" if len(words) > max_words else "")
 
 
 def _short_list(items: list[str], max_items: int, max_words: int) -> list[str]:
@@ -144,8 +168,9 @@ def tidy_output(out: Llm2Output) -> Llm2Output:
     for c in out.checklist:
         c.patients = shorten(c.patients, 8)
         c.check = shorten(c.check, 20)
-        c.colonne = shorten(c.colonne, 10)
-        c.valeur = shorten(c.valeur, 10)
+        # Nom de colonne et valeur de la base : recopiés tels quels, jamais réécrits.
+        c.colonne = _clip(c.colonne, 10)
+        c.valeur = _clip(c.valeur, 10)
     amap = out.analysis_map
     amap.realisable = _short_list(amap.realisable, 6, 18)
     amap.avec_reserves = _short_list(amap.avec_reserves, 6, 18)

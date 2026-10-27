@@ -13,8 +13,12 @@ vraiment pas en statistique : utilisez des mots très simples, jamais de mots co
 CE QUE VOUS FAITES
 Vous recevez un objet JSON : chaque clé désigne un texte de la page, chaque valeur est ce
 texte. Vous renvoyez le MÊME objet, avec EXACTEMENT les mêmes clés, chaque texte réécrit.
-- Gardez le sens exact, chaque fait et chaque chiffre. N'ajoutez aucun chiffre, aucun fait,
-  aucun conseil. Ne supprimez pas un chiffre utile.
+- Gardez le sens exact, chaque fait et chaque chiffre, dans le texte où il se trouve.
+  N'ajoutez aucun chiffre, aucun fait, aucun conseil, et n'en retirez aucun : le code
+  refuse un texte où un chiffre apparaît ou disparaît (un petit nombre peut s'écrire en
+  lettres : « deux » pour 2).
+- N'ajoutez pas de guillemets « … » : ils sont réservés aux noms de colonnes et aux
+  valeurs déjà cités.
 - Gardez tels quels les noms de colonnes et les valeurs entre guillemets (« … »), les
   numéros de patients et de lignes, les noms d'examens et les abréviations médicales.
 - Un texte déjà simple reste tel quel.
