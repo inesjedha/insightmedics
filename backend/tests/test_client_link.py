@@ -49,3 +49,12 @@ def test_lien_expire():
     _mk("tokexpire", paid=True, status="done",
         expires_at=(datetime.now(UTC) - timedelta(days=1)).isoformat())
     assert client.get("/r/tokexpire").status_code == 410
+
+
+def test_client_ne_recoit_que_le_classeur():
+    """Décision du 27/10/2026 : la base nettoyée est remise avec l'analyse statistique,
+    pas avec l'audit ; le rapport Word reste interne."""
+    _mk("toklivrables", paid=True, status="done",
+        expires_at=(datetime.now(UTC) + timedelta(days=10)).isoformat())
+    for kind in ("base_analyse.csv", "base_analyse.sav", "report.docx"):
+        assert client.get(f"/r/toklivrables/{kind}").status_code == 404, kind

@@ -1,15 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  Loader2,
-  Link2Off,
-  Clock,
-  Download,
-  FileSpreadsheet,
-  FileText,
-  Database,
-  ShieldCheck,
-} from "lucide-react";
+import { Loader2, Link2Off, Clock, Download, FileSpreadsheet, Database } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section, SectionHeader } from "@/components/site/Section";
 import {
@@ -149,28 +140,10 @@ const DELIVERABLES: {
   icon: React.ReactNode;
 }[] = [
   {
-    kind: "report.docx",
-    label: "Rapport d'audit (Word)",
-    hint: "Synthèse, verdict, limites et plan d'action.",
-    icon: <FileText className="h-5 w-5" />,
-  },
-  {
     kind: "workbook.xlsx",
     label: "Classeur d'audit (Excel)",
-    hint: "Détail par domaine, anomalies et base anonymisée.",
+    hint: "Anomalies ligne par ligne, questions à trancher et score détaillé.",
     icon: <FileSpreadsheet className="h-5 w-5" />,
-  },
-  {
-    kind: "base_analyse.csv",
-    label: "Base d'analyse (CSV)",
-    hint: "Base nettoyée et anonymisée, prête à analyser.",
-    icon: <Database className="h-5 w-5" />,
-  },
-  {
-    kind: "base_analyse.sav",
-    label: "Base d'analyse (SPSS .sav)",
-    hint: "Même base, au format SPSS.",
-    icon: <Database className="h-5 w-5" />,
   },
 ];
 
@@ -181,9 +154,8 @@ function DeliverablesDownload({ token }: { token: string }) {
         <Download className="h-5 w-5 text-brand" />
         Vos livrables
       </h3>
-      <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-        <ShieldCheck className="h-4 w-4 text-brand" />
-        Les identifiants directs ont été retirés : toutes les bases sont anonymisées.
+      <p className="mt-1 text-sm text-muted-foreground">
+        Les noms, initiales et numéros de dossier n'apparaissent pas dans le classeur.
       </p>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {DELIVERABLES.map((d) => (
@@ -205,6 +177,14 @@ function DeliverablesDownload({ token }: { token: string }) {
           </a>
         ))}
       </div>
+      <p className="mt-5 flex items-start gap-2 text-sm text-foreground/80">
+        <Database className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+        <span>
+          La base nettoyée, prête pour vos tests statistiques, vous est remise avec l'analyse
+          statistique, une fois les points bloquants ci-dessus vérifiés : l'analyser avant
+          fausserait vos résultats.
+        </span>
+      </p>
     </div>
   );
 }

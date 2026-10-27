@@ -7,9 +7,10 @@ from ..services import audits as service
 from ..services.audits import DeliverableKind
 
 
-def deliverable_response(audit: Audit, kind: DeliverableKind) -> Response:
+def deliverable_response(audit: Audit, kind: DeliverableKind, *,
+                         for_client: bool = False) -> Response:
     try:
-        d = service.build_deliverable(audit, kind)
+        d = service.build_deliverable(audit, kind, for_client=for_client)
     except service.DeliverableUnavailableError as exc:
         raise HTTPException(404, str(exc)) from exc
     return Response(content=d.content, media_type=d.media_type,
