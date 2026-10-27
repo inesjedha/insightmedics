@@ -529,7 +529,8 @@ export function OfferNudge() {
     <aside className="flex flex-wrap items-center gap-4 rounded-xl border border-brand/25 bg-accent px-5 py-4 sm:px-6">
       <p className="min-w-0 flex-[999_1_360px] leading-relaxed text-accent-foreground">
         <strong>Pas le temps de tout reprendre avant la soutenance&nbsp;?</strong> Vous vérifiez les
-        dossiers, Dr Hamza et l'équipe font tout le reste&nbsp;: nettoyage, tableaux, tests.
+        dossiers, Dr Hamza et l'équipe font tout le reste en une semaine&nbsp;: nettoyage, tableaux,
+        tests.
       </p>
       <a
         href="#suite"
@@ -807,14 +808,16 @@ export function NextSteps({
             </div>
             <div className="flex flex-[1_1_240px] flex-col justify-center gap-3">
               <p className="font-display text-5xl leading-none">{ANALYSIS_PRICE}</p>
-              <p className="text-sm opacity-90">Déjà plus de 30 thèses accompagnées.</p>
+              <p className="text-sm opacity-90">
+                Livrée en 1&nbsp;semaine · plus de 30 thèses accompagnées.
+              </p>
               <WhatsAppButton
                 label="Parler de mon analyse à Dr Hamza"
                 className="bg-background text-brand hover:bg-background/90"
               />
               <p className="text-sm leading-relaxed opacity-90">
-                Dites-nous la date de votre soutenance&nbsp;: nous vous disons si le délai est
-                tenable.
+                Dites-nous la date de votre soutenance&nbsp;: nous réservons votre semaine
+                d'analyse.
               </p>
               <Link
                 to="/contact"
@@ -900,7 +903,7 @@ export function StickyWhatsApp() {
         tabIndex={visible ? 0 : -1}
         className="flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-3 font-semibold text-brand-foreground"
       >
-        <MessageCircle className="h-5 w-5" /> L'analyse avec Dr Hamza · {ANALYSIS_PRICE}
+        <MessageCircle className="h-5 w-5" /> L'analyse en 1&nbsp;semaine · {ANALYSIS_PRICE}
       </a>
     </div>
   );

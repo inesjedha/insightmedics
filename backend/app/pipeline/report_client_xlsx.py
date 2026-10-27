@@ -28,7 +28,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 from .llm2 import PRIORITY_LABELS, PRIORITY_ORDER
 from .summary import key_counts
 
-ANALYSIS_OFFER = "l'analyse statistique (500 DT)"
+ANALYSIS_OFFER = "l'analyse statistique (500 DT, livrée en 1 semaine)"
 CONTACT_EMAIL = "helpinsightmedics@gmail.com"
 WHATSAPP_DISPLAY = "+216 96 389 570"
 
