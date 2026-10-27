@@ -67,6 +67,15 @@ def detect_issues(p: dict[str, Any]) -> list[dict]:
                                 f"différents mais mêmes {', '.join(same_profile['key_columns'])} "
                                 "— doublons possibles, à vérifier au dossier"})
 
+    # Fiche de recueil vierge recopiée dans la base
+    template = s.get("template_rows") or {}
+    if template.get("n"):
+        lines = ", ".join(str(n) for n in template["lines"][:5])
+        issues.append({"level": "warn",
+                       "label": f"{template['n']} ligne(s) modèle de la fiche de recueil (cases à "
+                                f"cocher vides, ligne {lines}) — ce n'est pas un patient, à retirer "
+                                "de l'effectif"})
+
     # Lignes vides (souvent en fin de fichier)
     n_empty = (s.get("empty_rows") or {}).get("n", 0)
     if n_empty:

@@ -53,5 +53,5 @@ def client_assessment(audit: Audit = Depends(paid_audit)) -> dict[str, Any]:
 
 @router.get("/{token}/{kind}")
 def client_deliverable(kind: DeliverableKind, audit: Audit = Depends(paid_audit)) -> Response:
-    """Livrables anonymisés : classeur Excel, rapport Word, base nettoyée."""
-    return deliverable_response(audit, kind)
+    """Livrable de l'audit : le classeur Excel (sans les bases, remises avec l'analyse)."""
+    return deliverable_response(audit, kind, for_client=True)

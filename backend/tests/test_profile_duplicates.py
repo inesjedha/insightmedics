@@ -205,3 +205,19 @@ def test_lignes_recopiees_font_perdre_des_points():
         _near_copy(df, 10 + k, 30 + k, n_changed=1)
     p = profile(df, {"file_name": "t.csv", "format": "csv"})
     assert compute_score(p)["score_final"] < compute_score(_without_new_fields(p))["score_final"]
+
+
+def test_ligne_modele_de_la_fiche_detectee():
+    """Cas réel du 27/10/2026 : la 1re ligne est la fiche vierge (« ☐ »), comptée comme un
+    patient."""
+    template = pd.DataFrame([{"num_patient": "☐", "sexe": "☐ M ☐ F", "age": "☐",
+                              "mecanisme": "☐ AVP ☐ Chute ☐ Autre : ______"}])
+    df = pd.concat([template, _base().astype(object)], ignore_index=True)
+    s = profile(df, {"file_name": "t.xlsx", "format": "xlsx"})["structure"]
+    assert s["template_rows"] == {"n": 1, "lines": [1]}
+
+
+def test_texte_avec_un_seul_soulignement_pas_une_ligne_modele():
+    df = _base().astype(object)
+    df.loc[2, "sexe"] = "F ____ à préciser"
+    assert profile(df, {"file_name": "t.csv", "format": "csv"})["structure"]["template_rows"]["n"] == 0

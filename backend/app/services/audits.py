@@ -264,14 +264,20 @@ def _cleaning(audit: Audit) -> dict[str, Any] | None:
     return clean(df, audit.profiling or {}, audit.ai_audit, approved_op_ids=set())
 
 
-def _deliverable_content(audit: Audit, kind: DeliverableKind) -> bytes:
+# Ce que l'étudiant reçoit avec l'audit : le classeur seul. Le rapport Word reste
+# disponible en interne ; la base nettoyée est livrée avec l'analyse statistique, une fois
+# les doublons et les points bloquants tranchés (décision du 27/10/2026).
+CLIENT_DELIVERABLES = frozenset({DeliverableKind.WORKBOOK})
+
+
+def _deliverable_content(audit: Audit, kind: DeliverableKind, for_client: bool) -> bytes:
     assert audit.profiling is not None and audit.score_detail is not None
     if kind is DeliverableKind.REPORT:
         return build_report(audit.profiling, audit.score_detail, audit.ai_audit)
     cleaning = _cleaning(audit)
     if kind is DeliverableKind.WORKBOOK:  # sans fichier source : classeur sans les bases
         return build_workbook(audit.profiling, audit.score_detail, audit.ai_audit,
-                              cleaning=cleaning)
+                              cleaning=cleaning, include_data=not for_client)
     if cleaning is None:
         raise DeliverableUnavailableError("Fichier source indisponible pour le nettoyage")
     if kind is DeliverableKind.BASE_CSV:
@@ -279,9 +285,16 @@ def _deliverable_content(audit: Audit, kind: DeliverableKind) -> bytes:
     return to_sav_bytes(cleaning["base_analyse"])
 
 
-def build_deliverable(audit: Audit, kind: DeliverableKind) -> Deliverable:
-    """Fabrique un livrable à la volée. Lève `DeliverableUnavailableError` si impossible."""
+def build_deliverable(audit: Audit, kind: DeliverableKind, *,
+                      for_client: bool = False) -> Deliverable:
+    """Fabrique un livrable à la volée. Lève `DeliverableUnavailableError` si impossible.
+
+    `for_client` : téléchargement par l'étudiant (lien privé) ; seuls les
+    CLIENT_DELIVERABLES sont servis, et le classeur ne contient pas les bases."""
     if not audit.profiling or not audit.score_detail:
         raise DeliverableUnavailableError("Audit introuvable ou incomplet")
+    if for_client and kind not in CLIENT_DELIVERABLES:
+        raise DeliverableUnavailableError("Livrable remis avec l'analyse statistique")
     suffix, media_type = _DELIVERABLE_FILES[kind]
-    return Deliverable(_deliverable_content(audit, kind), f"{audit.id}_{suffix}", media_type)
+    return Deliverable(_deliverable_content(audit, kind, for_client),
+                       f"{audit.id}_{suffix}", media_type)

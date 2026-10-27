@@ -161,7 +161,11 @@ def _score_and_assemble(profiling: dict[str, Any], scoring_inputs: dict[str, Any
         "row_count": s["n_rows"],
         "column_count": s["n_cols"],
         "missing_pct": m["pct_global"],
-        "duplicates_pct": round(s["duplicates"]["exact_rows"] / max(s["n_rows"], 1) * 100, 1),
+        # Doublons stricts + lignes recopiées d'une autre sauf l'identifiant (identiques ou
+        # quasi identiques) : c'est ce que l'étudiant entend par « doublons ».
+        "duplicates_pct": round((s["duplicates"]["exact_rows"]
+                                 + s["duplicates"].get("n_suspect_copy_rows", 0))
+                                / max(s["n_rows"], 1) * 100, 1),
         "issues": issues,
         "critical_issues": n_crit,
         "profiling": profiling,

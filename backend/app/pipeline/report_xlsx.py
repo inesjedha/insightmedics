@@ -330,7 +330,10 @@ def _sheet_data(wb: Workbook, title: str, df, note: str, max_rows: int = 500) ->
 # ---------------------------------------------------------------- entrée
 
 def build_workbook(profiling: dict, score_detail: dict,
-                   ai_audit: dict | None, cleaning: dict | None = None) -> bytes:
+                   ai_audit: dict | None, cleaning: dict | None = None,
+                   include_data: bool = True) -> bytes:
+    """`include_data=False` : classeur remis au client avec l'audit, sans les bases
+    nettoyées, qui sont livrées avec l'analyse statistique."""
     wb = Workbook()
     wb.remove(wb.active)  # retire la feuille vide par défaut
     _sheet_resume(wb, profiling, score_detail, ai_audit)
@@ -342,7 +345,7 @@ def build_workbook(profiling: dict, score_detail: dict,
     _sheet_decisions(wb, ai_audit)
     _sheet_plan(wb, ai_audit)
     # Onglets de données produits au jalon M8 (nettoyage). Ajoutés seulement si dispo.
-    if cleaning:
+    if cleaning and include_data:
         _sheet_data(wb, "Base analyse", cleaning["base_analyse"],
                     "Copie nettoyée et anonymisée ; original inchangé.")
         _sheet_data(wb, "Source anonymisée", cleaning["source_anonymisee"],

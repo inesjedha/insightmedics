@@ -214,11 +214,13 @@ export function DomainsCard({ scoreDetail }: { scoreDetail: ScoreDetail }) {
       {scoreDetail.plafonds_appliques.length > 0 && (
         <div className="mt-5 rounded-md border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
           <p className="font-semibold">Plafond appliqué</p>
+          <p className="mt-1">
+            Les 8 domaines totalisent {scoreDetail.score_brut}/100, mais un défaut bloquant limite
+            la note à {scoreDetail.score_final}/100 :
+          </p>
           <ul className="mt-1 list-disc pl-5">
             {scoreDetail.plafonds_appliques.map((p, i) => (
-              <li key={i}>
-                {p.defaut} → score plafonné à {p.plafond}/100
-              </li>
+              <li key={i}>{p.defaut}</li>
             ))}
           </ul>
         </div>
@@ -266,7 +268,7 @@ export function AuditScoreCard({
           <Metric label="Lignes" value={result.rowCount.toLocaleString("fr-FR")} />
           <Metric label="Colonnes" value={result.columnCount.toString()} />
           <Metric label="Manquants" value={`${result.missingPct}%`} />
-          <Metric label="Doublons" value={`${result.duplicatesPct}%`} />
+          <Metric label="Doublons et copies" value={`${result.duplicatesPct}%`} />
         </div>
       </div>
 

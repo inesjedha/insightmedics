@@ -39,6 +39,9 @@ MAX_EXAMPLES = 10
 # Lignes quasi identiques (proposition de Hamza, 26/10/2026) : part des variables
 # renseignées des deux côtés qui sont égales, signalée au-delà de 90 % sur au moins 30
 # variables. Comparaison de toutes les paires : bornée en nombre de lignes.
+# Ligne modèle d'une fiche de recueil recopiée dans la base (cases à cocher vides « ☐ »,
+# pointillés « ____ ») : ce n'est pas un patient.
+TEMPLATE_CELL_RE = re.compile(r"[☐☑☒□▢]|_{3,}")
 NEAR_DUP_THRESHOLD = 0.90
 NEAR_DUP_MIN_SHARED = 30
 NEAR_DUP_MAX_ROWS = 3000
@@ -128,6 +131,17 @@ def _numeric_flags(s: pd.Series) -> list[str]:
             if (stripped != s.dropna().astype(str)).any():
                 flags.append("leading_trailing_whitespace")
     return flags
+
+
+def _template_rows(df: pd.DataFrame) -> list[int]:
+    """Numéros (à partir de 1) des lignes qui sont la fiche de recueil vierge : au moins 3
+    cellules et 30 % des cellules renseignées portent des cases à cocher ou des pointillés."""
+    text = df.astype(object).where(df.notna()).map(
+        lambda v: isinstance(v, str) and bool(TEMPLATE_CELL_RE.search(v)))
+    marked = text.sum(axis=1)
+    filled = df.notna().sum(axis=1).clip(lower=1)
+    mask = (marked >= 3) & (marked / filled >= 0.30)
+    return [i + 1 for i, is_template in enumerate(mask) if is_template]
 
 
 def _row_hash(frame: pd.DataFrame) -> pd.Series:
@@ -329,6 +343,7 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
     # Lignes vides (aucune valeur hors identifiant), fréquentes en fin de .sav ou d'Excel.
     body = df.drop(columns=[id_col]) if id_col else df
     empty_row_pos = [i + 1 for i, empty in enumerate(body.isna().all(axis=1)) if empty]
+    template_row_pos = _template_rows(df)
 
     advanced_dups: dict[str, Any] = {}
     if id_col:
@@ -348,6 +363,7 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
             **advanced_dups,
         },
         "empty_rows": {"n": len(empty_row_pos), "lines": empty_row_pos[:20]},
+        "template_rows": {"n": len(template_row_pos), "lines": template_row_pos[:20]},
         "empty_columns": empty_cols,
         "constant_columns": constant_cols,
         "near_constant_columns": near_constant,

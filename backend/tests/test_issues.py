@@ -143,3 +143,9 @@ def test_lignes_quasi_identiques_critique_avec_contexte():
     issue = next(i for i in detect_issues(p) if "quasi identiques" in i["label"])
     assert issue["level"] == "critical"
     assert "10 paire(s)" in issue["label"] and "53 % en médiane" in issue["label"]
+
+
+def test_ligne_modele_signalee():
+    p = _prof()
+    p["structure"]["template_rows"] = {"n": 1, "lines": [1]}
+    assert any("ligne(s) modèle" in i["label"] and "ligne 1" in i["label"] for i in detect_issues(p))

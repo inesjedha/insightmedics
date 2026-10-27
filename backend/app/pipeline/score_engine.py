@@ -357,7 +357,8 @@ def compute_score(profiling: dict[str, Any],
     # Plafonds de la grille de Hamza (v2.1, 26/10/2026), et eux seuls. Le 49 est réservé au
     # critère principal totalement absent et aux patients non individualisables ; un
     # critère présent mais mal défini perd des points (domaines 5 et 6), sans plafond.
-    n_real_rows = n_rows - (s.get("empty_rows") or {}).get("n", 0)
+    n_real_rows = (n_rows - (s.get("empty_rows") or {}).get("n", 0)
+                   - (s.get("template_rows") or {}).get("n", 0))
     cap(n_real_rows <= 0, "Absence de véritables observations / table vide", 10)
     cap(cjp_status == "absent", "Critère principal totalement absent", 49)
     # Hamza plafonne pour l'identité UNIQUEMENT si les patients ne sont pas
