@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..db import execute_update
-from ..models import Audit, AuditStatus, utcnow_iso
+from ..models import Analysis, Audit, AuditStatus, utcnow_iso
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,14 @@ def purge_expired(db: Session, now: datetime | None = None) -> PurgeReport:
         db.commit()
         if marked:
             _delete_audit_files(audit)
+            # Analyses de cet audit : la base corrigée part avec le dossier ; on efface
+            # aussi ce qui en dérive (contre-audit, résultats, texte).
+            execute_update(db, (
+                update(Analysis).where(Analysis.audit_id == audit.id,
+                                       Analysis.purged_at.is_(None))
+                .values(recheck=None, results=None, text=None, flow=None, derived_log=None,
+                        stored_path=None, purged_at=utcnow_iso())))
+            db.commit()
             purged += 1
 
     # Dossiers sans audit actif : uploads rejetés anciens, ou audits déjà purgés dont la

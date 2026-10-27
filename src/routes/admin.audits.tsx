@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
@@ -8,9 +8,10 @@ import {
   Loader2,
   Lock,
   RotateCcw,
+  Sigma,
   Unlock,
 } from "lucide-react";
-import { listAudits, unlockAudit, UnauthorizedError } from "@/lib/api/client";
+import { listAudits, orderAnalysis, unlockAudit, UnauthorizedError } from "@/lib/api/client";
 import type { AuditResult } from "@/lib/api/types";
 import { AdminPageHeader, RefreshButton } from "@/components/admin/AdminUi";
 import { Button } from "@/components/ui/button";
@@ -259,6 +260,7 @@ function AuditAction({
           <Unlock className="h-3.5 w-3.5" /> débloqué
         </span>
         {audit.token && !audit.purged && <CopyLinkButton token={audit.token} />}
+        {!audit.purged && <OrderAnalysisButton auditId={audit.id} />}
       </div>
     );
   }
@@ -322,6 +324,41 @@ function CopyLinkButton({ token }: { token: string }) {
           <Copy className="h-3.5 w-3.5" /> Lien client
         </>
       )}
+    </Button>
+  );
+}
+
+/** Offre Analyses + résultats : crée (ou retrouve) l'analyse de cet audit et l'ouvre. */
+function OrderAnalysisButton({ auditId }: { auditId: string }) {
+  const navigate = useNavigate();
+  const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  const order = async () => {
+    setPending(true);
+    setFailed(null);
+    try {
+      const a = await orderAnalysis(auditId);
+      await navigate({ to: "/admin/analyses/$id", params: { id: a.id } });
+    } catch (e) {
+      setFailed(e instanceof Error ? e.message : "Erreur");
+      setPending(false);
+    }
+  };
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={order}
+      disabled={pending}
+      title={failed ?? "Commander ou ouvrir l'analyse statistique (500 DT)"}
+      className="h-7 gap-1 px-2 text-xs"
+    >
+      {pending ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Sigma className="h-3.5 w-3.5" />
+      )}
+      Analyse 500 DT
     </Button>
   );
 }

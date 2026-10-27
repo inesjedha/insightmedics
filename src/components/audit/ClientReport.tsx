@@ -1402,6 +1402,49 @@ function Fold({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
+/* ------------------------------------------ analyse livrée (offre 500 DT) */
+
+export function AnalysisDelivered({
+  docxHref,
+  xlsxHref,
+  deliveredAt,
+}: {
+  docxHref: string;
+  xlsxHref: string;
+  deliveredAt: string | null;
+}) {
+  return (
+    <section className="flex flex-wrap items-center gap-5 rounded-2xl bg-brand p-6 text-brand-foreground sm:p-8">
+      <div className="min-w-0 flex-[999_1_360px] space-y-2">
+        <p className="font-hand text-2xl text-highlight">c'est prêt</p>
+        <h2 className="text-3xl leading-tight sm:text-4xl">Votre partie Résultats est livrée.</h2>
+        <p className="leading-relaxed opacity-90">
+          Le texte, les tableaux et les figures, relus par notre équipe, et le paragraphe « Analyse
+          statistique » à insérer dans votre Matériel et méthodes.
+          {deliveredAt && ` Livrée le ${new Date(deliveredAt).toLocaleDateString("fr-FR")}.`}
+        </p>
+      </div>
+      <div className="flex flex-[1_1_220px] flex-col gap-3">
+        <Button asChild size="lg" className="bg-background text-brand hover:bg-background/90">
+          <a href={docxHref}>
+            <Download /> Partie Résultats (Word)
+          </a>
+        </Button>
+        <Button
+          asChild
+          size="lg"
+          variant="outline"
+          className="border-brand-foreground/60 bg-transparent text-brand-foreground hover:bg-brand-foreground/10 hover:text-brand-foreground"
+        >
+          <a href={xlsxHref}>
+            <FileSpreadsheet /> Tableaux et base d'analyse (Excel)
+          </a>
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 /* ------------------------------------------------------------ 9. classeur */
 
 export function WorkbookDownload({ href }: { href: string }) {

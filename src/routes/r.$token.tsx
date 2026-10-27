@@ -15,13 +15,21 @@ import {
   TrustStrip,
   AlreadyInOrder,
   DidYouKnow,
+  AnalysisDelivered,
   StickyWhatsApp,
   TechnicalDetails,
   WorkbookDownload,
 } from "@/components/audit/ClientReport";
 import { ogImageMeta } from "@/lib/seo";
-import { getClientResult, getClientDetail, clientDownloadUrl, ApiError } from "@/lib/api/client";
-import type { AiAssessment, AuditResult, ScoreDetail } from "@/lib/api/types";
+import {
+  getClientResult,
+  getClientDetail,
+  getClientAnalysis,
+  clientAnalysisUrl,
+  clientDownloadUrl,
+  ApiError,
+} from "@/lib/api/client";
+import type { AiAssessment, AuditResult, ClientAnalysis, ScoreDetail } from "@/lib/api/types";
 
 export const Route = createFileRoute("/r/$token")({
   head: () => ({
@@ -49,6 +57,7 @@ function ClientResultPage() {
   const [result, setResult] = useState<AuditResult | null>(null);
   const [scoreDetail, setScoreDetail] = useState<ScoreDetail | null>(null);
   const [assessment, setAssessment] = useState<AiAssessment | null>(null);
+  const [analysis, setAnalysis] = useState<ClientAnalysis | null>(null);
   const workbookHref = clientDownloadUrl(token, "workbook.xlsx");
   // Cases cochées gardées dans ce navigateur, par audit (un fragment du jeton suffit).
   const storageKey = `im-audit:${token.slice(0, 10)}`;
@@ -63,6 +72,10 @@ function ClientResultPage() {
         setResult(res);
         setScoreDetail(detail.scoreDetail);
         setAssessment(detail.assessment);
+        // Analyse livrée (offre 500 DT) : facultative, une panne ne bloque pas la page.
+        getClientAnalysis(token)
+          .then((x) => alive && setAnalysis(x))
+          .catch(() => undefined);
         setPhase("ready");
       } catch (e) {
         if (!alive) return;
@@ -116,6 +129,13 @@ function ClientResultPage() {
 
         {phase === "ready" && result && (
           <div className="mt-8 space-y-10 pb-20 md:pb-0">
+            {analysis && (
+              <AnalysisDelivered
+                docxHref={clientAnalysisUrl(token, "resultats.docx")}
+                xlsxHref={clientAnalysisUrl(token, "resultats.xlsx")}
+                deliveredAt={analysis.deliveredAt}
+              />
+            )}
             <ReportHero
               result={result}
               scoreDetail={scoreDetail}
@@ -129,7 +149,7 @@ function ClientResultPage() {
             />
             <BlockingPoints assessment={assessment} storageKey={storageKey} />
             <AnalysisMapCard map={assessment?.analysis_map} />
-            <OfferNudge />
+            {!analysis && <OfferNudge />}
             <RecordsToOpen
               assessment={assessment}
               storageKey={storageKey}
@@ -137,12 +157,14 @@ function ClientResultPage() {
             />
             <DirectorQuestions decisions={assessment?.client_decisions} storageKey={storageKey} />
             <AlreadyInOrder assessment={assessment} />
-            <NextSteps assessment={assessment} needsHumanReview={result.needsHumanReview} />
+            {!analysis && (
+              <NextSteps assessment={assessment} needsHumanReview={result.needsHumanReview} />
+            )}
             <DidYouKnow assessment={assessment} />
             <TrustStrip />
             <TechnicalDetails scoreDetail={scoreDetail} findings={assessment?.findings ?? []} />
             <WorkbookDownload href={workbookHref} />
-            <StickyWhatsApp />
+            {!analysis && <StickyWhatsApp />}
           </div>
         )}
       </Section>

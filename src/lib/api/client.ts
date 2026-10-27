@@ -1,9 +1,12 @@
 // Client de l'API Insight Medics (backend FastAPI, voir backend/README.md).
 // Une fonction par endpoint ; la mécanique HTTP commune est dans http.ts.
 
-import { apiUrl, request, requestOrNull } from "./http";
+import { apiUrl, downloadAdmin, request, requestOrNull } from "./http";
 import type {
   AiAssessment,
+  AnalysisDetail,
+  AnalysisSummary,
+  ClientAnalysis,
   AuditEvent,
   AuditResult,
   Lead,
@@ -103,4 +106,87 @@ type ClientDeliverable = "workbook.xlsx";
 
 export function clientDownloadUrl(token: string, kind: ClientDeliverable): string {
   return apiUrl(`/r/${encodeURIComponent(token)}/${kind}`);
+}
+
+// --- Analyses + résultats (admin) ---
+
+export function listAnalyses(): Promise<AnalysisSummary[]> {
+  return request<AnalysisSummary[]>("/analyses", { admin: true });
+}
+
+export function getAnalysis(id: string): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}`, { admin: true });
+}
+
+/** Commande l'analyse d'un audit livré (idempotent : renvoie l'analyse existante). */
+export function orderAnalysis(auditId: string): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/audit/${encodeURIComponent(auditId)}/analysis`, {
+    method: "POST",
+    admin: true,
+  });
+}
+
+export function uploadAnalysisBase(id: string, file: File): Promise<AnalysisDetail> {
+  const form = new FormData();
+  form.append("file", file);
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/base`, {
+    method: "POST",
+    body: form,
+    admin: true,
+  });
+}
+
+export function setAnalysisInstructions(id: string, text: string): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/instructions`, {
+    method: "PUT",
+    body: { text },
+    admin: true,
+  });
+}
+
+/** Contre-audit puis plan proposé par l'IA (tâche de fond : suivre avec getAnalysis). */
+export function generateAnalysisPlan(id: string): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/plan/generate`, {
+    method: "POST",
+    admin: true,
+  });
+}
+
+export function saveAnalysisPlan(id: string, plan: unknown): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/plan`, {
+    method: "PUT",
+    body: plan,
+    admin: true,
+  });
+}
+
+/** Plan validé : calculs puis rédaction (tâche de fond). */
+export function computeAnalysis(id: string): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/compute`, {
+    method: "POST",
+    admin: true,
+  });
+}
+
+export function deliverAnalysis(id: string): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/deliver`, {
+    method: "POST",
+    admin: true,
+  });
+}
+
+export function downloadAnalysisFile(id: string, kind: AnalysisFile): Promise<void> {
+  return downloadAdmin(`/analyses/${encodeURIComponent(id)}/${kind}`, kind);
+}
+
+// --- Analyses + résultats (étudiant, lien privé) ---
+
+type AnalysisFile = "resultats.docx" | "resultats.xlsx";
+
+export function getClientAnalysis(token: string): Promise<ClientAnalysis | null> {
+  return requestOrNull<ClientAnalysis>(`/r/${encodeURIComponent(token)}/analysis`);
+}
+
+export function clientAnalysisUrl(token: string, kind: AnalysisFile): string {
+  return apiUrl(`/r/${encodeURIComponent(token)}/analysis/${kind}`);
 }

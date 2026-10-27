@@ -52,7 +52,7 @@ export const ADMIN_UNAUTHORIZED_EVENT = "im:admin-unauthorized";
 // --- Requêtes ---
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "PUT";
   /** Objet sérialisé en JSON, ou FormData envoyé tel quel (upload). */
   body?: unknown;
   /** Ajoute l'en-tête X-Admin-Key. */
@@ -108,4 +108,17 @@ export async function requestOrNull<T>(path: string): Promise<T | null> {
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
   }
+}
+
+/** Télécharge un fichier réservé à l'admin (en-tête X-Admin-Key, donc pas de simple lien). */
+export async function downloadAdmin(path: string, filename: string): Promise<void> {
+  const res = await fetch(apiUrl(path), { headers: { "X-Admin-Key": getAdminKey() } });
+  if (res.status === 401) throw new UnauthorizedError();
+  if (!res.ok) throw new ApiError(res.status, await errorDetail(res));
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }

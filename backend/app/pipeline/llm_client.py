@@ -146,7 +146,8 @@ def call_and_validate[T: BaseModel](system: str, user: str, schema: type[T],
     est invalide.
 
     `post` : traitement optionnel après validation (ex. filtrage des règles), qui
-    retourne (objet modifié, notes supplémentaires).
+    retourne (objet modifié, notes supplémentaires), ou lève ValueError pour demander une
+    nouvelle réponse (le message est renvoyé au modèle).
     Retourne (objet validé | None, notes).
     """
     if not settings.ai_enabled:
@@ -170,7 +171,13 @@ def call_and_validate[T: BaseModel](system: str, user: str, schema: type[T],
             last_error = str(exc)[:300]
             continue
         if post is not None:
-            obj, extra = post(obj)
+            # `post` peut refuser une sortie valide mais incohérente (colonne inconnue,
+            # chiffre absent des résultats) en levant ValueError : on relance avec le motif.
+            try:
+                obj, extra = post(obj)
+            except ValueError as exc:
+                last_error = str(exc)[:600]
+                continue
             notes.extend(extra)
         notes.append(f"OK ({settings.llm_model}, effort {settings.llm_effort}, "
                      f"tentative {attempt + 1})")

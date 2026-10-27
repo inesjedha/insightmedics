@@ -274,7 +274,8 @@ Champs :
   source demandées dans le registre. Pour chacune :
   · "patients" (« 4 et 34 », « 24 ») ; "row_ids" : les identifiants EXACTS de ces lignes
     tels qu'ils figurent dans les entrées (le code en déduit le numéro de ligne du fichier) ;
-  · "colonne" (la colonne concernée, ou « toutes » pour une paire de lignes jumelles) ;
+  · "colonne" (le nom EXACT de la colonne tel qu'il figure dans les entrées, ou « toutes »
+    pour une paire de lignes jumelles : il sert à retrouver la valeur dans la base corrigée) ;
   · "valeur" (la valeur actuelle, 8 mots au plus : « 2 183 », « identiques ou presque ») ;
   · "check" (12 mots au plus : la question à vérifier dans le dossier) ;
   · "mission" (le numéro de la mission, à partir de 1).

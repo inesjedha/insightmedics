@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { FileBarChart2, LayoutDashboard, LogOut, Users } from "lucide-react";
+import { FileBarChart2, LayoutDashboard, LogOut, Sigma, Users } from "lucide-react";
 import { AdminGate } from "@/components/admin/AdminAuth";
 import { useAdminSession } from "@/components/admin/session";
 import { Logo } from "@/components/site/Logo";
@@ -24,6 +24,7 @@ function AdminRoot() {
 const NAV = [
   { to: "/admin", label: "Tableau de bord", icon: LayoutDashboard, exact: true },
   { to: "/admin/audits", label: "Audits", icon: FileBarChart2, exact: false },
+  { to: "/admin/analyses", label: "Analyses (500 DT)", icon: Sigma, exact: false },
   { to: "/admin/leads", label: "Prospects & clients", icon: Users, exact: false },
 ] as const;
 
