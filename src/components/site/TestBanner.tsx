@@ -47,8 +47,8 @@ export function TestBanner({
           Audit complet : {FULL_AUDIT_PRICE_LABEL}
         </p>
         <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-          Verdict d'exploitabilité, plan de correction, rapport Word, classeur Excel et base
-          nettoyée. Réglé après un appel avec nous, avant le lancement.
+          Verdict d'exploitabilité, missions de correction, questions pour votre directeur et
+          classeur Excel. Réglé après un appel avec nous, avant le lancement.
         </p>
       </div>
 

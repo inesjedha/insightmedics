@@ -122,6 +122,29 @@ def _suspect_missing_codes(s: pd.Series, declared: Any) -> list:
     return found
 
 
+def _missing_code_impact(s: pd.Series, codes: list) -> dict[str, Any]:
+    """Combien de cases portent chaque code de case vide (999, « NA »…), et ce que ces codes
+    font à la moyenne : c'est la preuve concrète montrée à l'étudiant (« 141 au lieu de 52 »)."""
+    if pd.api.types.is_numeric_dtype(s):
+        values = s.dropna()
+        by_code = {_fmt_code(c): int((values == c).sum()) for c in codes}
+        is_code = values.isin(codes)
+        impact: dict[str, Any] = {"n": int(is_code.sum()), "by_code": by_code}
+        rest = values[~is_code]
+        if len(values) and len(rest):
+            impact["mean_with"] = _py(round(float(values.mean()), 1))
+            impact["mean_without"] = _py(round(float(rest.mean()), 1))
+        return impact
+    lowered = s.dropna().astype(str).str.strip().str.lower()
+    by_code = {str(c): int((lowered == str(c).lower()).sum()) for c in codes}
+    return {"n": sum(by_code.values()), "by_code": by_code}
+
+
+def _fmt_code(code: Any) -> str:
+    """999.0 → « 999 » (clé lisible, stable en JSON)."""
+    return str(int(code)) if isinstance(code, float) and code.is_integer() else str(code)
+
+
 def _numeric_flags(s: pd.Series) -> list[str]:
     flags = []
     if s.dtype == object:
@@ -451,6 +474,7 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
                 col["flags"].append("rare_categories")
         if col["suspected_missing_codes"]:
             col["flags"].append("suspected_missing_code_in_values")
+            col["missing_code_impact"] = _missing_code_impact(s, col["suspected_missing_codes"])
         # Valeurs observées absentes des libellés de valeurs SPSS déclarés (§13)
         if vlabels:
             declared = {str(k) for k in vlabels} | {str(float(k)) for k in vlabels
@@ -482,6 +506,9 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
         "pct_global": round(float(na.values.mean() * 100), 1),
         "patients_with_missing": int((per_patient > 0).sum()),
         "complete_cases": int((per_patient == 0).sum()),
+        # Hors colonnes entièrement vides (en-têtes de section, champs jamais saisis) : c'est
+        # le chiffre lu par l'étudiant ; le score garde la définition ci-dessus (grille).
+        "complete_cases_useful": int((na.loc[:, ~na.all()].sum(axis=1) == 0).sum()),
         "median_missing_per_patient": _py(per_patient.median()),
         "missing_blocks": missing_blocks[:20],
         "declared_missing_in_file": bool(declared_missing),
@@ -501,6 +528,7 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
                     "n_future": int(future.sum()),
                     "n_before_1900": int(too_old.sum()),
                     "row_ids_future": row_ids(future),
+                    "latest_future": str(s[future].max().date()) if future.any() else None,
                 }
             )
 
@@ -509,7 +537,9 @@ def profile(df: pd.DataFrame, meta: dict[str, Any]) -> dict[str, Any]:
     for c in df.columns:
         kinds = [k for k, rx in PII_NAME_RE.items() if rx.search(str(c))]
         s = df[c].dropna().astype(str).str.strip()
-        if len(s):
+        # « 2023-03-04 00:00:00 » ressemble à un numéro de téléphone pour l'expression
+        # régulière : on ne cherche téléphones et e-mails que hors colonnes de dates.
+        if len(s) and not pd.api.types.is_datetime64_any_dtype(df[c]):
             if s.str.match(PHONE_CONTENT_RE).mean() > 0.5:
                 kinds.append("phone_content")
             if s.str.match(EMAIL_CONTENT_RE).mean() > 0.5:

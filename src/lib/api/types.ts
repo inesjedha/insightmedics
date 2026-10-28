@@ -230,9 +230,37 @@ export interface AiAssessment {
 }
 
 /** Détail public de l'aperçu gratuit. */
+/** Feu tricolore des constats et du verdict de l'aperçu ; « gris » : sans gravité. */
+export type PreviewLight = "rouge" | "orange" | "vert" | "gris";
+
+/** Un constat de l'aperçu gratuit, en mots simples, avec sa preuve chiffrée.
+ * `count` : cases ou lignes à vérifier, dont la liste n'est que dans l'audit complet. */
+export interface PreviewFinding {
+  key: string;
+  light: Exclude<PreviewLight, "vert">;
+  title: string;
+  why: string;
+  proof: string;
+  count: number;
+  unit: "case" | "ligne" | "valeur";
+}
+
+/** Aperçu gratuit tel que l'étudiant le lit — renvoyé par /audit/:id/preview. */
+export interface PreviewView {
+  verdict: { light: "rouge" | "orange" | "vert"; title: string; text: string };
+  score: number;
+  findings: PreviewFinding[];
+  to_check: number;
+  checks: {
+    reserved: { name: string; example: string }[];
+    n_done: number;
+    n_reserved: number;
+  };
+}
+
 export interface PreviewDetail {
   events: AuditEvent[];
-  scoreDetail: ScoreDetail | null;
+  view: PreviewView | null;
 }
 
 /** Détail de l'audit complet, servi au client par son lien privé. */

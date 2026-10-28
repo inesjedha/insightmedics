@@ -166,7 +166,7 @@ export const servicesLd: JsonLd = {
         "@type": "Service",
         name: "Audit complet de la base de données",
         description:
-          "Verdict d'exploitabilité, plan de correction, rapport Word, classeur Excel et base nettoyée.",
+          "Verdict d'exploitabilité, missions de correction, questions pour le directeur et classeur Excel.",
         provider: { "@id": ORG_ID },
       },
     },

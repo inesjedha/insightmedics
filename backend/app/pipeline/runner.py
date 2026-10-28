@@ -51,9 +51,10 @@ def _ingest_and_profile(path: str | Path, original_name: str, log: LogFn,
     log("info", f"Fichier reçu : {original_name}"
                 + (" + protocole de recherche" if with_protocol else ""))
     df, meta = ingest(path, original_name)
-    log("info", f"Parsing OK — {len(df)} lignes × {len(df.columns)} colonnes "
+    log("info", f"Fichier lu : {len(df)} lignes et {len(df.columns)} colonnes "
                 f"(format {meta['format']})")
-    log("info", "Profilage des variables, manquants, doublons, dates…")
+    log("info", "Recherche des doublons, des cases vides, des valeurs impossibles et des "
+                "dates incohérentes…")
     profiling = profile(df, meta)
     return df, meta, profiling
 
@@ -157,7 +158,7 @@ def _score_and_assemble(profiling: dict[str, Any], scoring_inputs: dict[str, Any
                         ai_audit: dict[str, Any] | None, events: list[dict], started_at: str,
                         log: LogFn, *, preview: bool) -> dict[str, Any]:
     """Calcule le score, agrège les anomalies lisibles, et assemble le dict de résultat."""
-    log("info", "Calcul du score de qualité /100 (grille en 8 domaines)…")
+    log("info", "Calcul de la note de qualité sur 100…")
     issues = detect_issues(profiling)  # anomalies lisibles pour le front
     score_detail = compute_score(profiling, scoring_inputs or None)
     score = score_detail["score_final"]
@@ -175,8 +176,8 @@ def _score_and_assemble(profiling: dict[str, Any], scoring_inputs: dict[str, Any
     n_crit = sum(1 for i in issues if i["level"] == "critical")
     kind = "Aperçu" if preview else "Audit"
     log("success" if n_crit == 0 else "warn",
-        f"{kind} terminé — score {score}/100 ({score_detail['niveau_qualite']}), "
-        f"{n_crit} anomalie(s) critique(s), confiance {score_detail['confiance']['niveau']}")
+        f"{kind} terminé : note de {score}/100 ({score_detail['niveau_qualite']}), "
+        f"{n_crit} point(s) urgent(s), confiance {score_detail['confiance']['niveau']}")
 
     m = profiling["missing_summary"]
     s = profiling["structure"]
