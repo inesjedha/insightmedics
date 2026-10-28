@@ -44,13 +44,14 @@ class Settings(BaseSettings):
     llm_max_retries: int = 4
     # Clé d'accès admin (CRM, déblocage d'audits). Vide = endpoints admin verrouillés.
     admin_api_key: str = ""
-    # Mails de notification à l'équipe à chaque formulaire rempli (services/notify.py).
-    # Envoi par l'API Resend ; sans clé ou sans destinataire, rien n'est envoyé.
-    resend_api_key: str = ""
-    # Destinataires, séparés par des virgules.
+    # Mails transactionnels via l'API Brevo (services/mailer.py) ; sans clé, aucun envoi.
+    brevo_api_key: str = ""
+    # Expéditeur : une adresse du domaine authentifié chez Brevo (SPF + DKIM).
+    mail_from_email: str = "notifications@insightmedics.fr"
+    mail_from_name: str = "Insight Medics"
+    # Notifications à l'équipe à chaque formulaire rempli (services/notify.py) :
+    # destinataires séparés par des virgules ; vide = aucune notification.
     notify_emails: str = ""
-    # Expéditeur : une adresse du domaine vérifié chez Resend.
-    notify_from: str = "Insight Medics <notifications@insightmedics.fr>"
     # Prévenir aussi à chaque test gratuit (en plus des demandes de contact et d'audit).
     notify_on_test: bool = True
     # Adresse publique du site, pour les liens vers l'admin dans les mails.

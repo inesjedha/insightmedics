@@ -2,29 +2,21 @@
 
 Filet de sécurité pour ne rien manquer si personne n'ouvre l'admin : chaque demande
 (contact, déblocage d'audit) et chaque test gratuit envoie un court mail avec les données
-saisies. L'envoi passe par l'API HTTP de Resend (les ports SMTP sont souvent fermés chez
-les hébergeurs) et ne bloque jamais le formulaire : il tourne en tâche de fond, et un échec
-est seulement journalisé.
+saisies. Ce module ne fait que le contenu ; l'envoi passe par `mailer` (Brevo). Il ne
+bloque jamais le formulaire : il tourne en tâche de fond, et un échec est seulement
+journalisé.
 
-Sans `RESEND_API_KEY` ou sans destinataire (`NOTIFY_EMAILS`), rien n'est envoyé (dev, tests).
+Sans `BREVO_API_KEY` ou sans destinataire (`NOTIFY_EMAILS`), rien n'est envoyé (dev, tests).
 """
 
 from __future__ import annotations
 
 import html
-import json
-import logging
-import urllib.error
-import urllib.request
 from dataclasses import dataclass
 
 from ..config import settings
 from ..models import Audit, Lead
-
-logger = logging.getLogger(__name__)
-
-RESEND_URL = "https://api.resend.com/emails"
-TIMEOUT_SECONDS = 10
+from . import mailer
 
 SOURCE_LABEL = {"contact": "Formulaire de contact", "audit": "Demande d'audit complet (50 DT)"}
 
@@ -35,10 +27,11 @@ class Message:
     rows: list[tuple[str, str]]      # (libellé, valeur), dans l'ordre d'affichage
     link_label: str
     link: str
+    reply_to: str | None = None      # « Répondre » écrit directement à l'étudiant
 
 
 def enabled() -> bool:
-    return bool(settings.resend_api_key and settings.notify_email_list)
+    return mailer.configured() and bool(settings.notify_email_list)
 
 
 # ---------------------------------------------------------------- contenus
@@ -64,6 +57,7 @@ def lead_message(lead: Lead) -> Message:
         rows=[(k, v) for k, v in rows if v],
         link_label="Ouvrir la demande dans l'admin",
         link=f"{settings.site_url}/admin/leads/{lead.id}",
+        reply_to=lead.email or None,
     )
 
 
@@ -110,32 +104,8 @@ def render_html(m: Message) -> str:
 # ---------------------------------------------------------------- envoi
 
 def send(m: Message) -> bool:
-    """Envoie le mail à l'équipe. Ne lève jamais : renvoie False et journalise en cas d'échec."""
+    """Envoie la notification à l'équipe (jamais d'exception, voir `mailer.send_email`)."""
     if not enabled():
         return False
-    payload = {
-        "from": settings.notify_from,
-        "to": settings.notify_email_list,
-        "subject": m.subject[:200],
-        "text": render_text(m),
-        "html": render_html(m),
-    }
-    request = urllib.request.Request(
-        RESEND_URL, data=json.dumps(payload).encode("utf-8"), method="POST",
-        headers={"Authorization": f"Bearer {settings.resend_api_key}",
-                 "Content-Type": "application/json", "User-Agent": "insightmedics-backend"})
-    try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
-            ok = 200 <= response.status < 300
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", "replace")[:300]
-        logger.warning("Notification non envoyée (HTTP %s) : %s", exc.code, detail)
-        return False
-    except Exception:  # un mail raté ne doit jamais casser un formulaire
-        logger.warning("Notification non envoyée (réseau)", exc_info=True)
-        return False
-    if ok:
-        logger.info("Notification envoyée : %s", m.subject.split(" · ")[0])
-    return ok
-
-
+    return mailer.send_email(settings.notify_email_list, m.subject, render_text(m),
+                             render_html(m), reply_to=m.reply_to, tag="notification-equipe")

@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.config import settings
 from app.main import app
-from app.services import notify
+from app.services import mailer, notify
 
 
 class _Response:
@@ -31,9 +31,9 @@ def outbox(monkeypatch):
                      "body": json.loads(request.data.decode("utf-8"))})
         return _Response()
 
-    monkeypatch.setattr(settings, "resend_api_key", "re_test")
+    monkeypatch.setattr(settings, "brevo_api_key", "xkeysib-test")
     monkeypatch.setattr(settings, "notify_emails", "a@exemple.fr, b@exemple.fr")
-    monkeypatch.setattr(notify.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(mailer.urllib.request, "urlopen", fake_urlopen)
     return sent
 
 
@@ -45,18 +45,20 @@ def test_formulaire_de_contact_envoie_un_mail_avec_les_donnees(outbox):
     assert r.status_code == 201
     assert len(outbox) == 1
     mail = outbox[0]["body"]
-    assert mail["to"] == ["a@exemple.fr", "b@exemple.fr"]
+    assert mail["to"] == [{"email": "a@exemple.fr"}, {"email": "b@exemple.fr"}]
+    assert mail["sender"] == {"name": "Insight Medics", "email": "notifications@insightmedics.fr"}
+    assert mail["replyTo"] == {"email": "sana@exemple.tn"}
     assert mail["subject"] == "Nouvelle demande · Formulaire de contact · Sana"
-    assert "Téléphone : +216 20 000 000" in mail["text"]
-    assert "Base de 120 patients <urgent>" in mail["text"]
-    assert "&lt;urgent&gt;" in mail["html"] and "<urgent>" not in mail["html"]
-    assert f"/admin/leads/{r.json()['id']}" in mail["text"]
-    assert outbox[0]["headers"]["Authorization"] == "Bearer re_test"
+    assert "Téléphone : +216 20 000 000" in mail["textContent"]
+    assert "Base de 120 patients <urgent>" in mail["textContent"]
+    assert "&lt;urgent&gt;" in mail["htmlContent"] and "<urgent>" not in mail["htmlContent"]
+    assert f"/admin/leads/{r.json()['id']}" in mail["textContent"]
+    assert outbox[0]["headers"]["Api-key"] == "xkeysib-test"
 
 
 def test_sans_cle_aucun_mail(monkeypatch):
     calls: list[object] = []
-    monkeypatch.setattr(notify.urllib.request, "urlopen", lambda *a, **k: calls.append(a))
+    monkeypatch.setattr(mailer.urllib.request, "urlopen", lambda *a, **k: calls.append(a))
     monkeypatch.setattr(settings, "notify_emails", "a@exemple.fr")
     r = TestClient(app).post("/leads", json={"email": "x@exemple.tn"})
     assert r.status_code == 201 and calls == []
@@ -66,7 +68,7 @@ def test_echec_d_envoi_ne_casse_pas_le_formulaire(monkeypatch, outbox):
     def boom(request, timeout):
         raise urllib.error.URLError("hors ligne")
 
-    monkeypatch.setattr(notify.urllib.request, "urlopen", boom)
+    monkeypatch.setattr(mailer.urllib.request, "urlopen", boom)
     r = TestClient(app).post("/leads", json={"email": "y@exemple.tn"})
     assert r.status_code == 201
 
