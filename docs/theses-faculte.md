@@ -80,6 +80,8 @@ charte modifiée par Hamza fait échouer `test_theses_charte.py` : reporter l'é
   le fait sur un PDF produit par Word.
 - **Pas encore automatisé** : Introduction, Discussion et Conclusion (recherche et
   lecture d'articles), pages liminaires, version « figures Excel » des Résultats,
-  survie (Kaplan-Meier, Cox), courbes ROC, kappa, thèses en arabe.
+  survie (Kaplan-Meier, Cox), courbes ROC, kappa, thèses en arabe et en anglais
+  (tableaux du moteur en virgule décimale) : « Tout lancer » les refuse, elles restent au
+  format simple.
 - Les gabarits Word de chaque faculté (« THESE copie finale.docx » à Sousse…) ne sont pas
   encore dans le dépôt : le rendu applique la charte mesurée, pas le fichier gabarit.

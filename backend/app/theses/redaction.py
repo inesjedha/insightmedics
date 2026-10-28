@@ -177,7 +177,8 @@ def build_user_message(context: dict[str, Any], fiche: dict[str, Any] | None,
                        figures: list[dict[str, Any]], instructions: str) -> str:
     charte = get_charte(effective(fiche)["these.faculte"])
     parts = [
-        "## FICHE DE MISSION\n" + json.dumps(_fiche_for_prompt(fiche), ensure_ascii=False),
+        "## FICHE DE MISSION (remplie par l'étudiant et l'équipe)\n<contenu_client id=\"fiche\">\n"
+        + json.dumps(_fiche_for_prompt(fiche), ensure_ascii=False) + "\n</contenu_client>",
         "## CHAMPS NON DOCUMENTÉS (mention [À CONFIRMER : …] si tu en as besoin)\n"
         + json.dumps(to_confirm(fiche), ensure_ascii=False),
         f"## FACULTÉ\n{charte.name} ({charte.code}). La partie « Analyse statistique » "

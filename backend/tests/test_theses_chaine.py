@@ -231,3 +231,50 @@ def test_lancement_refuse_si_la_fiche_est_incomplete(admin_headers, tmp_path):
                json={"these.titre": "T", "objectifs.principal": "O", "these.langue": "ar"})
     r = client.post(f"/analyses/{aid}/launch", headers=h)
     assert r.status_code == 409 and "arabe" in r.json()["detail"]
+
+
+def test_garde_fous_relus_avant_la_production(admin_headers, monkeypatch, tmp_path):
+    """Retours de relecture : « Tout lancer » n'enchaîne qu'une fois ; anglais refusé ;
+    fiche bornée ; un champ validé par l'équipe ne se remplace plus côté étudiant."""
+    h = admin_headers
+    plans = [{**PLAN, "questions": ["Les lignes 3 et 4 sont-elles le même patient ?"]}, PLAN]
+    calls = {"plan": 0, "draft": 0}
+
+    def call_llm(system: str, prompt: str, effort=None) -> str:
+        if "RÈGLES DE LA PLATEFORME" in system:
+            calls["draft"] += 1
+            return json.dumps(_draft(40))
+        calls["plan"] += 1
+        return json.dumps(plans[min(calls["plan"] - 1, 1)])
+
+    monkeypatch.setattr(llm_client, "call_llm", call_llm)
+    monkeypatch.setattr(settings, "anthropic_api_key", "cle-factice")
+    token = "tokgardefous"
+    aid = client.post(f"/audit/{_audit(tmp_path, token)}/analysis", headers=h).json()["id"]
+    client.put(f"/analyses/{aid}/fiche", headers=h, json={
+        "these.titre": "Hémothorax", "these.faculte": "FMS", "objectifs.principal": "o"})
+
+    # Question à trancher : arrêt au plan ; refaire le plan à la main n'enchaîne pas.
+    client.post(f"/analyses/{aid}/launch", headers=h)
+    a = client.get(f"/analyses/{aid}", headers=h).json()
+    assert a["status"] == "plan_ready" and a["autoRun"] is True
+    client.post(f"/analyses/{aid}/plan/generate", headers=h)
+    a = client.get(f"/analyses/{aid}", headers=h).json()
+    assert a["status"] == "plan_ready" and a["planValidatedAt"] is None
+    assert calls == {"plan": 2, "draft": 0}
+
+    # Fiche bornée ; champ « doctorant propose, Insight Medics valide » verrouillé.
+    assert client.put(f"/r/{token}/fiche", json={"these.titre": "A" * 5000}).status_code == 422
+    client.put(f"/analyses/{aid}/fiche", headers=h, json={"these.type_etude": "cas-témoins"})
+    r = client.put(f"/r/{token}/fiche", json={"these.type_etude": "transversale"})
+    assert r.status_code == 422 and "Déjà validé" in r.json()["detail"]
+
+    # Anglais : pas encore automatisé au format faculté.
+    client.put(f"/analyses/{aid}/fiche", headers=h, json={"these.langue": "en"})
+    r = client.post(f"/analyses/{aid}/launch", headers=h)
+    assert r.status_code == 409 and "anglais" in r.json()["detail"]
+    # … et les calculs lancés à la main restent au format simple (pas de livrable bloqué).
+    assert client.post(f"/analyses/{aid}/compute", headers=h).status_code == 202
+    a = client.get(f"/analyses/{aid}", headers=h).json()
+    assert a["status"] == "review" and a["draft"] is None and a["checks"] == []
+    assert a["deliverables"] == ["resultats.docx", "resultats.xlsx"]

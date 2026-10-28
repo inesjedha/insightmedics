@@ -47,6 +47,35 @@ def student_editable(key: str) -> bool:
     return fields()[key].get("qui", "").startswith(STUDENT)
 
 
+# Garde-fous de taille : la fiche part dans le prompt de l'IA (coût, injection).
+MAX_TEXT = 2000
+MAX_ITEMS = 40
+
+
+def validated_by_team(current: dict[str, Any] | None, update: dict[str, Any]) -> list[str]:
+    """Champs « doctorant propose, Insight Medics valide » déjà remplis : l'étudiant ne
+    les remplace plus (l'équipe a pu les corriger). Renvoie leurs libellés."""
+    out = []
+    for key, value in update.items():
+        spec = fields().get(key, {})
+        who = spec.get("qui", "")
+        before = (current or {}).get(key)
+        if who.startswith(STUDENT) and who != STUDENT and before not in (None, "", [], UNKNOWN) \
+                and value != before:
+            out.append(spec.get("libelle", key))
+    return out
+
+
+def _too_big(value: Any) -> bool:
+    if isinstance(value, str):
+        return len(value) > MAX_TEXT
+    if isinstance(value, list):
+        return len(value) > MAX_ITEMS or any(_too_big(v) for v in value)
+    if isinstance(value, dict):
+        return len(value) > MAX_ITEMS or any(_too_big(v) for v in value.values())
+    return False
+
+
 def defaults() -> dict[str, Any]:
     return {k: f["defaut"] for k, f in fields().items() if "defaut" in f}
 
@@ -59,6 +88,8 @@ def _check(key: str, spec: dict[str, Any], value: Any) -> str | None:
         return None
     if value == UNKNOWN:
         return f"« {label} » est obligatoire" if spec.get("obligatoire") else None
+    if _too_big(value):
+        return f"« {label} » : trop long ({MAX_TEXT} caractères, {MAX_ITEMS} éléments au plus)"
     if kind in ("texte", "choix_plus_texte"):
         return None if isinstance(value, str) else f"« {label} » : texte attendu"
     if kind == "choix":
@@ -79,12 +110,14 @@ def _check(key: str, spec: dict[str, Any], value: Any) -> str | None:
         return None if ok else f"« {label} » : liste de textes attendue"
     if kind == "objet":
         subs = spec.get("sous_champs") or []
-        ok = isinstance(value, dict) and all(k in subs for k in value)
+        ok = isinstance(value, dict) and all(k in subs and isinstance(v, str)
+                                             for k, v in value.items())
         return None if ok else f"« {label} » : champs attendus {', '.join(subs)}"
     if kind == "liste_objets":
         subs = spec.get("sous_champs") or []
-        ok = isinstance(value, list) and all(isinstance(v, dict) and all(k in subs for k in v)
-                                             for v in value)
+        ok = isinstance(value, list) and all(
+            isinstance(v, dict) and all(k in subs and isinstance(x, str) for k, x in v.items())
+            for v in value)
         return None if ok else f"« {label} » : liste de {', '.join(subs)} attendue"
     return None
 
@@ -148,8 +181,13 @@ def to_confirm(fiche: dict[str, Any] | None) -> list[str]:
 def unsupported(fiche: dict[str, Any] | None) -> list[str]:
     """Ce que le workflow automatique ne sait pas encore faire (à traiter à la main)."""
     out = []
-    if effective(fiche).get("these.langue") == "ar":
+    lang = effective(fiche).get("these.langue")
+    if lang == "ar":
         out.append("thèse en arabe : rédaction et mise en page à faire par l'équipe")
+    elif lang == "en":
+        # Tableaux du moteur à la française (virgule décimale) : pas encore convertis.
+        out.append("thèse en anglais : format faculté pas encore automatisé (tableaux en "
+                   "virgule décimale), à traiter au format simple ou par l'équipe")
     return out
 
 

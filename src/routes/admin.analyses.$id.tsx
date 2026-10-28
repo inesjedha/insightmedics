@@ -36,6 +36,7 @@ import type {
   ThesisDraftBlock,
 } from "@/lib/api/types";
 import { FicheForm } from "@/components/theses/FicheForm";
+import { useFileDrop } from "@/components/audit/useFileDrop";
 import { AdminPageHeader, ErrorBanner } from "@/components/admin/AdminUi";
 import { AnalysisStatusBadge } from "@/components/admin/AnalysisStatusBadge";
 import { Button } from "@/components/ui/button";
@@ -286,6 +287,7 @@ function BaseStep({
   saving: boolean;
 }) {
   const [text, setText] = useState(a.instructions);
+  const drop = useFileDrop({ accept: ".xlsx,.xls,.sav,.csv", disabled, onFile: onUpload });
   return (
     <div className="space-y-4">
       <div className="rounded-lg bg-muted/40 p-4 text-sm">
@@ -312,15 +314,17 @@ function BaseStep({
           </p>
         )}
         <label
+          {...drop.handlers}
           className={cn(
-            "mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs",
-            disabled && "pointer-events-none opacity-50",
+            "mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed bg-card px-3 py-2 text-xs transition-colors",
+            drop.dragging ? "border-brand bg-accent" : "border-border",
+            disabled && "cursor-not-allowed opacity-50",
           )}
         >
           <FileUp className="h-4 w-4 text-brand" />
           {a.fileName
-            ? "Remplacer la base corrigée"
-            : "Facultatif : l'étudiant a renvoyé une base corrigée ? La déposer"}
+            ? "Remplacer la base corrigée (glisser ou cliquer)"
+            : "Facultatif : l'étudiant a renvoyé une base corrigée ? La glisser ici ou cliquer"}
           <input
             type="file"
             accept=".xlsx,.xls,.sav,.csv"
@@ -329,6 +333,16 @@ function BaseStep({
             onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
           />
         </label>
+        {drop.rejected && (
+          <p role="alert" className="mt-2 text-xs text-destructive">
+            « {drop.rejected} » n'est pas une base : SPSS (.sav), Excel (.xlsx, .xls) ou CSV.
+          </p>
+        )}
+        {disabled && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            La base ne se remplace qu'avant la validation du plan.
+          </p>
+        )}
       </div>
       <div className="space-y-2">
         <p className="text-sm font-medium">
@@ -651,7 +665,7 @@ function ResultsStep({
         </p>
       )}
       <div className="flex flex-wrap gap-3">
-        {(a.deliverables.length
+        {(a.deliverables?.length
           ? a.deliverables
           : (["resultats.docx", "resultats.xlsx"] as AnalysisFile[])
         ).map((kind) => (

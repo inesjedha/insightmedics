@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import math
 import warnings
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 
 import numpy as np
@@ -54,7 +54,10 @@ def fmt(x: float | None, digits: int = 1) -> str:
     l'affichage de SPSS : 31,25 → 31,3 ; 18,5 → 19), signe moins typographique."""
     if x is None or not math.isfinite(float(x)):
         return "—"
-    q = Decimal(repr(float(x))).quantize(Decimal(1).scaleb(-digits), rounding=ROUND_HALF_UP)
+    try:
+        q = Decimal(repr(float(x))).quantize(Decimal(1).scaleb(-digits), rounding=ROUND_HALF_UP)
+    except InvalidOperation:  # valeur démesurée (OR d'une séparation quasi complète)
+        return f"{float(x):.{digits}g}".replace(".", ",").replace("-", "−")
     if q == 0:
         q = abs(q)  # jamais « −0,0 »
     return f"{q:.{digits}f}".replace(".", ",").replace("-", "−")
@@ -66,16 +69,17 @@ def _integers(values: pd.Series) -> bool:
 
 
 def _digits(values: pd.Series) -> int:
-    """Précision de la variable : nombre de décimales des valeurs saisies (0 à 3).
+    """Précision de la variable : nombre de décimales des valeurs saisies (0 à 2).
     Médiane, quartiles et extrêmes s'affichent à cette précision ; moyenne et
     écart-type avec une décimale de plus (au moins une)."""
     v = values.dropna().astype(float).to_numpy()
     if not len(v):
         return 0
-    for d in range(4):
+    # Plafond à 2 : une colonne calculée (IMC, âge tiré des dates) a des décimales sans fin.
+    for d in range(3):
         if np.allclose(v, np.round(v, d), rtol=0, atol=1e-9):
             return d
-    return 3
+    return 2
 
 
 def fmt_p(p: float | None) -> str:

@@ -175,6 +175,14 @@ def faculty_format(analysis: Analysis) -> bool:
     return fiche_mod.faculty(analysis.fiche) is not None
 
 
+def faculty_ready(analysis: Analysis) -> bool:
+    """Format faculté réellement applicable : faculté choisie, champs obligatoires remplis,
+    langue prise en charge. Sinon, la chaîne reste au format simple (une fiche à moitié
+    remplie par l'étudiant ne doit pas changer le livrable en cours de route)."""
+    return (faculty_format(analysis) and not fiche_mod.missing_for_launch(analysis.fiche)
+            and not fiche_mod.unsupported(analysis.fiche))
+
+
 def set_fiche(db: Session, analysis: Analysis, data: dict[str, Any], *,
               student: bool = False) -> Analysis:
     """Mise à jour partielle de la fiche (une valeur vide efface le champ). L'étudiant ne
@@ -188,6 +196,11 @@ def set_fiche(db: Session, analysis: Analysis, data: dict[str, Any], *,
         clean = fiche_mod.validate(data, student=student)
     except fiche_mod.FicheError as exc:
         raise AnalysisError("Fiche invalide : " + " ; ".join(exc.problems[:6])) from exc
+    if student:
+        locked = fiche_mod.validated_by_team(analysis.fiche, data)
+        if locked:
+            raise AnalysisError("Déjà validé avec l'équipe : " + ", ".join(locked)
+                                + ". Écrivez-nous pour le modifier.")
     analysis.fiche = fiche_mod.merge(analysis.fiche, {k: clean.get(k) for k in data})
     analysis.updated_at = utcnow_iso()
     db.commit()
@@ -208,9 +221,10 @@ def launch(db: Session, analysis: Analysis) -> str:
     unsupported = fiche_mod.unsupported(analysis.fiche)
     if unsupported:
         raise AnalysisError("À traiter à la main : " + " ; ".join(unsupported) + ".")
+    job_id = claim(db, analysis, "plan")
     analysis.auto_run = True
     db.commit()
-    return claim(db, analysis, "plan")
+    return job_id
 
 
 def _load_base(analysis: Analysis, audit: Audit) -> tuple[pd.DataFrame, dict[str, Any]]:
@@ -284,6 +298,9 @@ def claim(db: Session, analysis: Analysis, step: str) -> str:
                Analysis.purged_at.is_(None))
         .values(status=target, job_id=job_id, job_started_at=utcnow_iso(), error=None,
                 updated_at=utcnow_iso(),
+                # Une étape lancée à la main n'enchaîne jamais seule (« Tout lancer » remet
+                # le drapeau juste après).
+                **({"auto_run": False} if step == "plan" else {}),
                 **({"plan_validated_at": utcnow_iso()} if step == "compute" else {}))))
     db.commit()
     db.refresh(analysis)
@@ -451,11 +468,12 @@ def _compute_and_write(analysis_id: str, job_id: str) -> None:
         with _heartbeat(analysis_id, job_id):
             base, flow, log, results, _ = compute(analysis, audit)
             context = build_context(analysis.plan or {}, flow, results, log)
-            if faculty_format(analysis):
+            if faculty_ready(analysis):
                 values = _write_faculty(analysis, audit, base, flow, results, context)
             else:
                 text, notes = run_write_llm(context)
-                values = {"text": text.model_dump() if text else None,
+                values = {"text": text.model_dump() if text else None, "draft": None,
+                          "checks": [],
                           "error": None if text else "Rédaction IA non produite : "
                           + "; ".join(notes)[:400]}
         written = bool(values.get("draft") or values.get("text"))
@@ -526,14 +544,14 @@ XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 def deliverables(analysis: Analysis) -> list[str]:
     """Les fichiers de l'analyse : au format de la faculté s'il y a un brouillon."""
-    if faculty_format(analysis) and analysis.draft:
+    if faculty_ready(analysis) and analysis.draft:
         return list(FACULTY_DELIVERABLES)
     return sorted(DELIVERABLES)
 
 
 def download_name(analysis: Analysis, kind: str) -> str:
     """Noms des livrables de Hamza (« Resultats_These_Hemothorax.docx »)."""
-    if not (faculty_format(analysis) and analysis.draft):
+    if not (faculty_ready(analysis) and analysis.draft):
         return kind
     subject = subject_slug(analysis.fiche)
     return {"analyse_statistique.docx": f"Analyse_statistique_These_{subject}.docx",
@@ -546,21 +564,25 @@ def build_deliverable(analysis: Analysis, audit: Audit, kind: str) -> tuple[byte
         raise AnalysisError("Aucun résultat calculé.")
     if kind not in deliverables(analysis):
         raise AnalysisError("Livrable inconnu.")
-    if kind.endswith(".docx") and faculty_format(analysis) and analysis.draft:
-        base, flow, _, results, _ = compute(analysis, audit)
+    # Tableaux et chiffres : ceux calculés et relus (`analysis.results`), jamais recalculés
+    # au téléchargement (une mise à jour du moteur ne doit pas changer un livrable relu).
+    # Seule la base d'analyse (figures, onglet de l'Excel) est reconstruite.
+    if kind.endswith(".docx") and faculty_ready(analysis) and analysis.draft:
+        base, _, _, _, _ = compute(analysis, audit)
         draft = ResultsDraft.model_validate(analysis.draft)
         with tempfile.TemporaryDirectory() as tmp:
-            methods, results_doc, charte = build_docs(analysis.plan or {}, flow, results,
-                                                      included_rows(base), draft,
-                                                      analysis.fiche, Path(tmp))
+            methods, results_doc, charte = build_docs(analysis.plan or {}, analysis.flow or [],
+                                                      analysis.results, included_rows(base),
+                                                      draft, analysis.fiche, Path(tmp))
             stats_docx, results_docx = render_both(methods, results_doc, charte)
         return (stats_docx if kind == "analyse_statistique.docx" else results_docx), DOCX
     if kind == "resultats.docx":
         return (build_results_docx(analysis.plan or {}, analysis.flow or [], analysis.results,
                                    analysis.text), DOCX)
-    base, flow, log, results, prof = compute(analysis, audit)
+    base, flow, log, _, prof = compute(analysis, audit)
     pii = {p.get("column") for p in prof.get("pii_candidates") or []}
-    return (build_results_xlsx(base, pii, flow, results, log, analysis.plan or {},
+    return (build_results_xlsx(base, pii, analysis.flow or flow, analysis.results,
+                               analysis.derived_log or log, analysis.plan or {},
                                analysis.text), XLSX)
 
 
