@@ -116,3 +116,36 @@ def test_code_a_zero_de_tete_reste_du_texte():
     base, journal = apply_corrections(df, [Correction(kind="missing_codes", column="Code",
                                                       values=[999])])
     assert base["Code"].tolist()[0] == "007" and journal[-1]["n"] == 1
+
+
+def test_classeur_de_resultats_sommaire_dictionnaire_et_lignes_ecartees():
+    import io
+
+    from openpyxl import load_workbook
+
+    from app.analysis.report import build_results_xlsx
+
+    plan = AnalysisPlan.model_validate({
+        "title": "Étude test",
+        "corrections": [{"kind": "missing_codes", "column": "Age", "values": [999]}],
+        "population": {"exclusions": [{"label": "Âge inconnu", "expr": 'isnull(col("Age"))'}]},
+        "analyses": [{"kind": "describe", "id": "d", "title": "Patients", "by_group": False,
+                      "variables": [{"name": "Age", "type": "quantitative"}]}]})
+    base, flow, log = prepare(_df(), plan)
+    from app.analysis.prepare import analysed
+    from app.analysis.stats import run_plan
+    res = run_plan(plan, analysed(base))
+    wb = load_workbook(io.BytesIO(build_results_xlsx(base, set(), flow, res, log,
+                                                     plan.model_dump())))
+    assert wb.sheetnames[:5] == ["Sommaire", "Tableaux", "Diagramme de flux",
+                                 "Base d'analyse", "Dictionnaire des colonnes"]
+    links = [c.hyperlink.location for row in wb["Sommaire"].iter_rows() for c in row
+             if c.hyperlink is not None and c.hyperlink.location]
+    assert any("Tableaux" in x for x in links)
+    data = wb["Base d'analyse"]
+    assert data["A1"].value == "INCLUS_ANALYSE"
+    excluded = [r for r in range(2, data.max_row + 1) if data.cell(row=r, column=1).value == 0]
+    assert excluded and data.cell(row=excluded[0], column=3).font.color.rgb.endswith("6B7280")
+    dico = " ".join(str(c.value) for row in wb["Dictionnaire des colonnes"].iter_rows()
+                    for c in row if c.value)
+    assert "Votre fichier, corrigée" in dico and "1 = analysé" in dico

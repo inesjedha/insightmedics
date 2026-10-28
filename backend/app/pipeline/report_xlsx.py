@@ -20,13 +20,14 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from . import xlsx_style as st
 from .llm2 import PRIORITY_LABELS
 
-TITLE = Font(name="Arial", bold=True, size=13, color="1F3B57")
-H = Font(name="Arial", bold=True, color="FFFFFF", size=10)
-HFILL = PatternFill("solid", fgColor="1F3B57")
-BOLD = Font(name="Arial", bold=True, size=10)
-NORM = Font(name="Arial", size=10)
+TITLE = st.font(14, bold=True, color=st.BRAND_DARK)
+H = st.font(10, bold=True, color="FFFFFF")
+HFILL = PatternFill("solid", fgColor=st.BRAND)
+BOLD = st.font(10, bold=True)
+NORM = st.font(10)
 WRAP = Alignment(wrap_text=True, vertical="top")
 SEV_FILL = {
     "critique": PatternFill("solid", fgColor="F8CBAD"),
@@ -48,7 +49,7 @@ def _headers(ws, headers: list[str], widths: list[int]) -> None:
 
 def _note(ws, text: str) -> None:
     c = ws.cell(row=2, column=1, value=text)
-    c.font = Font(name="Arial", italic=True, size=10, color="888888")
+    c.font = st.font(10, italic=True, color=st.MUTED_INK)
 
 
 # ---------------------------------------------------------------- onglets
@@ -69,7 +70,7 @@ def _sheet_resume(wb: Workbook, prof: dict, score: dict, ai: dict | None) -> Non
         ("Variables (colonnes)", s["n_cols"]),
         ("Identifiants uniques", s["n_unique_ids"]),
         ("Colonnes entièrement vides", len(s["empty_columns"])),
-        ("Taux de données manquantes", f"{m['pct_global']}%"),
+        ("Taux de données manquantes", st.fr_pct(m["pct_global"])),
         ("Doublons stricts de lignes", s["duplicates"]["exact_rows"]),
         ("Identifiants portés par des profils différents",
          (s["duplicates"].get("id_conflicts") or {}).get("n_ids", 0)),
@@ -85,7 +86,9 @@ def _sheet_resume(wb: Workbook, prof: dict, score: dict, ai: dict | None) -> Non
         stats.append(("Anomalies enregistrées", len(ai["assessment"].get("findings", []))))
     for label, val in stats:
         ws.cell(row=row, column=1, value=label).font = NORM
-        ws.cell(row=row, column=2, value=val).font = BOLD
+        v = ws.cell(row=row, column=2, value=val)
+        v.font = BOLD
+        v.alignment = Alignment(horizontal="right")
         row += 1
     row += 1
     # Tableau des 8 domaines
@@ -120,8 +123,10 @@ def _sheet_resume(wb: Workbook, prof: dict, score: dict, ai: dict | None) -> Non
         ("Motif du plafond",
          "; ".join(c["defaut"] for c in score["plafonds_appliques"]) or "aucun"),
     ]:
-        ws.cell(row=row, column=1, value=label).font = NORM
-        ws.cell(row=row, column=2, value=val).font = BOLD
+        lab = ws.cell(row=row, column=1, value=label)
+        lab.font = NORM
+        lab.alignment = WRAP
+        st.merged_text(ws, row, 2, 4, val, BOLD)
         row += 1
 
 
@@ -330,6 +335,23 @@ def _sheet_data(wb: Workbook, title: str, df, note: str, max_rows: int = 500) ->
 
 # ---------------------------------------------------------------- entrée
 
+def _finish(wb: Workbook) -> None:
+    """Socle commun : polices, onglets vides masqués (un en-tête et une note seulement ;
+    ils restent consultables via « Afficher »), filtres sur les tableaux, hauteurs de
+    ligne, impression A4 paysage."""
+    for ws in wb.worksheets:
+        st.restyle(ws)
+        if ws.title != "Résumé audit" and ws.max_row <= 2 and (
+                ws.cell(row=2, column=1).font.i or ws.max_row == 1):
+            ws.sheet_state = "hidden"
+        widths = [st.col_width(ws, j) for j in range(1, ws.max_column + 1)]
+        st.setup_sheet(ws, widths, st.BRAND_DARK, "Audit (équipe)")
+        if ws.title != "Résumé audit" and ws.max_row > 2:
+            ws.auto_filter.ref = ws.dimensions
+            ws.print_title_rows = "1:1"
+        st.autofit_rows(ws, 2 if ws.title != "Résumé audit" else 1)
+
+
 def build_workbook(profiling: dict, score_detail: dict,
                    ai_audit: dict | None, cleaning: dict | None = None) -> bytes:
     """Classeur expert (admin). L'étudiant reçoit le classeur court de report_client_xlsx."""
@@ -343,6 +365,7 @@ def build_workbook(profiling: dict, score_detail: dict,
     _sheet_variables_exclues(wb, profiling)
     _sheet_decisions(wb, ai_audit)
     _sheet_plan(wb, ai_audit)
+    _finish(wb)
     # Onglets de données produits au jalon M8 (nettoyage). Ajoutés seulement si dispo.
     if cleaning:
         _sheet_data(wb, "Base analyse", cleaning["base_analyse"],

@@ -399,7 +399,8 @@ def build_deliverable(analysis: Analysis, audit: Audit, kind: str) -> tuple[byte
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     base, flow, log, results, prof = compute(analysis, audit)
     pii = {p.get("column") for p in prof.get("pii_candidates") or []}
-    return (build_results_xlsx(base, pii, flow, results, log, analysis.plan or {}),
+    return (build_results_xlsx(base, pii, flow, results, log, analysis.plan or {},
+                               analysis.text),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
