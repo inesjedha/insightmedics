@@ -27,11 +27,22 @@ import {
   getClientResult,
   getClientDetail,
   getClientAnalysis,
+  getClientFiche,
+  getFicheSchema,
+  saveClientFiche,
   clientAnalysisUrl,
   clientDownloadUrl,
   ApiError,
 } from "@/lib/api/client";
-import type { AiAssessment, AuditResult, ClientAnalysis, ScoreDetail } from "@/lib/api/types";
+import type {
+  AiAssessment,
+  AuditResult,
+  ClientAnalysis,
+  ClientFiche,
+  FicheSchema,
+  ScoreDetail,
+} from "@/lib/api/types";
+import { ThesisFicheCard } from "@/components/theses/ThesisFicheCard";
 
 export const Route = createFileRoute("/r/$token")({
   head: () => ({
@@ -60,6 +71,8 @@ function ClientResultPage() {
   const [scoreDetail, setScoreDetail] = useState<ScoreDetail | null>(null);
   const [assessment, setAssessment] = useState<AiAssessment | null>(null);
   const [analysis, setAnalysis] = useState<ClientAnalysis | null>(null);
+  const [fiche, setFiche] = useState<ClientFiche | null>(null);
+  const [ficheSchema, setFicheSchema] = useState<FicheSchema | null>(null);
   const workbookHref = clientDownloadUrl(token, "workbook.xlsx");
   // Cases cochées gardées dans ce navigateur, par audit (un fragment du jeton suffit).
   const storageKey = `im-audit:${token.slice(0, 10)}`;
@@ -77,6 +90,17 @@ function ClientResultPage() {
         // Analyse livrée (offre 500 DT) : facultative, une panne ne bloque pas la page.
         getClientAnalysis(token)
           .then((x) => alive && setAnalysis(x))
+          .catch(() => undefined);
+        // Fiche de la thèse : seulement une fois l'analyse commandée, tant qu'elle est ouverte.
+        getClientFiche(token)
+          .then(async (f) => {
+            if (!alive || !f?.editable) return;
+            const schema = await getFicheSchema();
+            if (alive) {
+              setFicheSchema(schema);
+              setFiche(f);
+            }
+          })
           .catch(() => undefined);
         setPhase("ready");
       } catch (e) {
@@ -135,7 +159,19 @@ function ClientResultPage() {
               <AnalysisDelivered
                 docxHref={clientAnalysisUrl(token, "resultats.docx")}
                 xlsxHref={clientAnalysisUrl(token, "resultats.xlsx")}
+                statsHref={
+                  analysis.files.includes("analyse_statistique.docx")
+                    ? clientAnalysisUrl(token, "analyse_statistique.docx")
+                    : undefined
+                }
                 deliveredAt={analysis.deliveredAt}
+              />
+            )}
+            {!analysis && fiche && ficheSchema && (
+              <ThesisFicheCard
+                schema={ficheSchema}
+                fiche={fiche}
+                onSave={async (patch) => setFiche(await saveClientFiche(token, patch))}
               />
             )}
             <ReportHero

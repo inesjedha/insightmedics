@@ -1579,10 +1579,13 @@ function Fold({ title, children }: { title: string; children: React.ReactNode })
 export function AnalysisDelivered({
   docxHref,
   xlsxHref,
+  statsHref,
   deliveredAt,
 }: {
   docxHref: string;
   xlsxHref: string;
+  /** Format faculté : la partie « Analyse statistique » à insérer dans le M&M (Word). */
+  statsHref?: string;
   deliveredAt: string | null;
 }) {
   return (
@@ -1602,6 +1605,13 @@ export function AnalysisDelivered({
             <Download /> Partie Résultats (Word)
           </a>
         </Button>
+        {statsHref && (
+          <Button asChild size="lg" className="bg-background text-brand hover:bg-background/90">
+            <a href={statsHref}>
+              <Download /> Analyse statistique, pour votre M&amp;M (Word)
+            </a>
+          </Button>
+        )}
         <Button
           asChild
           size="lg"

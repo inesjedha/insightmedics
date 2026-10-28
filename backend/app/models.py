@@ -123,6 +123,13 @@ class Analysis(Base):
     derived_log: Mapped[list | None] = mapped_column(JSON, nullable=True)
     results: Mapped[list | None] = mapped_column(JSON, nullable=True)
     text: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # Format faculté (app/theses) : fiche de mission (clés de Dr Hamza), lancement en un
+    # bouton (plan puis calculs sans arrêt s'il n'y a rien à trancher), brouillon rédigé
+    # par l'IA et contrôles avant livraison.
+    fiche: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    auto_run: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False)
+    draft: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    checks: Mapped[list | None] = mapped_column(JSON, nullable=True)
     delivered_at: Mapped[str | None] = mapped_column(String, nullable=True)
     purged_at: Mapped[str | None] = mapped_column(String, nullable=True)
     events: Mapped[list | None] = mapped_column(JSON, nullable=True)

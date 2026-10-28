@@ -106,6 +106,9 @@ Analysis = Annotated[Describe | Proportion | Compare | Paired | Correlation | Lo
 class Groups(BaseModel):
     variable: str
     label: str = ""
+    # Modalité du groupe qui compte comme « événement » (« Récidive », 1) : sert à
+    # orienter l'odds ratio des facteurs binaires. À défaut, « 1 » ou « Oui » s'il existe.
+    event: str | float | int | None = None
 
 
 class ToCheck(BaseModel):

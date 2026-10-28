@@ -1,0 +1,368 @@
+{
+  "faculte": "FMM",
+  "nom": "Faculté de médecine de Monastir",
+  "version": "2.0",
+  "date_mesure": "28/10/2026",
+  "mesure_sur": [
+    "Graisse abdominale (Selma, M&M + Résultats ×2, 06/10/2026)",
+    "Pneumothorax néonatal (M&M + Results ×2, en anglais, 23/10/2026)",
+    "charte des mémoires FMM"
+  ],
+  "langue": {
+    "texte": "fr-FR (ou en-US)"
+  },
+  "note_officielle": "La FMM demande une taille 14 ; consigne interne du 23/09/2026 : charte des mémoires FMM en Times 12.",
+  "page": {
+    "format": "A4",
+    "marges_cm": {
+      "haut": 2.5,
+      "bas": 2.3,
+      "gauche": 2.5,
+      "droite": 2.5
+    },
+    "entete_cm": 1.0,
+    "pied_cm": 1.2,
+    "largeur_utile_cm": 16.0,
+    "compatibilite_word": 14
+  },
+  "texte": {
+    "style": "Normal",
+    "police": "Times New Roman",
+    "taille_pt": 12,
+    "alignement": "justifié",
+    "interligne": 1.5,
+    "avant_pt": 0,
+    "apres_pt": 4,
+    "retrait_premiere_ligne_cm": 1.25
+  },
+  "puces": {
+    "style": "Puce",
+    "symbole": "–",
+    "retrait_gauche_cm": 1.0,
+    "suspendu_cm": 0.5,
+    "apres_pt": 2
+  },
+  "titres": [
+    {
+      "role": "page_intercalaire",
+      "police": "Times New Roman",
+      "taille_pt": 36,
+      "gras": true,
+      "couleur": "215E99",
+      "alignement": "centré (horizontal et vertical)",
+      "casse": "capitales"
+    },
+    {
+      "role": "niveau_1",
+      "style": "Titre 1",
+      "police": "Times New Roman",
+      "taille_pt": 14,
+      "gras": true,
+      "petites_capitales": true,
+      "couleur": "001F5F",
+      "alignement": "gauche",
+      "avant_pt": 14,
+      "apres_pt": 6,
+      "numerotation": "1.",
+      "fin": ""
+    },
+    {
+      "role": "niveau_1_1",
+      "style": "Titre 2",
+      "police": "Times New Roman",
+      "taille_pt": 12,
+      "gras": true,
+      "couleur": "1F487C",
+      "avant_pt": 10,
+      "apres_pt": 4,
+      "numerotation": "1.1.",
+      "fin": ""
+    },
+    {
+      "role": "niveau_1_1_1",
+      "style": "Titre 3",
+      "police": "Times New Roman",
+      "taille_pt": 12,
+      "gras": true,
+      "italique": true,
+      "couleur": "4F81BC",
+      "avant_pt": 8,
+      "apres_pt": 2,
+      "numerotation": "1.1.1.",
+      "fin": ""
+    }
+  ],
+  "legendes": {
+    "tableau": {
+      "style": "Legende Tableau",
+      "position": "au-dessus",
+      "police": "Times New Roman",
+      "taille_pt": 12,
+      "gras": true,
+      "couleur": "000000",
+      "alignement": "centré",
+      "avant_pt": 10,
+      "apres_pt": 4,
+      "modele": "Tableau {romain} : {titre}"
+    },
+    "figure": {
+      "style": "Legende Figure",
+      "position": "dessous",
+      "police": "Times New Roman",
+      "taille_pt": 12,
+      "gras": true,
+      "couleur": "000000",
+      "alignement": "centré",
+      "avant_pt": 4,
+      "apres_pt": 2,
+      "modele": "Figure {n} : {titre}"
+    }
+  },
+  "notes": {
+    "style": "Note",
+    "police": "Times New Roman",
+    "taille_pt": 10,
+    "alignement": "justifié",
+    "avant_pt": 1,
+    "apres_pt": 10,
+    "interligne": 1.0
+  },
+  "tableaux": {
+    "largeur_dxa": 9072,
+    "largeur_cm": 16.0,
+    "alignement": "centré",
+    "disposition": "fixe",
+    "style_texte": "Texte Tableau",
+    "police": "Times New Roman",
+    "taille_pt": 10,
+    "interligne": 1.0,
+    "avant_pt": 1.5,
+    "apres_pt": 1.5,
+    "filets": {
+      "haut": "simple 1 pt 4F81BD",
+      "sous_entete": "simple 0,75 pt 4F81BD",
+      "bas": "simple 1 pt 4F81BD",
+      "verticaux": "aucun"
+    },
+    "fond_lignes_alternees": "F2F6FB",
+    "fond_regroupement": "DCE6F2",
+    "entete": "gras",
+    "entete_repetee": true,
+    "lignes_insecables": true,
+    "lignes_max": 15
+  },
+  "figures": {
+    "taille_base_pt": 9,
+    "graduations_pt": 8.5,
+    "taille_min_pt_a_l_insertion": 7.5,
+    "dpi_png": 600,
+    "formats": [
+      "png",
+      "pdf"
+    ],
+    "pdf_fonttype": 42,
+    "texte_gris": false,
+    "titre_dans_l_image": false,
+    "couleurs": {
+      "groupe_1": "1F6FB2",
+      "groupe_2": "DD6B27",
+      "fond_groupe_1": "DCE9F5",
+      "fond_groupe_2": "F9E2D2",
+      "serie_unique": "2E5E8C",
+      "bleu_nuit": "1B3A5C",
+      "encre": "1A1A1A",
+      "quadrillage": "E3E5E8",
+      "seconde_famille": "2A9D8F",
+      "succes_partiel_echec": [
+        "1F6FB2",
+        "D9A030",
+        "B8402A"
+      ],
+      "rampe_4": [
+        "86B6EF",
+        "3987E5",
+        "1C5CAB",
+        "0D366B"
+      ],
+      "rampe_6": [
+        "C6DCF5",
+        "94BFEE",
+        "5C9DE0",
+        "3179C4",
+        "1C5CAB",
+        "0D366B"
+      ],
+      "roc": [
+        "1F4E79",
+        "E07B39",
+        "8E6BB0"
+      ],
+      "bandeau_flux": "D6E4F1"
+    },
+    "excel": {
+      "classeur": "Figures_Excel_These_<Sujet>.xlsx",
+      "premier_onglet": "Mode d'emploi",
+      "onglet_par_figure": "Figure n <Nom court>",
+      "graphiques": "natifs, liés aux cellules, données sous le graphique",
+      "formules": [
+        "effectifs",
+        "pourcentages",
+        "étiquettes n (x %)",
+        "quartiles (méthode SPSS)",
+        "densités"
+      ],
+      "valeurs_fixes": [
+        "p",
+        "rho"
+      ],
+      "schemas": "formes Excel (flux) ou image (schéma anatomique)",
+      "nettoyage": [
+        "auteur vide",
+        "x15ac:absPath retiré"
+      ],
+      "export": "PNG 600 ppp + PDF"
+    },
+    "police": "Times New Roman",
+    "largeur_cm": [
+      13.8,
+      15.5
+    ]
+  },
+  "entete": {
+    "contenu": "titre de la thèse à gauche + nom du chapitre à droite",
+    "police": "Times New Roman",
+    "taille_pt": 10,
+    "italique": true,
+    "couleur": "215E99",
+    "filet_bas": "simple 0,5 pt 0F4761"
+  },
+  "pied": {
+    "contenu": "champ PAGE",
+    "police": "Times New Roman",
+    "taille_pt": 10.5,
+    "alignement": "droite"
+  },
+  "pagination": {
+    "intercalaire": "section 1 sans numéro",
+    "chapitre": "à partir de 1 (livrable isolé) ou de la page de la fiche"
+  },
+  "references": {
+    "appel": "[n]",
+    "appels_multiples": "[1, 2]",
+    "intervalle": "[3–5]",
+    "espace_insecable_avant": true,
+    "avant_ponctuation": true,
+    "style": "Vancouver (NLM)",
+    "auteurs_max": 6,
+    "liste": {
+      "police": "Times New Roman",
+      "taille_pt": 11,
+      "interligne": 1.0,
+      "alignement": "gauche",
+      "retrait_suspendu_cm": 0.8,
+      "apres_pt": 3
+    },
+    "emplacement": "« Références citées dans ce chapitre » en fin de chapitre, liste générale en fin de thèse",
+    "plafond_discussion": 80
+  },
+  "conclusion": {
+    "titre": "CONCLUSION",
+    "sous_titres": false,
+    "references": false,
+    "pages": [
+      2,
+      3
+    ],
+    "visee_par_le_directeur": true
+  },
+  "resumes": {
+    "emplacement": "verso de la thèse (4e de couverture)",
+    "langues": [
+      "fr",
+      "en"
+    ],
+    "mots_cles": "MeSH"
+  },
+  "limites": {
+    "pages_max": 100
+  },
+  "typographie": {
+    "decimale": ",",
+    "milliers": "espace insécable",
+    "intervalle": "–",
+    "moins": "−",
+    "apostrophe": "’",
+    "guillemets": "« »",
+    "espace_insecable_avant": [
+      ":",
+      ";",
+      "?",
+      "!",
+      "%"
+    ],
+    "p": {
+      "decimales": 3,
+      "seuil_affichage": "p < 0,001",
+      "interdit": "0,000",
+      "gras_si": "p < 0,05"
+    },
+    "pourcentage_decimales": 1,
+    "or_ic_decimales": 2,
+    "asc_decimales": 3,
+    "moyenne_et": "une décimale de plus que la variable (au moins une)",
+    "mediane_quartiles": "précision de la variable",
+    "arrondi": "au plus proche, demie vers le haut (SPSS)"
+  },
+  "statistiques": {
+    "logiciel_declare": "IBM SPSS Statistics 26",
+    "seuil": 0.05,
+    "bilateral": true,
+    "normalite": "Shapiro-Wilk, normale si p > 0,05 (dans chaque groupe)",
+    "quartiles": "HAVERAGE de SPSS = numpy.percentile(method='weibull')",
+    "deux_groupes_quanti": "Student (Welch si Levene p <= 0,05, Levene centré moyenne) si normale, sinon Mann-Whitney asymptotique sans correction de continuité",
+    "qualitatives": "Chi² de Pearson sans correction si effectifs théoriques >= 5, sinon Fisher exact (2x2) ou Fisher-Freeman-Halton Monte-Carlo (100 000 tirages, graine 20261012)",
+    "or_ic": "Woolf avec Chi², exact conditionnel avec Fisher, Haldane +0,5 si case nulle",
+    "proportions_ic": "Wilson",
+    "multivarie": "logistique binaire, méthode Entrée ou pas à pas descendante RV (sortie p > 0,10) ; ~10 événements par variable ; Hosmer-Lemeshow",
+    "apparie": "t apparié ou Wilcoxon (différences nulles écartées) ; McNemar ; Q de Cochran",
+    "roc": "ASC IC 95 % Hanley-McNeil ; comparaison appariée DeLong ; seuil de Youden ou publié",
+    "concordance": "kappa de Cohen, grille de Landis et Koch",
+    "survie": "Kaplan-Meier, log-rank, Cox, seulement avec dates réelles",
+    "interdits": [
+      "modèles mixtes",
+      "GEE",
+      "bootstrap",
+      "splines",
+      "Firth",
+      "Mantel-Haenszel",
+      "risques compétitifs",
+      "landmark",
+      "imputation multiple",
+      "scores de propension",
+      "ANCOVA",
+      "correction tests multiples",
+      "tailles d'effet"
+    ]
+  },
+  "livrables": {
+    "partie_1": [
+      "Introduction_These_<Sujet>.docx + .pdf",
+      "Materiel_et_Methodes_These_<Sujet>.docx + .pdf",
+      "Resultats_These_<Sujet>.docx + .pdf",
+      "Resultats_These_<Sujet>_figures_Excel.docx + .pdf",
+      "Figures_Excel_These_<Sujet>.xlsx",
+      "Figures_Resultats_These_<Sujet>.zip",
+      "Figures_Excel_images_These_<Sujet>.zip",
+      "Base_analyse_These_<Sujet>.xlsx + .sav"
+    ],
+    "partie_2": [
+      "Discussion_Conclusion_These_<Sujet>.docx + .pdf",
+      "Discussion_Conclusion_These_<Sujet>_figures_Excel.docx + .pdf",
+      "Figures_Excel_Discussion_These_<Sujet>.xlsx",
+      "Figures_Discussion_These_<Sujet>.zip",
+      "Sources_Discussion_These_<Sujet>.xlsx",
+      "References_These_<Sujet>_Zotero.ris",
+      "Resumes_These_<Sujet>.docx"
+    ]
+  }
+}

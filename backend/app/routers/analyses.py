@@ -24,6 +24,7 @@ def _get(db: Session, analysis_id: str) -> Analysis:
 def _out(db: Session, analysis: Analysis) -> AnalysisOut:
     audit = db.get(Audit, analysis.audit_id)
     out = AnalysisOut.model_validate(analysis)
+    out.deliverables = service.deliverables(analysis)
     if audit:
         out.audit_file_name, out.audit_token = audit.file_name, audit.token
     return out
@@ -75,6 +76,32 @@ def get_analysis(analysis_id: str, db: Session = Depends(get_db)) -> AnalysisOut
 def put_instructions(analysis_id: str, text: str = Body(..., embed=True),
                      db: Session = Depends(get_db)) -> AnalysisOut:
     return _out(db, service.set_instructions(db, _get(db, analysis_id), text))
+
+
+@router.put("/analyses/{analysis_id}/fiche", response_model=AnalysisOut,
+            response_model_by_alias=True)
+def put_fiche(analysis_id: str, fiche: dict[str, Any] = Body(...),
+              db: Session = Depends(get_db)) -> AnalysisOut:
+    """Fiche de mission (format faculté), mise à jour partielle : clés de Dr Hamza."""
+    try:
+        return _out(db, service.set_fiche(db, _get(db, analysis_id), fiche))
+    except service.AuditError as exc:
+        raise _guard(exc) from exc
+
+
+@router.post("/analyses/{analysis_id}/launch", response_model=AnalysisOut,
+             response_model_by_alias=True, status_code=202)
+def launch(analysis_id: str, background: BackgroundTasks,
+           db: Session = Depends(get_db)) -> AnalysisOut:
+    """« Tout lancer » : plan, calculs et rédaction enchaînés, en tâche de fond ; arrêt au
+    plan s'il pose des questions à trancher."""
+    analysis = _get(db, analysis_id)
+    try:
+        job_id = service.launch(db, analysis)
+    except service.AuditError as exc:
+        raise _guard(exc) from exc
+    background.add_task(service.run_planning, analysis.id, job_id)
+    return _out(db, analysis)
 
 
 @router.post("/analyses/{analysis_id}/base", response_model=AnalysisOut,
@@ -149,14 +176,15 @@ def deliver(analysis_id: str, db: Session = Depends(get_db)) -> AnalysisOut:
 
 
 def file_response(analysis: Analysis, audit: Audit, kind: str) -> Response:
-    if kind not in service.DELIVERABLES:
+    if kind not in service.deliverables(analysis):
         raise HTTPException(404, "Livrable inconnu")
     try:
         content, media = service.build_deliverable(analysis, audit, kind)
     except service.AuditError as exc:
         raise HTTPException(404, str(exc)) from exc
+    name = service.download_name(analysis, kind)
     return Response(content=content, media_type=media,
-                    headers={"Content-Disposition": f'attachment; filename="{kind}"'})
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 @router.get("/analyses/{analysis_id}/{kind}")

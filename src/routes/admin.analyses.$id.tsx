@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import {
+  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   Download,
   FileUp,
   Loader2,
   Play,
+  Rocket,
   RotateCcw,
   Send,
   Sparkles,
@@ -19,11 +21,22 @@ import {
   downloadAnalysisFile,
   generateAnalysisPlan,
   getAnalysis,
+  getFicheSchema,
+  launchAnalysis,
+  saveAnalysisFiche,
   saveAnalysisPlan,
   setAnalysisInstructions,
   uploadAnalysisBase,
 } from "@/lib/api/client";
-import type { AnalysisDetail, AnalysisResultBlock } from "@/lib/api/types";
+import type {
+  AnalysisDetail,
+  AnalysisFile,
+  AnalysisResultBlock,
+  FicheSchema,
+  ThesisDraftBlock,
+} from "@/lib/api/types";
+import { FicheForm } from "@/components/theses/FicheForm";
+import { useFileDrop } from "@/components/audit/useFileDrop";
 import { AdminPageHeader, ErrorBanner } from "@/components/admin/AdminUi";
 import { AnalysisStatusBadge } from "@/components/admin/AnalysisStatusBadge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +54,13 @@ function AdminAnalysis() {
   const [a, setA] = useState<AnalysisDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [schema, setSchema] = useState<FicheSchema | null>(null);
+
+  useEffect(() => {
+    getFicheSchema()
+      .then(setSchema)
+      .catch(() => undefined);
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -111,7 +131,48 @@ function AdminAnalysis() {
       {error && <ErrorBanner message={error} />}
       {a.error && !error && <ErrorBanner message={a.error} />}
 
-      <Step n={1} title="Base et réponses de l'étudiant" done={!!a.plan}>
+      <Step
+        n={1}
+        title="Fiche de mission de la thèse (format faculté)"
+        done={!!a.fiche?.["these.faculte"]}
+      >
+        <FacultyPicker
+          value={typeof a.fiche?.["these.faculte"] === "string" ? a.fiche["these.faculte"] : null}
+          disabled={running || a.status === "delivered" || !!busy}
+          onPick={(code) => act("fiche", () => saveAnalysisFiche(a.id, { "these.faculte": code }))}
+        />
+        <p className="text-sm text-muted-foreground">
+          Le reste de la fiche est rempli par l'étudiant sur son lien privé et complété ici.
+        </p>
+        {schema ? (
+          <FicheForm
+            schema={schema}
+            value={a.fiche ?? {}}
+            visible={(key) => key !== "these.faculte"}
+            showWho
+            disabled={running || a.status === "delivered" || !!busy}
+            saving={busy === "fiche"}
+            onSave={(patch) => act("fiche", () => saveAnalysisFiche(a.id, patch))}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">Chargement du formulaire…</p>
+        )}
+        <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+          <Button
+            onClick={() => act("launch", () => launchAnalysis(a.id))}
+            disabled={!canEditBase || !!busy || running}
+          >
+            {running && a.autoRun ? <Loader2 className="animate-spin" /> : <Rocket />}
+            Tout lancer
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            Nettoyage et plan, calculs, rédaction et contrôles, d'une traite (deux appels IA). Arrêt
+            au plan s'il y a une question à trancher. Il ne reste qu'à relire et livrer.
+          </span>
+        </div>
+      </Step>
+
+      <Step n={2} title="Base et réponses de l'étudiant" done={!!a.plan}>
         <BaseStep
           a={a}
           disabled={!canEditBase || !!busy}
@@ -122,7 +183,7 @@ function AdminAnalysis() {
         />
       </Step>
 
-      <Step n={2} title="Nettoyage de la base et plan d'analyse" done={!!a.planValidatedAt}>
+      <Step n={3} title="Nettoyage de la base et plan d'analyse" done={!!a.planValidatedAt}>
         <div className="flex flex-wrap items-center gap-3">
           <Button
             onClick={() => act("plan", () => generateAnalysisPlan(a.id))}
@@ -145,7 +206,7 @@ function AdminAnalysis() {
         />
       </Step>
 
-      <Step n={3} title="Résultats, relecture et livraison" done={a.status === "delivered"}>
+      <Step n={4} title="Résultats, relecture et livraison" done={a.status === "delivered"}>
         {a.status === "computing" && (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Calculs puis rédaction en cours…
@@ -226,6 +287,7 @@ function BaseStep({
   saving: boolean;
 }) {
   const [text, setText] = useState(a.instructions);
+  const drop = useFileDrop({ accept: ".xlsx,.xls,.sav,.csv", disabled, onFile: onUpload });
   return (
     <div className="space-y-4">
       <div className="rounded-lg bg-muted/40 p-4 text-sm">
@@ -252,15 +314,17 @@ function BaseStep({
           </p>
         )}
         <label
+          {...drop.handlers}
           className={cn(
-            "mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs",
-            disabled && "pointer-events-none opacity-50",
+            "mt-3 flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed bg-card px-3 py-2 text-xs transition-colors",
+            drop.dragging ? "border-brand bg-accent" : "border-border",
+            disabled && "cursor-not-allowed opacity-50",
           )}
         >
           <FileUp className="h-4 w-4 text-brand" />
           {a.fileName
-            ? "Remplacer la base corrigée"
-            : "Facultatif : l'étudiant a renvoyé une base corrigée ? La déposer"}
+            ? "Remplacer la base corrigée (glisser ou cliquer)"
+            : "Facultatif : l'étudiant a renvoyé une base corrigée ? La glisser ici ou cliquer"}
           <input
             type="file"
             accept=".xlsx,.xls,.sav,.csv"
@@ -269,6 +333,16 @@ function BaseStep({
             onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
           />
         </label>
+        {drop.rejected && (
+          <p role="alert" className="mt-2 text-xs text-destructive">
+            « {drop.rejected} » n'est pas une base : SPSS (.sav), Excel (.xlsx, .xls) ou CSV.
+          </p>
+        )}
+        {disabled && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            La base ne se remplace qu'avant la validation du plan.
+          </p>
+        )}
       </div>
       <div className="space-y-2">
         <p className="text-sm font-medium">
@@ -573,26 +647,42 @@ function ResultsStep({
 }: {
   a: AnalysisDetail;
   busy: boolean;
-  onDownload: (kind: "resultats.docx" | "resultats.xlsx") => void;
+  onDownload: (kind: AnalysisFile) => void;
   onRecompute: () => void;
   onDeliver: () => void;
 }) {
   const sections = new Map((a.text?.sections ?? []).map((s) => [s.analysis_id, s]));
+  const blocking = (a.checks ?? []).some((c) => c.level === "error");
+  const faculty = a.fiche?.["these.faculte"];
   return (
     <div className="space-y-5 text-sm">
+      {a.draft && typeof faculty === "string" && (
+        <p className="text-muted-foreground">
+          Rendu au format :{" "}
+          <span className="font-semibold text-foreground">{FACULTIES[faculty] ?? faculty}</span>
+          {a.status === "review" &&
+            " · une autre faculté choisie à l'étape 1 change la mise en page ; relancer la rédaction pour suivre aussi son plan"}
+        </p>
+      )}
       <div className="flex flex-wrap gap-3">
-        <Button variant="outline" onClick={() => onDownload("resultats.docx")} disabled={busy}>
-          <Download /> Word
-        </Button>
-        <Button variant="outline" onClick={() => onDownload("resultats.xlsx")} disabled={busy}>
-          <Download /> Excel
-        </Button>
+        {(a.deliverables?.length
+          ? a.deliverables
+          : (["resultats.docx", "resultats.xlsx"] as AnalysisFile[])
+        ).map((kind) => (
+          <Button key={kind} variant="outline" onClick={() => onDownload(kind)} disabled={busy}>
+            <Download /> {FILE_LABEL[kind]}
+          </Button>
+        ))}
         {a.status === "review" && (
           <>
             <Button variant="ghost" onClick={onRecompute} disabled={busy}>
               <RotateCcw /> Relancer calculs et rédaction
             </Button>
-            <Button onClick={onDeliver} disabled={busy}>
+            <Button
+              onClick={onDeliver}
+              disabled={busy || blocking}
+              title={blocking ? "Contrôle bloquant : relancer la rédaction" : undefined}
+            >
               <Send /> Relu : livrer à l'étudiant
             </Button>
           </>
@@ -603,6 +693,8 @@ function ResultsStep({
           </span>
         )}
       </div>
+      <ThesisChecks a={a} />
+      {a.draft && <DraftPreview a={a} />}
       {!!a.text?.missing?.length && (
         <div className="rounded-md bg-amber-500/10 p-3">
           <p className="font-medium">Reste à faire par le biostatisticien</p>
@@ -636,6 +728,161 @@ function ResultsStep({
       {(a.results ?? []).map((r) => (
         <ResultBlock key={r.id} r={r} section={sections.get(r.id)} />
       ))}
+    </div>
+  );
+}
+
+const FACULTIES: Record<string, string> = {
+  FMS: "Faculté de médecine de Sousse",
+  FMT: "Faculté de médecine de Tunis",
+  FMM: "Faculté de médecine de Monastir",
+  FMSf: "Faculté de médecine de Sfax",
+};
+
+/** Choix de la faculté : il décide du plan, de la charte et du seul rendu produit. */
+function FacultyPicker({
+  value,
+  disabled,
+  onPick,
+}: {
+  value: string | null;
+  disabled: boolean;
+  onPick: (code: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold">
+        Faculté de la thèse <span className="text-destructive">*</span>
+        <span className="ml-2 font-normal text-muted-foreground">
+          plan, charte et mise en page des livrables
+        </span>
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {Object.entries(FACULTIES).map(([code, name]) => (
+          <Button
+            key={code}
+            type="button"
+            variant={value === code ? "default" : "outline"}
+            disabled={disabled}
+            aria-pressed={value === code}
+            onClick={() => value !== code && onPick(code)}
+          >
+            {value === code && <CheckCircle2 />}
+            {name.replace("Faculté de médecine de ", "")} ({code})
+          </Button>
+        ))}
+      </div>
+      {!value && (
+        <p className="text-xs text-amber-700">
+          À choisir avant « Tout lancer » (l'étudiant a pu l'indiquer sur son lien).
+        </p>
+      )}
+    </div>
+  );
+}
+
+const FILE_LABEL: Record<AnalysisFile, string> = {
+  "analyse_statistique.docx": "Analyse statistique (Word)",
+  "resultats.docx": "Résultats (Word)",
+  "resultats.xlsx": "Classeur (Excel)",
+};
+
+/** Contrôles automatiques avant livraison (§ 14 des prompts de Dr Hamza). */
+function ThesisChecks({ a }: { a: AnalysisDetail }) {
+  const checks = a.checks ?? [];
+  const toConfirm = a.draft?.to_confirm ?? [];
+  const missing = a.draft?.missing ?? [];
+  if (!a.draft && !checks.length) return null;
+  return (
+    <div className="space-y-3">
+      {checks.length ? (
+        <ul className="space-y-1.5">
+          {checks.map((c, i) => (
+            <li
+              key={i}
+              className={cn(
+                "flex gap-2 rounded-md p-2",
+                c.level === "error" ? "bg-destructive/10 text-destructive" : "bg-amber-500/10",
+              )}
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                {c.level === "error" ? "Bloquant : " : ""}
+                {c.message}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="flex items-center gap-2 text-emerald-700">
+          <CheckCircle2 className="h-4 w-4" /> Contrôles automatiques passés.
+        </p>
+      )}
+      {!!toConfirm.length && (
+        <div className="rounded-md bg-amber-500/10 p-3">
+          <p className="font-medium">À confirmer avec l'étudiant (surligné dans le Word)</p>
+          <ul className="list-disc pl-5">
+            {toConfirm.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {!!missing.length && (
+        <div className="rounded-md bg-amber-500/10 p-3">
+          <p className="font-medium">Reste à faire par le biostatisticien</p>
+          <ul className="list-disc pl-5">
+            {missing.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Lecture rapide du brouillon (le Word reste la référence pour la relecture). */
+function DraftPreview({ a }: { a: AnalysisDetail }) {
+  const draft = a.draft;
+  if (!draft) return null;
+  const part = (title: string, blocks: ThesisDraftBlock[]) => (
+    <details className="rounded-md border border-border p-3">
+      <summary className="cursor-pointer font-semibold">{title}</summary>
+      <div className="mt-2 space-y-2 text-foreground/80">
+        {blocks.map((b, i) => {
+          if (b.type === "heading")
+            return (
+              <p
+                key={i}
+                className="font-semibold text-foreground"
+                style={{ paddingLeft: `${(b.level ?? 0) * 12}px` }}
+              >
+                {b.text}
+              </p>
+            );
+          if (b.type === "paragraph") return <p key={i}>{b.text}</p>;
+          if (b.type === "bullets")
+            return (
+              <ul key={i} className="list-disc pl-5">
+                {(b.items ?? []).map((it) => (
+                  <li key={it}>{it}</li>
+                ))}
+              </ul>
+            );
+          return (
+            <p key={i} className="text-xs text-muted-foreground">
+              [{b.type === "figure" ? "Figure" : "Tableau"} : {b.title}]
+            </p>
+          );
+        })}
+      </div>
+    </details>
+  );
+  return (
+    <div className="space-y-2">
+      {part("Brouillon : Analyse statistique (M&M)", draft.methods)}
+      {part("Brouillon : chapitre Résultats", draft.results)}
     </div>
   );
 }

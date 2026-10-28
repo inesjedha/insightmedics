@@ -326,9 +326,84 @@ export interface AnalysisDetail extends AnalysisSummary {
     sections: { analysis_id: string; heading: string; table_title: string; paragraphs: string[] }[];
     missing: string[];
   } | null;
+  /** Format faculté (voir docs/theses-faculte.md) : fiche de mission, clés de Dr Hamza. */
+  fiche: Fiche | null;
+  autoRun: boolean | null;
+  draft: ThesisDraft | null;
+  checks: ThesisCheck[] | null;
+  /** Fichiers téléchargeables (3 au format faculté : analyse_statistique.docx en plus). */
+  deliverables: AnalysisFile[];
   deliveredAt: string | null;
   events: AuditEvent[] | null;
   auditToken: string | null;
+}
+
+export type AnalysisFile = "analyse_statistique.docx" | "resultats.docx" | "resultats.xlsx";
+
+/** Fiche de mission d'une thèse : valeurs par clé du schéma (« these.titre »…). */
+export type Fiche = Record<string, unknown>;
+
+/** Un champ du schéma de Dr Hamza (`Fiche_mission_these.json`). */
+export interface FicheField {
+  libelle: string;
+  type:
+    | "texte"
+    | "choix"
+    | "choix_plus_texte"
+    | "choix_multiple"
+    | "entier"
+    | "booléen"
+    | "liste"
+    | "liste_fichiers"
+    | "objet"
+    | "liste_objets";
+  valeurs?: string[];
+  sous_champs?: string[];
+  defaut?: unknown;
+  obligatoire?: boolean;
+  qui?: string;
+  note?: string;
+  attendus?: string[];
+  accepte_je_ne_sais_pas?: boolean;
+}
+
+export interface FicheSchema {
+  version: string;
+  champs: Record<string, FicheField>;
+}
+
+/** Brouillon de l'IA au format faculté (blocs typés, voir app/theses/redaction.py). */
+export interface ThesisDraftBlock {
+  type: "heading" | "paragraph" | "bullets" | "table" | "text_table" | "figure";
+  level?: number;
+  text?: string;
+  items?: string[];
+  analysis_id?: string;
+  figure_id?: string;
+  key?: string;
+  title?: string;
+  columns?: string[];
+  rows?: string[][];
+  note?: string;
+}
+
+export interface ThesisDraft {
+  methods: ThesisDraftBlock[];
+  results: ThesisDraftBlock[];
+  to_confirm: string[];
+  missing: string[];
+}
+
+export interface ThesisCheck {
+  level: "error" | "warn";
+  message: string;
+}
+
+/** Fiche sur le lien privé de l'étudiant : ses champs, et s'il peut encore la modifier. */
+export interface ClientFiche {
+  fiche: Fiche;
+  editable: boolean;
+  status: AnalysisStatus;
 }
 
 /** Ce que voit l'étudiant sur son lien privé : l'analyse livrée et ses fichiers. */

@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     notify_on_test: bool = True
     # Adresse publique du site, pour les liens vers l'admin dans les mails.
     site_url: str = "https://insightmedics.fr"
+    # Thèses : logiciel déclaré dans la partie « Analyse statistique » du M&M. Vide = aucun
+    # logiciel nommé (la phrase devient une mention [À CONFIRMER] pour l'équipe). Les calculs
+    # sont faits par notre moteur (réglages identiques à SPSS) : ne déclarer SPSS que si les
+    # tests sont réellement refaits sous SPSS.
+    thesis_software: str = ""
 
     @property
     def sqlalchemy_url(self) -> str:
