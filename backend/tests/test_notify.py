@@ -43,8 +43,9 @@ def test_formulaire_de_contact_envoie_un_mail_avec_les_donnees(outbox):
         "phone": "+216 20 000 000", "subject": "Thèse en cardiologie",
         "message": "Offres : Analyses + résultats\nBase de 120 patients <urgent>"})
     assert r.status_code == 201
-    assert len(outbox) == 1
-    mail = outbox[0]["body"]
+    team = [m for m in outbox if m["body"]["tags"] == ["notification-equipe"]]
+    assert len(team) == 1
+    mail = team[0]["body"]
     assert mail["to"] == [{"email": "a@exemple.fr"}, {"email": "b@exemple.fr"}]
     assert mail["sender"] == {"name": "Insight Medics", "email": "notifications@insightmedics.fr"}
     assert mail["replyTo"] == {"email": "sana@exemple.tn"}
@@ -53,7 +54,7 @@ def test_formulaire_de_contact_envoie_un_mail_avec_les_donnees(outbox):
     assert "Base de 120 patients <urgent>" in mail["textContent"]
     assert "&lt;urgent&gt;" in mail["htmlContent"] and "<urgent>" not in mail["htmlContent"]
     assert f"/admin/leads/{r.json()['id']}" in mail["textContent"]
-    assert outbox[0]["headers"]["Api-key"] == "xkeysib-test"
+    assert team[0]["headers"]["Api-key"] == "xkeysib-test"
 
 
 def test_sans_cle_aucun_mail(monkeypatch):
@@ -82,3 +83,47 @@ def test_message_de_test_gratuit_sans_donnees_patients():
     assert m.subject == "Nouveau test gratuit · these.sav"
     assert ("Patients", "51") in m.rows and ("Score de l'aperçu", "62.5/100") in m.rows
     assert m.link.endswith("/admin/audits")
+
+
+# ---------------------------------------------------------------- accusé de réception étudiant
+
+def _student(outbox):
+    return [m["body"] for m in outbox if m["body"]["tags"] == ["accuse-reception"]]
+
+
+def test_l_etudiant_recoit_un_accuse_de_reception(outbox):
+    r = TestClient(app).post("/leads", json={
+        "source": "contact", "name": "Sana <b>Ben</b> Ali", "email": "sana@exemple.tn",
+        "subject": "Thèse en <i>cardiologie</i>"})
+    assert r.status_code == 201
+    [mail] = _student(outbox)
+    assert mail["to"] == [{"email": "sana@exemple.tn"}]
+    assert mail["replyTo"] == {"email": "helpinsightmedics@gmail.com"}
+    assert mail["subject"] == "Nous avons bien reçu votre demande"
+    assert "48\u00a0h ouvrées" in mail["textContent"] and "wa.me/21696389570" in mail["textContent"]
+    html = mail["htmlContent"]
+    assert "Merci Sana, c&#x27;est bien noté." in html          # prénom seul, échappé
+    assert "&lt;i&gt;cardiologie&lt;/i&gt;" in html and "<i>cardiologie" not in html
+    assert "<b>sous 48\u00a0h ouvrées</b>" in html                  # notre gras, lui, reste
+
+
+def test_demande_d_audit_variante_paiement_et_fichier(outbox):
+    from app.db import SessionLocal
+    from app.models import Audit
+
+    with SessionLocal() as db:
+        db.add(Audit(id="aud_mail", file_name="these_cardio.sav", file_size=1, stored_path=""))
+        db.commit()
+    r = TestClient(app).post("/leads", json={"source": "audit", "email": "amine@exemple.tn",
+                                             "auditId": "aud_mail"})
+    assert r.status_code == 201
+    [mail] = _student(outbox)
+    assert mail["subject"] == "Votre demande d'audit complet est bien reçue"
+    assert "Bonjour, vous avez demandé" in mail["textContent"]      # sans nom : pas de virgule seule
+    assert "50\u00a0DT" in mail["textContent"] and "these_cardio.sav" in mail["htmlContent"]
+
+
+def test_accuse_de_reception_desactivable(outbox, monkeypatch):
+    monkeypatch.setattr(settings, "student_emails", False)
+    TestClient(app).post("/leads", json={"email": "z@exemple.tn"})
+    assert _student(outbox) == []

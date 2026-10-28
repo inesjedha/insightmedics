@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 
 from ..auth import require_admin
 from ..db import get_db
-from ..models import Lead
+from ..models import Audit, Lead
 from ..schemas import LeadCreate, LeadPatch, LeadSchema
 from ..services import leads as service
-from ..services import notify
+from ..services import notify, student_mail
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
@@ -25,11 +25,16 @@ def create_lead(data: LeadCreate, background: BackgroundTasks,
                 db: Session = Depends(get_db)) -> Lead:
     """Public : alimenté par le formulaire de contact et la demande de déblocage d'audit.
 
-    Prévient l'équipe par mail, après la réponse (un échec d'envoi n'affecte pas le
-    formulaire)."""
+    Après la réponse (un échec d'envoi n'affecte jamais le formulaire) : un mail prévient
+    l'équipe, un autre confirme la demande à l'étudiant."""
     lead = service.create_lead(db, data)
     if notify.enabled():
         background.add_task(notify.send, notify.lead_message(lead))
+    if student_mail.enabled():
+        audit = db.get(Audit, lead.audit_id) if lead.audit_id else None
+        message = student_mail.mail_for_lead(lead, audit)
+        if message is not None:
+            background.add_task(student_mail.send, message)
     return lead
 
 
