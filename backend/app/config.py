@@ -44,6 +44,17 @@ class Settings(BaseSettings):
     llm_max_retries: int = 4
     # Clé d'accès admin (CRM, déblocage d'audits). Vide = endpoints admin verrouillés.
     admin_api_key: str = ""
+    # Mails de notification à l'équipe à chaque formulaire rempli (services/notify.py).
+    # Envoi par l'API Resend ; sans clé ou sans destinataire, rien n'est envoyé.
+    resend_api_key: str = ""
+    # Destinataires, séparés par des virgules.
+    notify_emails: str = ""
+    # Expéditeur : une adresse du domaine vérifié chez Resend.
+    notify_from: str = "Insight Medics <notifications@insightmedics.fr>"
+    # Prévenir aussi à chaque test gratuit (en plus des demandes de contact et d'audit).
+    notify_on_test: bool = True
+    # Adresse publique du site, pour les liens vers l'admin dans les mails.
+    site_url: str = "https://insightmedics.fr"
 
     @property
     def sqlalchemy_url(self) -> str:
@@ -61,6 +72,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def notify_email_list(self) -> list[str]:
+        return [e.strip() for e in self.notify_emails.split(",") if e.strip()]
 
     @property
     def ai_enabled(self) -> bool:

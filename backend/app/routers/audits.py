@@ -11,12 +11,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from ..auth import require_admin
+from ..config import settings
 from ..db import get_db
 from ..models import Audit, AuditStatus
 from ..pipeline.ingest import IngestError
 from ..schemas import AuditEvent, AuditResult
 from ..services import audits as service
-from ..services import unlock_jobs
+from ..services import notify, unlock_jobs
 from ..services.audits import DeliverableKind
 from .downloads import deliverable_response
 
@@ -96,7 +97,8 @@ def get_profiling(audit_id: str, db: Session = Depends(get_db)) -> dict[str, Any
 # ---------------------------------------------------------------- public
 
 @router.post("/upload", response_model=AuditResult, response_model_by_alias=True)
-def upload_and_preview(file: UploadFile, protocol: UploadFile | None = None,
+def upload_and_preview(file: UploadFile, background: BackgroundTasks,
+                       protocol: UploadFile | None = None,
                        db: Session = Depends(get_db)) -> AuditResult:
     """Téléverse une base (+ protocole optionnel) et renvoie l'aperçu gratuit."""
     file_name = file.filename or "base"
@@ -122,6 +124,8 @@ def upload_and_preview(file: UploadFile, protocol: UploadFile | None = None,
         raise HTTPException(422, str(exc)) from exc
     except Exception as exc:
         raise HTTPException(500, "Erreur interne pendant l'aperçu") from exc
+    if notify.enabled() and settings.notify_on_test:
+        background.add_task(notify.send, notify.test_message(audit))
     return AuditResult.from_audit(audit, view="public")
 
 

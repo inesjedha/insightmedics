@@ -129,7 +129,7 @@ L'orchestrateur `app/pipeline/runner.py` enchaîne les étapes :
 
 Voir `.env.example` (commenté) : `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`,
 `FILE_RETENTION_DAYS`, `MAINTENANCE_INTERVAL_MINUTES`, `UNLOCK_LEASE_MINUTES`, `ANTHROPIC_API_KEY`, `LLM_MODEL`, `LLM_EFFORT`, `LLM_MAX_TOKENS`,
-`ADMIN_API_KEY`. Les secrets ne sont jamais versionnés (`.env` est gitignoré).
+`ADMIN_API_KEY`, `RESEND_API_KEY`, `NOTIFY_EMAILS`, `NOTIFY_FROM`, `NOTIFY_ON_TEST`. Les secrets ne sont jamais versionnés (`.env` est gitignoré).
 
 Les tests n'utilisent jamais ces valeurs : `tests/conftest.py` impose une base et un
 stockage temporaires et désactive l'IA (aucun appel payant pendant `pytest`).
@@ -152,6 +152,8 @@ redéploie pas le backend). Les réglages vivent dans Railway (les fichiers
   audit IA en cours a 15 min pour finir lors d'un redéploiement), volume `/storage`.
   Variables : `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `STORAGE_DIR=/storage`,
   `CORS_ORIGINS` (domaines du front), et deux secrets saisis dans le tableau de bord
-  uniquement : `ADMIN_API_KEY`, `ANTHROPIC_API_KEY`.
+  uniquement : `ADMIN_API_KEY`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`. `NOTIFY_EMAILS` liste
+  les destinataires des mails envoyés à chaque formulaire rempli (`services/notify.py`,
+  domaine `insightmedics.fr` vérifié chez Resend).
 - **front** : healthcheck `/`. Variable `VITE_API_BASE_URL` (URL publique du backend),
   lue au moment du build : la changer impose un redéploiement du front.
