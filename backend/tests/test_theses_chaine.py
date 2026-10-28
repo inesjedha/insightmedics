@@ -222,6 +222,8 @@ def test_lancement_refuse_si_la_fiche_est_incomplete(admin_headers, tmp_path):
     h = admin_headers
     audit_id = _audit(tmp_path, "tokficheincomplete")
     aid = client.post(f"/audit/{audit_id}/analysis", headers=h).json()["id"]
+    r = client.post(f"/analyses/{aid}/launch", headers=h)
+    assert r.status_code == 409 and "faculté" in r.json()["detail"]
     client.put(f"/analyses/{aid}/fiche", headers=h, json={"these.faculte": "FMT"})
     r = client.post(f"/analyses/{aid}/launch", headers=h)
     assert r.status_code == 409 and "Titre exact" in r.json()["detail"]

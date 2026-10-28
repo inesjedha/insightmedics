@@ -11,11 +11,13 @@ peut garantir est fait par le code, l'IA ne fait que rédiger.
    `backend/app/theses/hamza/Fiche_mission_these.json`). L'étudiant remplit ses champs sur
    son lien privé dès que l'analyse est commandée ; l'équipe complète les siens dans
    l'admin. « Je ne sais pas » est accepté : jamais deviné, mention `[À CONFIRMER : …]`.
-2. **Tout lancer** (admin) : nettoyage et plan (IA) → calculs (code) → rédaction (IA) →
+2. **La faculté** est choisie en tête de la fiche, dans l'admin (ou indiquée par l'étudiant) :
+   elle décide du plan, de la charte et du seul rendu produit. « Tout lancer » la demande.
+3. **Tout lancer** (admin) : nettoyage et plan (IA) → calculs (code) → rédaction (IA) →
    mise en page d'essai et contrôles (code), d'une traite. Le workflow s'arrête au plan
    si l'IA pose une question à trancher (copies suspectes, critère principal flou…), comme
    la table de décisions de Hamza le prévoit.
-3. **Relecture puis « Livrer »** : un clic de l'équipe. Refusé tant qu'un contrôle
+4. **Relecture puis « Livrer »** : un clic de l'équipe. Refusé tant qu'un contrôle
    bloquant subsiste.
 
 Livrables, au format de la faculté :

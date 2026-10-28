@@ -135,16 +135,19 @@ function AdminAnalysis() {
         title="Fiche de mission de la thèse (format faculté)"
         done={!!a.fiche?.["these.faculte"]}
       >
+        <FacultyPicker
+          value={typeof a.fiche?.["these.faculte"] === "string" ? a.fiche["these.faculte"] : null}
+          disabled={running || a.status === "delivered" || !!busy}
+          onPick={(code) => act("fiche", () => saveAnalysisFiche(a.id, { "these.faculte": code }))}
+        />
         <p className="text-sm text-muted-foreground">
-          Remplie par l'étudiant sur son lien privé, complétée ici. Avec la faculté renseignée, la
-          rédaction suit le plan et la charte de la faculté (prompts de Dr Hamza) et les livrables
-          sont deux Word à la charte. Sans faculté, la chaîne reste au format simple.
+          Le reste de la fiche est rempli par l'étudiant sur son lien privé et complété ici.
         </p>
         {schema ? (
           <FicheForm
             schema={schema}
             value={a.fiche ?? {}}
-            visible={() => true}
+            visible={(key) => key !== "these.faculte"}
             showWho
             disabled={running || a.status === "delivered" || !!busy}
             saving={busy === "fiche"}
@@ -636,8 +639,17 @@ function ResultsStep({
 }) {
   const sections = new Map((a.text?.sections ?? []).map((s) => [s.analysis_id, s]));
   const blocking = (a.checks ?? []).some((c) => c.level === "error");
+  const faculty = a.fiche?.["these.faculte"];
   return (
     <div className="space-y-5 text-sm">
+      {a.draft && typeof faculty === "string" && (
+        <p className="text-muted-foreground">
+          Rendu au format :{" "}
+          <span className="font-semibold text-foreground">{FACULTIES[faculty] ?? faculty}</span>
+          {a.status === "review" &&
+            " · une autre faculté choisie à l'étape 1 change la mise en page ; relancer la rédaction pour suivre aussi son plan"}
+        </p>
+      )}
       <div className="flex flex-wrap gap-3">
         {(a.deliverables.length
           ? a.deliverables
@@ -702,6 +714,55 @@ function ResultsStep({
       {(a.results ?? []).map((r) => (
         <ResultBlock key={r.id} r={r} section={sections.get(r.id)} />
       ))}
+    </div>
+  );
+}
+
+const FACULTIES: Record<string, string> = {
+  FMS: "Faculté de médecine de Sousse",
+  FMT: "Faculté de médecine de Tunis",
+  FMM: "Faculté de médecine de Monastir",
+  FMSf: "Faculté de médecine de Sfax",
+};
+
+/** Choix de la faculté : il décide du plan, de la charte et du seul rendu produit. */
+function FacultyPicker({
+  value,
+  disabled,
+  onPick,
+}: {
+  value: string | null;
+  disabled: boolean;
+  onPick: (code: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold">
+        Faculté de la thèse <span className="text-destructive">*</span>
+        <span className="ml-2 font-normal text-muted-foreground">
+          plan, charte et mise en page des livrables
+        </span>
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {Object.entries(FACULTIES).map(([code, name]) => (
+          <Button
+            key={code}
+            type="button"
+            variant={value === code ? "default" : "outline"}
+            disabled={disabled}
+            aria-pressed={value === code}
+            onClick={() => value !== code && onPick(code)}
+          >
+            {value === code && <CheckCircle2 />}
+            {name.replace("Faculté de médecine de ", "")} ({code})
+          </Button>
+        ))}
+      </div>
+      {!value && (
+        <p className="text-xs text-amber-700">
+          À choisir avant « Tout lancer » (l'étudiant a pu l'indiquer sur son lien).
+        </p>
+      )}
     </div>
   );
 }

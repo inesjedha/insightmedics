@@ -199,13 +199,15 @@ def set_fiche(db: Session, analysis: Analysis, data: dict[str, Any], *,
 def launch(db: Session, analysis: Analysis) -> str:
     """« Tout lancer » : plan, puis calculs et rédaction sans attendre de validation, sauf
     question à trancher. Vérifie d'abord que la fiche permet de rédiger."""
-    if faculty_format(analysis):
-        missing = fiche_mod.missing_for_launch(analysis.fiche)
-        if missing:
-            raise AnalysisError("Fiche de mission incomplète : " + ", ".join(missing) + ".")
-        unsupported = fiche_mod.unsupported(analysis.fiche)
-        if unsupported:
-            raise AnalysisError("À traiter à la main : " + " ; ".join(unsupported) + ".")
+    if not faculty_format(analysis):
+        raise AnalysisError("Choisissez la faculté de la thèse avant de tout lancer : elle "
+                            "décide du plan, de la charte et du rendu.")
+    missing = fiche_mod.missing_for_launch(analysis.fiche)
+    if missing:
+        raise AnalysisError("Fiche de mission incomplète : " + ", ".join(missing) + ".")
+    unsupported = fiche_mod.unsupported(analysis.fiche)
+    if unsupported:
+        raise AnalysisError("À traiter à la main : " + " ; ".join(unsupported) + ".")
     analysis.auto_run = True
     db.commit()
     return claim(db, analysis, "plan")
