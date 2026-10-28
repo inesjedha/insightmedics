@@ -105,6 +105,17 @@ const URGENCIES = [
   "Pas encore de date",
 ] as const;
 
+/** Comment l'étudiant nous a connus : facultatif, pour savoir quels canaux amènent les demandes. */
+const REFERRALS = [
+  "Facebook",
+  "Instagram",
+  "Un ami ou un collègue",
+  "Mon directeur de thèse ou un professeur",
+  "Un groupe WhatsApp ou Telegram",
+  "Google",
+  "Autre",
+] as const;
+
 const SUBJECT_EXAMPLES = [
   "Thèse rétrospective en cardiologie",
   "Étude de cohorte sur le diabète",
@@ -128,6 +139,8 @@ function ContactPage() {
   const [showErrorBanner, setShowErrorBanner] = useState(false);
   const [selectedOffers, setSelectedOffers] = useState<string[]>(offre ? [offre] : []);
   const [urgency, setUrgency] = useState<string>("2-4 semaines");
+  const [referral, setReferral] = useState<string>("");
+  const [referralOther, setReferralOther] = useState<string>("");
   const [dialCode, setDialCode] = useState<string>(DEFAULT_DIAL_CODE);
   const [consent, setConsent] = useState(false);
   const [consentError, setConsentError] = useState(false);
@@ -212,10 +225,16 @@ function ContactPage() {
         problem: parsed.data.problem,
         objective: parsed.data.objective,
         message: finalMessage,
+        referral:
+          referral === "Autre" && referralOther.trim()
+            ? `Autre : ${referralOther.trim()}`
+            : referral || undefined,
       });
       setSubmitted(true);
       setValues(INITIAL_VALUES);
       setSelectedOffers([]);
+      setReferral("");
+      setReferralOther("");
       setConsent(false);
     } catch (err) {
       console.error("[contact] submit failed", err);
@@ -450,6 +469,23 @@ function ContactPage() {
                       />
                       <CharCount value={values.message} max={2000} />
                     </Field>
+                    <div className="space-y-3">
+                      <PillsField
+                        label="Comment nous avez-vous connus ? (facultatif)"
+                        options={[...REFERRALS]}
+                        value={referral}
+                        onChange={(v) => setReferral(v === referral ? "" : v)}
+                      />
+                      {referral === "Autre" && (
+                        <Input
+                          aria-label="Précisez comment vous nous avez connus"
+                          maxLength={60}
+                          placeholder="Précisez (facultatif)"
+                          value={referralOther}
+                          onChange={(e) => setReferralOther(e.target.value)}
+                        />
+                      )}
+                    </div>
                   </FormSection>
 
                   <div className="space-y-5 border-t border-foreground pt-6">

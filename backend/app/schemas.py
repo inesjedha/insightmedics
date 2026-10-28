@@ -38,6 +38,7 @@ class LeadCreate(CamelModel):
     problem: str | None = Field(default=None, max_length=1000)
     objective: str | None = Field(default=None, max_length=1000)
     message: str | None = Field(default=None, max_length=2500)
+    referral: str | None = Field(default=None, max_length=80)
     audit_id: str | None = None
 
 
@@ -55,6 +56,7 @@ class LeadSchema(CamelModel):
     problem: str | None = None
     objective: str | None = None
     message: str | None = None
+    referral: str | None = None
     audit_id: str | None = None
     audit_score: float | None = None
     status: LeadStatus

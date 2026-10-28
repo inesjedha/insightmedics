@@ -32,6 +32,9 @@ _ADDED_COLUMNS = {
         "job_id": "VARCHAR",
         "job_started_at": "VARCHAR",
     },
+    "leads": {
+        "referral": "VARCHAR",
+    },
 }
 
 

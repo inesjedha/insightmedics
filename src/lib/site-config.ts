@@ -16,6 +16,8 @@ export const siteConfig = {
   cta: {
     audit: { to: "/audit", label: "Tester ma base gratuitement", short: "Tester ma base" },
     order: { to: "/contact", label: "Confier ma thèse" },
+    // Le formulaire de contact pèse autant que le test : deux portes d'entrée, aucun lead perdu.
+    contact: { to: "/contact", label: "Parler à un expert", short: "Nous contacter" },
   },
   about: { to: "/a-propos", label: "À propos" },
   legal: [

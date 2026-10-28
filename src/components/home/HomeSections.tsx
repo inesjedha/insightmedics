@@ -52,12 +52,15 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="link" className="px-2 text-foreground">
-              <Link to="/tarifs">Voir les formules et tarifs</Link>
+            <Button asChild size="lg" variant="outline">
+              <Link to={siteConfig.cta.contact.to}>{siteConfig.cta.contact.label}</Link>
             </Button>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Test gratuit et sans inscription · Prix fixé avant de commencer
+            Test gratuit et sans inscription · Rappel sous 48&nbsp;h ouvrées ·{" "}
+            <Link to="/tarifs" className="text-foreground underline underline-offset-4">
+              Voir les formules et tarifs
+            </Link>
           </p>
         </div>
 
@@ -186,6 +189,14 @@ export function AuditTeaser() {
               {siteConfig.cta.audit.label}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="border-background/40 bg-transparent text-background hover:bg-background/10 hover:text-background"
+          >
+            <Link to={siteConfig.cta.contact.to}>{siteConfig.cta.contact.label}</Link>
           </Button>
           <p className="inline-flex items-start gap-2 text-sm text-background/70">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />

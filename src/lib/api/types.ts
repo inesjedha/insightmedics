@@ -15,6 +15,8 @@ export interface LeadInput {
   problem?: string;
   objective?: string;
   message?: string;
+  /** Comment l'étudiant nous a connus (canal d'acquisition). */
+  referral?: string;
   // Demande de déblocage : le serveur en déduit score et priorité
   auditId?: string;
 }

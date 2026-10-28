@@ -114,6 +114,7 @@ function LeadDetail() {
             <Info label="Objectif" value={lead.objective} className="sm:col-span-2" />
           )}
           {lead.message && <Info label="Message" value={lead.message} className="sm:col-span-2" />}
+          {lead.referral && <Info label="Nous a connus par" value={lead.referral} />}
           {lead.auditId && (
             <Info
               label="Audit"

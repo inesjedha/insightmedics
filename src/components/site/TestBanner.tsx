@@ -52,12 +52,17 @@ export function TestBanner({
         </p>
       </div>
 
-      <Button asChild size="lg" className="w-full lg:w-auto">
-        <Link to={siteConfig.cta.audit.to}>
-          {siteConfig.cta.audit.label}
-          <ArrowRight className="h-4 w-4" aria-hidden />
-        </Link>
-      </Button>
+      <div className="flex flex-col gap-3">
+        <Button asChild size="lg" className="w-full lg:w-auto">
+          <Link to={siteConfig.cta.audit.to}>
+            {siteConfig.cta.audit.label}
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        </Button>
+        <Button asChild size="lg" variant="outline" className="w-full lg:w-auto">
+          <Link to={siteConfig.cta.contact.to}>{siteConfig.cta.contact.label}</Link>
+        </Button>
+      </div>
     </div>
   );
 }

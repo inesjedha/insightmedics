@@ -127,3 +127,11 @@ def test_accuse_de_reception_desactivable(outbox, monkeypatch):
     monkeypatch.setattr(settings, "student_emails", False)
     TestClient(app).post("/leads", json={"email": "z@exemple.tn"})
     assert _student(outbox) == []
+
+
+def test_origine_du_contact_enregistree_et_dans_la_notification(outbox):
+    r = TestClient(app).post("/leads", json={"source": "contact", "email": "w@exemple.tn",
+                                             "referral": "Facebook"})
+    assert r.status_code == 201 and r.json()["referral"] == "Facebook"
+    team = [m["body"] for m in outbox if m["body"]["tags"] == ["notification-equipe"]]
+    assert "Nous a connus par : Facebook" in team[0]["textContent"]

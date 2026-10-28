@@ -42,7 +42,10 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-2 md:flex">
+          <Button asChild size="sm" variant="outline">
+            <Link to={siteConfig.cta.contact.to}>{siteConfig.cta.contact.short}</Link>
+          </Button>
           <Button asChild size="sm">
             <Link to={siteConfig.cta.audit.to}>{siteConfig.cta.audit.short}</Link>
           </Button>
@@ -87,6 +90,9 @@ export function SiteHeader() {
           ))}
           <Button asChild className="mt-4 w-full" onClick={() => setOpen(false)}>
             <Link to={siteConfig.cta.audit.to}>{siteConfig.cta.audit.label}</Link>
+          </Button>
+          <Button asChild variant="outline" className="mt-2 w-full" onClick={() => setOpen(false)}>
+            <Link to={siteConfig.cta.contact.to}>{siteConfig.cta.contact.label}</Link>
           </Button>
         </nav>
       </div>
