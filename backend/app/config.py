@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     # Notifications à l'équipe à chaque formulaire rempli (services/notify.py) :
     # destinataires séparés par des virgules ; vide = aucune notification.
     notify_emails: str = ""
+    # Accusé de réception envoyé à l'étudiant après un formulaire (services/student_mail.py).
+    student_emails: bool = True
+    # Adresse de l'équipe : « Répondre » dans les mails aux étudiants écrit ici.
+    team_reply_to: str = "helpinsightmedics@gmail.com"
+    # WhatsApp de l'équipe (format international, sans +), bouton des mails aux étudiants.
+    whatsapp_number: str = "21696389570"
     # Prévenir aussi à chaque test gratuit (en plus des demandes de contact et d'audit).
     notify_on_test: bool = True
     # Adresse publique du site, pour les liens vers l'admin dans les mails.
