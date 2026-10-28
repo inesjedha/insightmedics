@@ -49,6 +49,7 @@ def lead_message(lead: Lead) -> Message:
         ("Problème", lead.problem or ""),
         ("Objectif", lead.objective or ""),
         ("Message", lead.message or ""),
+        ("Nous a connus par", lead.referral or ""),
         ("Score de l'audit", f"{lead.audit_score:g}/100" if lead.audit_score is not None else ""),
         ("Note", lead.notes or ""),
     ]

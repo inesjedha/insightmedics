@@ -36,6 +36,8 @@ class Lead(Base):
     problem: Mapped[str | None] = mapped_column(Text, nullable=True)
     objective: Mapped[str | None] = mapped_column(Text, nullable=True)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Comment l'étudiant nous a connus (formulaire de contact) : canal d'acquisition.
+    referral: Mapped[str | None] = mapped_column(String, nullable=True)
     audit_id: Mapped[str | None] = mapped_column(String, nullable=True)
     audit_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     status: Mapped[str] = mapped_column(String, default="new")  # new|contacted|won|lost
