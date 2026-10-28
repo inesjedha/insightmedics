@@ -73,6 +73,6 @@ Les expressions sont analysées par un interpréteur fermé (jamais `eval`) :
 - Valider le plan avant les calculs, et relire le Word avant la livraison.
 - Survie (Kaplan-Meier, Cox) et modèles mixtes : hors de la version 1, signalés dans le
   plan comme « à faire par le biostatisticien ».
-- À demander : son prompt « résultats » (`03_Prompt_contre_audit_base_corrigee.md`,
-  `Verification_base_corrigee_et_Resultats_these_VUP.md`) pour caler la rédaction sur ses
-  habitudes et sur les formats des facultés.
+- Format des facultés : les prompts de Hamza (v2.0 du 28/10/2026) sont intégrés. Quand la
+  fiche de mission indique la faculté, la rédaction et les livrables suivent son plan et sa
+  charte, et « Tout lancer » enchaîne les étapes : voir [`theses-faculte.md`](theses-faculte.md).

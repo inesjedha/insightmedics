@@ -1,0 +1,396 @@
+{
+  "faculte": "FMSf",
+  "nom": "Faculté de médecine de Sfax",
+  "version": "2.0",
+  "date_mesure": "28/10/2026",
+  "mesure_sur": [
+    "TFO (M&M + Résultats ×2, 12/10/2026)",
+    "PAI (M&M + Résultats + Discussion, 13/10/2026)",
+    "Maha (thèse complète, 11/10/2026)",
+    "thèse d'Oumayma Gamoudi (modèle soutenu)"
+  ],
+  "langue": {
+    "texte": "fr-FR"
+  },
+  "note_officielle": "Règle écrite FMSf : marge gauche 3 cm, autres 2 cm ; nos livraisons gardent les marges du modèle soutenu.",
+  "page": {
+    "format": "A4",
+    "marges_cm": {
+      "haut": 2.5,
+      "bas": 2.5,
+      "gauche": 2.8,
+      "droite": 2.2
+    },
+    "entete_cm": 2.0,
+    "pied_cm": 2.0,
+    "largeur_utile_cm": 16.0,
+    "compatibilite_word": 12
+  },
+  "texte": {
+    "style": "Normal",
+    "police": "Times New Roman",
+    "taille_pt": 14,
+    "alignement": "justifié",
+    "interligne": 1.5,
+    "avant_pt": 0,
+    "apres_pt": 0,
+    "retrait_premiere_ligne_cm": 1.25
+  },
+  "puces": {
+    "style": "Paragraphe de liste",
+    "retrait_gauche_cm": 1.5,
+    "police": "Times New Roman",
+    "taille_pt": 14
+  },
+  "titres": [
+    {
+      "role": "chapitre_et_intercalaire",
+      "style": "Titre 1",
+      "police": "Lucian BT",
+      "taille_pt": 36,
+      "gras": true,
+      "capitales": true,
+      "alignement": "droite",
+      "filet_bas": {
+        "type": "simple",
+        "epaisseur_pt": 0.5,
+        "couleur": "auto"
+      },
+      "paragraphes_vides_avant": 13,
+      "page_seule": true
+    },
+    {
+      "role": "niveau_1",
+      "style": "Titre 2",
+      "police": "Georgia",
+      "taille_pt": 16,
+      "gras": true,
+      "capitales": true,
+      "retrait_gauche_cm": 1.0,
+      "avant_pt": 12,
+      "apres_pt": 6,
+      "numerotation": "1.",
+      "fin": ""
+    },
+    {
+      "role": "niveau_1_1",
+      "style": "Titre 3",
+      "police": "Georgia",
+      "taille_pt": 14,
+      "gras": true,
+      "retrait_gauche_cm": 2.0,
+      "avant_pt": 12,
+      "apres_pt": 6,
+      "numerotation": "1.1.",
+      "fin": ""
+    },
+    {
+      "role": "niveau_1_1_1",
+      "style": "Titre 4",
+      "police": "Georgia",
+      "taille_pt": 13,
+      "gras": true,
+      "italique": true,
+      "retrait_gauche_cm": 3.0,
+      "avant_pt": 12,
+      "apres_pt": 6,
+      "numerotation": "1.1.1.",
+      "fin": ""
+    },
+    {
+      "role": "niveau_1_1_1_1",
+      "style": "Titre 5",
+      "police": "Georgia",
+      "taille_pt": 13,
+      "gras": true,
+      "retrait_gauche_cm": 4.0,
+      "numerotation": "1.1.1.1.",
+      "fin": ""
+    }
+  ],
+  "regles_titres": {
+    "chiffres": "arabes uniquement",
+    "deux_points_apres_titre": false,
+    "introduction_conclusion": "aucun titre ni sous-titre",
+    "niveaux_max": 4
+  },
+  "legendes": {
+    "tableau": {
+      "style": "Légende",
+      "position": "au-dessus",
+      "police": "Times New Roman",
+      "taille_pt": 14,
+      "gras": true,
+      "italique": true,
+      "couleur": "000000",
+      "alignement": "centré",
+      "avant_pt": 12,
+      "champ": "SEQ Tableau \\* ROMAN",
+      "modele": "Tableau {romain} : {titre}"
+    },
+    "figure": {
+      "style": "Légende",
+      "position": "dessous",
+      "police": "Times New Roman",
+      "taille_pt": 14,
+      "gras": true,
+      "italique": true,
+      "couleur": "000000",
+      "alignement": "centré",
+      "avant_pt": 12,
+      "champ": "SEQ Figure \\* ARABIC",
+      "modele": "Figure {n} : {titre}"
+    }
+  },
+  "notes": {
+    "tableau": {
+      "style": "Note tableau",
+      "police": "Times New Roman",
+      "taille_pt": 10,
+      "avant_pt": 3,
+      "apres_pt": 8
+    },
+    "figure": {
+      "style": "Note figure",
+      "police": "Times New Roman",
+      "taille_pt": 10,
+      "alignement": "centré",
+      "apres_pt": 8
+    }
+  },
+  "tableaux": {
+    "style_word": "Tableau Liste 6 Couleur - Accentuation 51",
+    "largeur_dxa": 9071,
+    "largeur_cm": 16.0,
+    "alignement": "centré",
+    "police": "Times New Roman",
+    "taille_pt": 11,
+    "taille_si_dense_pt": 10,
+    "avant_pt": 1.5,
+    "apres_pt": 1.5,
+    "entete_repetee": true,
+    "lignes_insecables": true,
+    "abreviations": "interdites (règle FMSf)"
+  },
+  "figures": {
+    "taille_base_pt": 9,
+    "graduations_pt": 8.5,
+    "taille_min_pt_a_l_insertion": 7.5,
+    "dpi_png": 600,
+    "formats": [
+      "png",
+      "pdf"
+    ],
+    "pdf_fonttype": 42,
+    "texte_gris": false,
+    "titre_dans_l_image": false,
+    "couleurs": {
+      "groupe_1": "1F6FB2",
+      "groupe_2": "DD6B27",
+      "fond_groupe_1": "DCE9F5",
+      "fond_groupe_2": "F9E2D2",
+      "serie_unique": "2E5E8C",
+      "bleu_nuit": "1B3A5C",
+      "encre": "1A1A1A",
+      "quadrillage": "E3E5E8",
+      "seconde_famille": "2A9D8F",
+      "succes_partiel_echec": [
+        "1F6FB2",
+        "D9A030",
+        "B8402A"
+      ],
+      "rampe_4": [
+        "86B6EF",
+        "3987E5",
+        "1C5CAB",
+        "0D366B"
+      ],
+      "rampe_6": [
+        "C6DCF5",
+        "94BFEE",
+        "5C9DE0",
+        "3179C4",
+        "1C5CAB",
+        "0D366B"
+      ],
+      "roc": [
+        "1F4E79",
+        "E07B39",
+        "8E6BB0"
+      ],
+      "bandeau_flux": "D6E4F1"
+    },
+    "excel": {
+      "classeur": "Figures_Excel_These_<Sujet>.xlsx",
+      "premier_onglet": "Mode d'emploi",
+      "onglet_par_figure": "Figure n <Nom court>",
+      "graphiques": "natifs, liés aux cellules, données sous le graphique",
+      "formules": [
+        "effectifs",
+        "pourcentages",
+        "étiquettes n (x %)",
+        "quartiles (méthode SPSS)",
+        "densités"
+      ],
+      "valeurs_fixes": [
+        "p",
+        "rho"
+      ],
+      "schemas": "formes Excel (flux) ou image (schéma anatomique)",
+      "nettoyage": [
+        "auteur vide",
+        "x15ac:absPath retiré"
+      ],
+      "export": "PNG 600 ppp + PDF"
+    },
+    "police": "Times New Roman",
+    "largeur_cm": [
+      14.5,
+      16.0
+    ]
+  },
+  "entete": {
+    "contenu": "nom du chapitre",
+    "police": "Lucida Calligraphy",
+    "taille_pt": 9,
+    "alignement": "droite",
+    "filet_bas": "simple 0,5 pt",
+    "page_intercalaire": "première page de section sans en-tête"
+  },
+  "pied": {
+    "contenu": "champ PAGE",
+    "police": "CentSchbook BT",
+    "taille_pt": 10,
+    "gras": true,
+    "alignement": "droite"
+  },
+  "pagination": {
+    "debut": "Introduction p. 1",
+    "fin": "dernière page de la Conclusion",
+    "references": "chiffres romains majuscules à partir de I",
+    "annexes": "non numérotées"
+  },
+  "references": {
+    "appel": "(n)",
+    "appels_multiples": "(12, 13)",
+    "intervalle": "(5–8)",
+    "espace_insecable_avant": true,
+    "avant_ponctuation": true,
+    "style": "Vancouver (NLM)",
+    "auteurs_max": 6,
+    "liste": {
+      "police": "Times New Roman",
+      "taille_pt": 12,
+      "interligne": 1.15,
+      "alignement": "gauche",
+      "retrait_suspendu_cm": 1.0,
+      "apres_pt": 4
+    },
+    "nombre_these": [
+      40,
+      100
+    ],
+    "plafond_discussion": 80,
+    "proscrits": [
+      "articles soumis",
+      "résumés de congrès non publiés",
+      "communications",
+      "sites web non officiels"
+    ]
+  },
+  "conclusion": {
+    "titre": "CONCLUSION",
+    "titres_internes": false,
+    "references": false,
+    "pages_max": 6
+  },
+  "limites": {
+    "pages": [
+      50,
+      100
+    ],
+    "titre_these_mots_max": 10
+  },
+  "polices_absentes_poste": [
+    "Lucian BT",
+    "CentSchbook BT"
+  ],
+  "typographie": {
+    "decimale": ",",
+    "milliers": "espace insécable",
+    "intervalle": "–",
+    "moins": "−",
+    "apostrophe": "’",
+    "guillemets": "« »",
+    "espace_insecable_avant": [
+      ":",
+      ";",
+      "?",
+      "!",
+      "%"
+    ],
+    "p": {
+      "decimales": 3,
+      "seuil_affichage": "p < 0,001",
+      "interdit": "0,000",
+      "gras_si": "p < 0,05"
+    },
+    "pourcentage_decimales": 1,
+    "or_ic_decimales": 2,
+    "asc_decimales": 3,
+    "moyenne_et": "une décimale de plus que la variable (au moins une)",
+    "mediane_quartiles": "précision de la variable",
+    "arrondi": "au plus proche, demie vers le haut (SPSS)"
+  },
+  "statistiques": {
+    "logiciel_declare": "IBM SPSS Statistics 26",
+    "seuil": 0.05,
+    "bilateral": true,
+    "normalite": "Shapiro-Wilk, normale si p > 0,05 (dans chaque groupe)",
+    "quartiles": "HAVERAGE de SPSS = numpy.percentile(method='weibull')",
+    "deux_groupes_quanti": "Student (Welch si Levene p <= 0,05, Levene centré moyenne) si normale, sinon Mann-Whitney asymptotique sans correction de continuité",
+    "qualitatives": "Chi² de Pearson sans correction si effectifs théoriques >= 5, sinon Fisher exact (2x2) ou Fisher-Freeman-Halton Monte-Carlo (100 000 tirages, graine 20261012)",
+    "or_ic": "Woolf avec Chi², exact conditionnel avec Fisher, Haldane +0,5 si case nulle",
+    "proportions_ic": "Wilson",
+    "multivarie": "logistique binaire, méthode Entrée ou pas à pas descendante RV (sortie p > 0,10) ; ~10 événements par variable ; Hosmer-Lemeshow",
+    "apparie": "t apparié ou Wilcoxon (différences nulles écartées) ; McNemar ; Q de Cochran",
+    "roc": "ASC IC 95 % Hanley-McNeil ; comparaison appariée DeLong ; seuil de Youden ou publié",
+    "concordance": "kappa de Cohen, grille de Landis et Koch",
+    "survie": "Kaplan-Meier, log-rank, Cox, seulement avec dates réelles",
+    "interdits": [
+      "modèles mixtes",
+      "GEE",
+      "bootstrap",
+      "splines",
+      "Firth",
+      "Mantel-Haenszel",
+      "risques compétitifs",
+      "landmark",
+      "imputation multiple",
+      "scores de propension",
+      "ANCOVA",
+      "correction tests multiples",
+      "tailles d'effet"
+    ]
+  },
+  "livrables": {
+    "partie_1": [
+      "These_<Sujet>_MM_Resultats_figures_Matplotlib.docx + .pdf",
+      "These_<Sujet>_MM_Resultats_figures_Excel.docx + .pdf",
+      "Figures_Excel_These_<Sujet>.xlsx",
+      "Figures_Resultats_These_<Sujet>.zip",
+      "Figures_Excel_images_These_<Sujet>.zip",
+      "Sources_Introduction_MM_These_<Sujet>.xlsx",
+      "Annexe_statistique_These_<Sujet>.xlsx"
+    ],
+    "partie_2": [
+      "These_<Sujet>_MM_Resultats_Discussion.docx + .pdf",
+      "These_<Sujet>_MM_Resultats_Discussion_figures_Excel.docx + .pdf",
+      "Figures_Excel_Discussion_These_<Sujet>.xlsx",
+      "Figures_Discussion_These_<Sujet>.zip",
+      "References_These_<Sujet>.xlsx",
+      "References_These_<Sujet>_Zotero.ris",
+      "Resume_Abstract_These_<Sujet>.docx"
+    ]
+  }
+}

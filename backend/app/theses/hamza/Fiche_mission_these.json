@@ -1,0 +1,305 @@
+{
+  "version": "2.0",
+  "date": "28/10/2026",
+  "usage": "Fiche de mission commune aux prompts 1 et 2 des quatre facultés. « je ne sais pas » est accepté pour tout champ non obligatoire : il devient « non documenté » et produit une mention [À CONFIRMER : …] ; il n'est jamais deviné.",
+  "champs": {
+    "these.titre": {
+      "libelle": "Titre exact de la fiche d'inscription",
+      "type": "texte",
+      "obligatoire": true,
+      "qui": "doctorant"
+    },
+    "these.faculte": {
+      "libelle": "Faculté",
+      "type": "choix",
+      "valeurs": [
+        "FMS",
+        "FMT",
+        "FMM",
+        "FMSf"
+      ],
+      "obligatoire": true,
+      "qui": "doctorant"
+    },
+    "these.langue": {
+      "libelle": "Langue de la thèse",
+      "type": "choix",
+      "valeurs": [
+        "fr",
+        "en",
+        "ar"
+      ],
+      "defaut": "fr",
+      "qui": "doctorant",
+      "note": "ar seulement FMT et FMM ; FMSf : fr ou en ; FMS : fr"
+    },
+    "these.service": {
+      "libelle": "Service, hôpital, ville",
+      "type": "texte",
+      "qui": "doctorant"
+    },
+    "these.periode": {
+      "libelle": "Période d'étude et date de point",
+      "type": "texte",
+      "qui": "doctorant",
+      "accepte_je_ne_sais_pas": true
+    },
+    "these.type_etude": {
+      "libelle": "Type d'étude",
+      "type": "choix_plus_texte",
+      "valeurs": [
+        "cohorte rétrospective",
+        "cohorte prospective",
+        "cas-témoins",
+        "transversale",
+        "essai randomisé",
+        "étude diagnostique",
+        "série de cas",
+        "enquête CAP"
+      ],
+      "qui": "doctorant propose, Insight Medics valide"
+    },
+    "population.criteres": {
+      "libelle": "Inclusion ; non-inclusion ; exclusion",
+      "type": "texte",
+      "qui": "doctorant"
+    },
+    "population.effectif_annonce": {
+      "libelle": "Effectif annoncé",
+      "type": "entier",
+      "qui": "doctorant",
+      "note": "vérifié sur la base, jamais forcé"
+    },
+    "population.unite": {
+      "libelle": "Unité statistique",
+      "type": "choix",
+      "valeurs": [
+        "patient",
+        "séjour",
+        "œil",
+        "cycle",
+        "lésion",
+        "mère",
+        "nouveau-né",
+        "médecin"
+      ],
+      "defaut": "patient",
+      "qui": "Insight Medics"
+    },
+    "objectifs.principal": {
+      "libelle": "Objectif principal",
+      "type": "texte",
+      "obligatoire": true,
+      "qui": "doctorant"
+    },
+    "objectifs.secondaires": {
+      "libelle": "Objectifs secondaires",
+      "type": "liste",
+      "qui": "doctorant"
+    },
+    "critere_principal": {
+      "libelle": "Critère de jugement principal",
+      "type": "objet",
+      "sous_champs": [
+        "variable",
+        "moment",
+        "comparaison",
+        "methode"
+      ],
+      "qui": "Insight Medics (relu)"
+    },
+    "groupes": {
+      "libelle": "Groupes comparés",
+      "type": "liste_objets",
+      "sous_champs": [
+        "variable",
+        "codage",
+        "effectif"
+      ],
+      "qui": "doctorant propose, Insight Medics valide"
+    },
+    "multivarie.regle": {
+      "libelle": "Règle d'entrée du modèle",
+      "type": "texte",
+      "defaut": "p < 0,05 en univarié, une variable par groupe lié, méthode Entrée",
+      "qui": "Insight Medics"
+    },
+    "analyses_complementaires": {
+      "libelle": "Analyses complémentaires",
+      "type": "choix_plus_texte",
+      "valeurs": [
+        "simples, tirées de la problématique",
+        "aucune"
+      ],
+      "defaut": "simples, tirées de la problématique",
+      "qui": "Insight Medics"
+    },
+    "jury.specialite": {
+      "libelle": "Spécialité du jury",
+      "type": "texte",
+      "qui": "doctorant"
+    },
+    "livrer": {
+      "libelle": "Chapitres à livrer",
+      "type": "choix_multiple",
+      "valeurs": [
+        "intro",
+        "mm",
+        "res",
+        "discussion",
+        "conclusion",
+        "resumes"
+      ],
+      "defaut": [
+        "intro",
+        "mm",
+        "res"
+      ],
+      "qui": "doctorant"
+    },
+    "numerotation": {
+      "libelle": "Numérotation de départ",
+      "type": "objet",
+      "sous_champs": [
+        "premier_tableau",
+        "premiere_figure",
+        "premiere_reference"
+      ],
+      "defaut": {
+        "premier_tableau": "I",
+        "premiere_figure": 1,
+        "premiere_reference": 1
+      },
+      "qui": "Insight Medics"
+    },
+    "pagination.debut": {
+      "libelle": "Numéro de la première page de l'Introduction",
+      "type": "entier",
+      "defaut": 1,
+      "qui": "Insight Medics"
+    },
+    "figures.versions": {
+      "libelle": "Versions des figures",
+      "type": "choix",
+      "valeurs": [
+        "matplotlib+excel",
+        "excel",
+        "matplotlib"
+      ],
+      "defaut": "matplotlib+excel",
+      "qui": "doctorant"
+    },
+    "base.livrer": {
+      "libelle": "Livrer la base d'analyse",
+      "type": "booléen",
+      "defaut": false,
+      "qui": "doctorant"
+    },
+    "references.max": {
+      "libelle": "Plafond de références de la Discussion",
+      "type": "entier",
+      "defaut": 80,
+      "note": "FMSf : 40 à 100 pour la thèse entière",
+      "qui": "Insight Medics"
+    },
+    "plan_impose": {
+      "libelle": "Plan imposé par l'encadrant",
+      "type": "texte",
+      "qui": "doctorant"
+    },
+    "figures.discussion": {
+      "libelle": "Figures de la Discussion",
+      "type": "choix",
+      "valeurs": [
+        "aucune",
+        "2 à 3 figures Excel",
+        "schéma ou algorithme"
+      ],
+      "defaut": "aucune",
+      "qui": "doctorant"
+    },
+    "fichiers": {
+      "libelle": "Fichiers joints",
+      "type": "liste_fichiers",
+      "attendus": [
+        "base (.sav ou .xlsx)",
+        "dictionnaire et journal",
+        "formulaires d'inscription",
+        "brouillon (Introduction, méthodologie)",
+        "M&M corrigé par l'encadrant",
+        "remarques d'encadrant",
+        "articles fournis",
+        "thèse exemple du service"
+      ],
+      "qui": "doctorant"
+    },
+    "client": {
+      "libelle": "Client",
+      "type": "objet",
+      "sous_champs": [
+        "prenom",
+        "tutoiement",
+        "genre"
+      ],
+      "qui": "Insight Medics"
+    }
+  },
+  "exemple_fictif": {
+    "these.titre": "Facteurs associés à l'échec de la ventilation non invasive chez l'adulte en réanimation",
+    "these.faculte": "FMT",
+    "these.langue": "fr",
+    "these.service": "Service de réanimation médicale, hôpital X, Tunis",
+    "these.periode": "du 01/01/2024 au 31/12/2025 ; date de point : 31/03/2026",
+    "these.type_etude": "cohorte rétrospective",
+    "population.criteres": "adultes traités par VNI en première intention ; non-inclusion : VNI palliative ; exclusion : dossier inexploitable",
+    "population.effectif_annonce": 120,
+    "population.unite": "patient",
+    "objectifs.principal": "décrire le taux d'échec de la VNI",
+    "objectifs.secondaires": [
+      "décrire le profil des patients",
+      "rechercher les facteurs associés à l'échec"
+    ],
+    "critere_principal": {
+      "variable": "intubation ou décès",
+      "moment": "dans les 72 heures",
+      "comparaison": "aucune (taux)",
+      "methode": "proportion avec IC 95 % de Wilson"
+    },
+    "groupes": [
+      {
+        "variable": "echec_vni",
+        "codage": "1 = échec, 0 = succès",
+        "effectif": "à établir"
+      }
+    ],
+    "multivarie.regle": "p < 0,05 en univarié, une variable par groupe lié, méthode Entrée",
+    "analyses_complementaires": "simples, tirées de la problématique",
+    "jury.specialite": "réanimation médicale",
+    "livrer": [
+      "intro",
+      "mm",
+      "res"
+    ],
+    "numerotation": {
+      "premier_tableau": "I",
+      "premiere_figure": 1,
+      "premiere_reference": 1
+    },
+    "pagination.debut": 1,
+    "figures.versions": "matplotlib+excel",
+    "base.livrer": false,
+    "references.max": 80,
+    "plan_impose": "",
+    "figures.discussion": "aucune",
+    "fichiers": [
+      "base.sav",
+      "fiche_inscription.pdf",
+      "brouillon_methodologie.docx"
+    ],
+    "client": {
+      "prenom": "<prénom>",
+      "tutoiement": true,
+      "genre": "doctorante"
+    }
+  }
+}

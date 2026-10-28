@@ -7,16 +7,17 @@ la même erreur, pour ne pas révéler l'existence d'un audit.
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Body, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..models import AnalysisStatus, Audit
 from ..pipeline.student_text import mask_dossier_numbers
-from ..schemas import AuditResult, ClientAnalysis
+from ..schemas import AuditResult, ClientAnalysis, ClientFiche
 from ..services import analyses
 from ..services import audits as service
 from ..services.audits import DeliverableKind
+from ..theses import fiche as fiche_mod
 from .analyses import file_response
 from .downloads import deliverable_response
 
@@ -62,7 +63,42 @@ def client_analysis(audit: Audit = Depends(paid_audit), db: Session = Depends(ge
     if not analysis or analysis.status != AnalysisStatus.DELIVERED:
         raise HTTPException(404, "Aucune analyse livrée")
     return ClientAnalysis(status="delivered", delivered_at=analysis.delivered_at,
-                          files=sorted(analyses.DELIVERABLES))
+                          files=analyses.deliverables(analysis))
+
+
+_FICHE_OPEN = (AnalysisStatus.AWAITING_BASE, AnalysisStatus.PLAN_READY, AnalysisStatus.FAILED)
+
+
+def _client_fiche(analysis: Any) -> ClientFiche:
+    visible = {k: v for k, v in (analysis.fiche or {}).items()
+               if k in fiche_mod.fields() and fiche_mod.student_editable(k)}
+    return ClientFiche(fiche=visible, editable=analysis.status in _FICHE_OPEN,
+                       status=analysis.status)
+
+
+@router.get("/{token}/fiche", response_model=ClientFiche, response_model_by_alias=True)
+def client_fiche(audit: Audit = Depends(paid_audit), db: Session = Depends(get_db)
+                 ) -> ClientFiche:
+    """Fiche de mission de la thèse (champs de l'étudiant), une fois l'analyse commandée."""
+    analysis = analyses.for_audit(db, audit.id)
+    if not analysis:
+        raise HTTPException(404, "Aucune analyse commandée")
+    return _client_fiche(analysis)
+
+
+@router.put("/{token}/fiche", response_model=ClientFiche, response_model_by_alias=True)
+def put_client_fiche(fiche: dict[str, Any] = Body(...), audit: Audit = Depends(paid_audit),
+                     db: Session = Depends(get_db)) -> ClientFiche:
+    analysis = analyses.for_audit(db, audit.id)
+    if not analysis:
+        raise HTTPException(404, "Aucune analyse commandée")
+    if analysis.status not in _FICHE_OPEN:
+        raise HTTPException(409, "L'analyse est en cours : écrivez-nous pour toute modification.")
+    try:
+        analyses.set_fiche(db, analysis, fiche, student=True)
+    except analyses.AuditError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return _client_fiche(analysis)
 
 
 @router.get("/{token}/analysis/{kind}")

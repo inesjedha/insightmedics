@@ -5,6 +5,10 @@ import { apiUrl, downloadAdmin, request, requestOrNull } from "./http";
 import type {
   AiAssessment,
   AnalysisDetail,
+  AnalysisFile,
+  ClientFiche,
+  Fiche,
+  FicheSchema,
   AnalysisSummary,
   ClientAnalysis,
   AuditEvent,
@@ -197,14 +201,46 @@ export function downloadAnalysisFile(id: string, kind: AnalysisFile): Promise<vo
   return downloadAdmin(`/analyses/${encodeURIComponent(id)}/${kind}`, kind);
 }
 
+/** Fiche de mission (format faculté) : mise à jour partielle, une valeur vide efface. */
+export function saveAnalysisFiche(id: string, patch: Fiche): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/fiche`, {
+    method: "PUT",
+    body: patch,
+    admin: true,
+  });
+}
+
+/** « Tout lancer » : plan, calculs et rédaction enchaînés (tâche de fond). */
+export function launchAnalysis(id: string): Promise<AnalysisDetail> {
+  return request<AnalysisDetail>(`/analyses/${encodeURIComponent(id)}/launch`, {
+    method: "POST",
+    admin: true,
+  });
+}
+
+/** Public : schéma de la fiche de mission (JSON de Dr Hamza). */
+export function getFicheSchema(): Promise<FicheSchema> {
+  return request<FicheSchema>("/theses/fiche-schema");
+}
+
 // --- Analyses + résultats (étudiant, lien privé) ---
 
-type AnalysisFile = "resultats.docx" | "resultats.xlsx";
+/** Null tant qu'aucune analyse n'est commandée. */
+export function getClientFiche(token: string): Promise<ClientFiche | null> {
+  return requestOrNull<ClientFiche>(`/r/${encodeURIComponent(token)}/fiche`);
+}
+
+export function saveClientFiche(token: string, patch: Fiche): Promise<ClientFiche> {
+  return request<ClientFiche>(`/r/${encodeURIComponent(token)}/fiche`, {
+    method: "PUT",
+    body: patch,
+  });
+}
 
 export function getClientAnalysis(token: string): Promise<ClientAnalysis | null> {
   return requestOrNull<ClientAnalysis>(`/r/${encodeURIComponent(token)}/analysis`);
 }
 
-export function clientAnalysisUrl(token: string, kind: AnalysisFile): string {
+export function clientAnalysisUrl(token: string, kind: AnalysisFile | string): string {
   return apiUrl(`/r/${encodeURIComponent(token)}/analysis/${kind}`);
 }

@@ -118,7 +118,9 @@ export async function downloadAdmin(path: string, filename: string): Promise<voi
   const url = URL.createObjectURL(await res.blob());
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename;
+  // Nom choisi par le serveur (« Resultats_These_Hemothorax.docx ») s'il en donne un.
+  const served = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "");
+  a.download = served?.[1] ?? filename;
   a.click();
   URL.revokeObjectURL(url);
 }

@@ -175,6 +175,12 @@ class AnalysisOut(CamelModel):
     derived_log: list[dict[str, Any]] | None = None
     results: list[dict[str, Any]] | None = None
     text: dict[str, Any] | None = None
+    # Format faculté : fiche de mission, brouillon de l'IA, contrôles, livrables
+    fiche: dict[str, Any] | None = None
+    auto_run: bool | None = None
+    draft: dict[str, Any] | None = None
+    checks: list[dict[str, Any]] | None = None
+    deliverables: list[str] = []
     delivered_at: str | None = None
     events: list[dict[str, Any]] | None = None
     # Rappel de l'audit d'origine
@@ -199,3 +205,12 @@ class ClientAnalysis(CamelModel):
     status: AnalysisStatusValue
     delivered_at: str | None = None
     files: list[str] = []
+
+
+class ClientFiche(CamelModel):
+    """Fiche de mission sur le lien privé de l'étudiant : ses champs, et s'il peut encore
+    la modifier."""
+
+    fiche: dict[str, Any] = {}
+    editable: bool = False
+    status: AnalysisStatusValue

@@ -28,6 +28,8 @@ _SP = "[   ]*"
 _TRIPLE_RE = re.compile(rf"(\d+){_SP}(?:/|(?:patients?|cas|lignes?)?{_SP}sur){_SP}(\d+){_SP}"
                         rf"\({_SP}(\d+(?:,\d+)?){_SP}%")
 _PAIR_RE = re.compile(rf"(?<![/\d])(\d+){_SP}(?:patients?|cas)?{_SP}\({_SP}(\d+(?:,\d+)?){_SP}%")
+# Appels de tableaux et figures du brouillon ({{TAB:t1}}) : pas des résultats.
+_CALL_RE = re.compile(r"\{\{(?:TAB|FIG):[^}]*\}\}")
 # « p = 0,120 », « p < 0,001 »
 _P_RE = re.compile(rf"\bp{_SP}([=<>≤≥]){_SP}(\d+,\d+)")
 
@@ -73,10 +75,10 @@ def allowed_numbers(context: Any) -> set[str]:
     return found | {n.lstrip("-") for n in found} | {"0.05"}
 
 
-def unknown_numbers(out: ResultsText, allowed: set[str]) -> list[str]:
+def unknown_numbers(out: ResultsText | list[str], allowed: set[str]) -> list[str]:
     """Nombres du texte absents des résultats (hors « IC 95 % », « Tableau N », seuil)."""
     bad: list[str] = []
-    for text in _texts(out):
+    for text in (out if isinstance(out, list) else _texts(out)):
         for n in sorted(numbers_in(text)):
             if n not in allowed and n not in bad:
                 bad.append(n)
@@ -140,10 +142,16 @@ def _facts(context: Any) -> tuple[set[tuple[str, str, str]], set[tuple[str, str]
 def inconsistencies(out: ResultsText, context: Any) -> list[str]:
     """Tout ce qui, dans le texte, ne correspond pas aux résultats calculés : nombres
     inconnus, effectif et pourcentage qui ne vont pas ensemble, p mal recopié."""
+    return inconsistencies_in(_texts(out), context)
+
+
+def inconsistencies_in(texts: list[str], context: Any) -> list[str]:
+    """Même contrôle sur une liste de textes quelconque (brouillon au format faculté)."""
+    texts = [_CALL_RE.sub(" ", t) for t in texts]
     triples, pairs, pvalues = _facts(context)
     problems = [f"nombre absent des résultats : {n}"
-                for n in unknown_numbers(out, allowed_numbers(context))]
-    for text in _texts(out):
+                for n in unknown_numbers(texts, allowed_numbers(context))]
+    for text in texts:
         for k, big, pc in _TRIPLE_RE.findall(text):
             if (k, big, normalize(pc)) not in triples:
                 problems.append(f"« {k}/{big} ({pc} %) » ne correspond à aucun résultat")

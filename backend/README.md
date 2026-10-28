@@ -129,7 +129,7 @@ L'orchestrateur `app/pipeline/runner.py` enchaîne les étapes :
 
 Voir `.env.example` (commenté) : `DATABASE_URL`, `STORAGE_DIR`, `CORS_ORIGINS`,
 `FILE_RETENTION_DAYS`, `MAINTENANCE_INTERVAL_MINUTES`, `UNLOCK_LEASE_MINUTES`, `ANTHROPIC_API_KEY`, `LLM_MODEL`, `LLM_EFFORT`, `LLM_MAX_TOKENS`,
-`ADMIN_API_KEY`, `BREVO_API_KEY`, `MAIL_FROM_EMAIL`, `MAIL_FROM_NAME`, `NOTIFY_EMAILS`, `NOTIFY_ON_TEST`. Les secrets ne sont jamais versionnés (`.env` est gitignoré).
+`ADMIN_API_KEY`, `BREVO_API_KEY`, `MAIL_FROM_EMAIL`, `MAIL_FROM_NAME`, `NOTIFY_EMAILS`, `NOTIFY_ON_TEST`, `THESIS_SOFTWARE`. Les secrets ne sont jamais versionnés (`.env` est gitignoré).
 
 Les tests n'utilisent jamais ces valeurs : `tests/conftest.py` impose une base et un
 stockage temporaires et désactive l'IA (aucun appel payant pendant `pytest`).

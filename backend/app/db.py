@@ -35,6 +35,12 @@ _ADDED_COLUMNS = {
     "leads": {
         "referral": "VARCHAR",
     },
+    "analyses": {
+        "fiche": "JSON",
+        "auto_run": "BOOLEAN",
+        "draft": "JSON",
+        "checks": "JSON",
+    },
 }
 
 

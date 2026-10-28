@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import math
 import warnings
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 import numpy as np
@@ -37,14 +38,26 @@ from .plan import (
 NORMAL_P = 0.05
 MIN_EPV = 10
 HARD_MIN_EPV = 5
+# Tirages de Monte-Carlo (Fisher-Freeman-Halton) : graine fixée, deux exécutions donnent
+# le même p (prompts de Dr Hamza, § 8.1).
+MC_RESAMPLES = 100_000
+MC_SEED = 20261012
+# Modalités qui signalent la présence d'un facteur binaire (« Diabète : oui »).
+_PRESENT = {"1", "oui", "yes", "o", "y", "présent", "present", "positif", "positive", "vrai",
+            "true"}
 
 
 # ---------------------------------------------------------------- formats français
 
 def fmt(x: float | None, digits: int = 1) -> str:
-    if x is None or (isinstance(x, float) and not math.isfinite(x)):
+    """Nombre à la française, arrondi au plus proche, la demie vers le haut (comme
+    l'affichage de SPSS : 31,25 → 31,3 ; 18,5 → 19), signe moins typographique."""
+    if x is None or not math.isfinite(float(x)):
         return "—"
-    return f"{x:.{digits}f}".replace(".", ",").replace("-", "−")
+    q = Decimal(repr(float(x))).quantize(Decimal(1).scaleb(-digits), rounding=ROUND_HALF_UP)
+    if q == 0:
+        q = abs(q)  # jamais « −0,0 »
+    return f"{q:.{digits}f}".replace(".", ",").replace("-", "−")
 
 
 def _integers(values: pd.Series) -> bool:
@@ -53,11 +66,16 @@ def _integers(values: pd.Series) -> bool:
 
 
 def _digits(values: pd.Series) -> int:
-    """1 décimale ; 2 pour les petites grandeurs mesurées (Hb 8,4 ; shock index 0,87)."""
-    if _integers(values):
-        return 1
-    m = float(values.abs().median()) if len(values) else 0.0
-    return 2 if m < 10 else 1
+    """Précision de la variable : nombre de décimales des valeurs saisies (0 à 3).
+    Médiane, quartiles et extrêmes s'affichent à cette précision ; moyenne et
+    écart-type avec une décimale de plus (au moins une)."""
+    v = values.dropna().astype(float).to_numpy()
+    if not len(v):
+        return 0
+    for d in range(4):
+        if np.allclose(v, np.round(v, d), rtol=0, atol=1e-9):
+            return d
+    return 3
 
 
 def fmt_p(p: float | None) -> str:
@@ -98,16 +116,22 @@ def is_normal(s: pd.Series) -> bool:
 
 
 def summary_quant(s: pd.Series, normal: bool, digits: int) -> str:
+    """« 76,1 ± 10,9 » (moyenne ± écart-type, une décimale de plus que la variable) ou
+    « 53 [34–63] » (médiane [Q1–Q3], à la précision de la variable ; une médiane qui
+    tombe entre deux valeurs, 95,5, garde sa décimale)."""
     s = s.dropna().astype(float)
     if s.empty:
         return "—"
     if normal:
         sd = float(s.std(ddof=1)) if len(s) > 1 else float("nan")
-        return f"{fmt(float(s.mean()), digits)} ± {fmt(sd, digits)}"
+        d = max(1, digits + 1)
+        return f"{fmt(float(s.mean()), d)} ± {fmt(sd, d)}"
     q1, med, q3 = quartiles(s)
-    if _integers(s) and all(float(x).is_integer() for x in (q1, med, q3)):
-        digits = 0  # « 15 [15 − 15] » plutôt que « 15,0 [15,0 − 15,0] »
-    return f"{fmt(med, digits)} [{fmt(q1, digits)} − {fmt(q3, digits)}]"
+    d = digits
+    if not math.isclose(med, round(med, d), abs_tol=1e-9) \
+            and math.isclose(med, round(med, d + 1), abs_tol=1e-9):
+        d = digits + 1
+    return f"{fmt(med, d)} [{fmt(q1, d)}–{fmt(q3, d)}]"
 
 
 def _levels(s: pd.Series) -> list[Any]:
@@ -133,6 +157,9 @@ def _num(s: pd.Series) -> pd.Series:
 # ---------------------------------------------------------------- tests
 
 def test_quant(groups: list[pd.Series], normal: bool | None = None) -> tuple[float | None, str]:
+    """Réglages de SPSS : Student, ou Welch si le test de Levene (centré sur la moyenne)
+    donne p ≤ 0,05 ; Mann-Whitney en approximation normale corrigée des ex aequo, sans
+    correction de continuité (« signification asymptotique »)."""
     groups = [g.dropna().astype(float) for g in groups if len(g.dropna()) > 0]
     if len(groups) < 2 or any(len(g) < 2 for g in groups):
         return None, "effectifs insuffisants"
@@ -142,8 +169,12 @@ def test_quant(groups: list[pd.Series], normal: bool | None = None) -> tuple[flo
         warnings.simplefilter("ignore")
         if len(groups) == 2:
             if normal:
-                return float(stats.ttest_ind(*groups, equal_var=False).pvalue), "t de Student (Welch)"
-            return float(stats.mannwhitneyu(*groups, alternative="two-sided").pvalue), "Mann-Whitney"
+                unequal = float(stats.levene(*groups, center="mean").pvalue) <= NORMAL_P
+                p = float(stats.ttest_ind(*groups, equal_var=not unequal).pvalue)
+                return p, "t de Welch" if unequal else "t de Student"
+            return (float(stats.mannwhitneyu(*groups, alternative="two-sided",
+                                             use_continuity=False, method="asymptotic").pvalue),
+                    "Mann-Whitney")
         if normal:
             return float(stats.f_oneway(*groups).pvalue), "ANOVA"
         return float(stats.kruskal(*groups).pvalue), "Kruskal-Wallis"
@@ -161,8 +192,62 @@ def test_cat(table: pd.DataFrame) -> tuple[float | None, str]:
     if table.shape == (2, 2) and small:
         return float(stats.fisher_exact(table.to_numpy()).pvalue), "Fisher"
     if small:
-        return float(chi2.pvalue), "Chi² (effectifs attendus < 5 : à interpréter avec prudence)"
+        # Au-delà de 2 × 2 : Fisher-Freeman-Halton par Monte-Carlo, graine fixée.
+        method = stats.MonteCarloMethod(n_resamples=MC_RESAMPLES,
+                                        rng=np.random.default_rng(MC_SEED))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            p = float(stats.fisher_exact(table.to_numpy(), method=method).pvalue)
+        return p, "Fisher-Freeman-Halton"
     return float(chi2.pvalue), "Chi²"
+
+
+def odds_ratio_2x2(a: int, b: int, c: int, d: int, exact: bool) -> tuple[float, float, float, str]:
+    """OR de l'événement en présence du facteur : a = facteur et événement, b = facteur
+    sans événement, c = sans facteur avec événement, d = ni l'un ni l'autre.
+    IC de Woolf (avec un Chi²) ou exact conditionnel (avec un Fisher : l'IC exclut 1 si et
+    seulement si p < 0,05). Case nulle : correction de Haldane (+ 0,5), OR « indicatif »."""
+    if exact:
+        from scipy.stats.contingency import odds_ratio
+        res = odds_ratio([[a, b], [c, d]], kind="conditional")
+        ci = res.confidence_interval()
+        return float(res.statistic), float(ci.low), float(ci.high), "exact"
+    note = "Woolf"
+    cells = [float(x) for x in (a, b, c, d)]
+    if 0 in (a, b, c, d):
+        cells = [x + 0.5 for x in cells]
+        note = "Woolf, correction de Haldane (indicatif)"
+    fa, fb, fc, fd = cells
+    o = (fa * fd) / (fb * fc)
+    se = math.sqrt(1 / fa + 1 / fb + 1 / fc + 1 / fd)
+    return o, math.exp(math.log(o) - 1.959964 * se), math.exp(math.log(o) + 1.959964 * se), note
+
+
+def hosmer_lemeshow(y: np.ndarray, p: np.ndarray, groups: int = 10) -> float | None:
+    """p du test de Hosmer-Lemeshow sur les déciles de risque (ex aequo gardés ensemble,
+    comme SPSS) ; None si moins de 3 groupes."""
+    data = pd.DataFrame({"y": y, "p": p})
+    try:
+        data["g"] = pd.qcut(data["p"], q=groups, labels=False, duplicates="drop")
+    except ValueError:
+        return None
+    agg = data.groupby("g").agg(obs=("y", "sum"), exp=("p", "sum"), n=("y", "size"))
+    g = len(agg)
+    if g < 3:
+        return None
+    denom = agg["exp"] * (1 - agg["exp"] / agg["n"])
+    stat = float((((agg["obs"] - agg["exp"]) ** 2) / denom.where(denom > 0)).fillna(0).sum())
+    return float(stats.chi2.sf(stat, g - 2))
+
+
+def present_level(levels: list[Any]) -> Any | None:
+    """Pour une variable à deux modalités : celle qui signale la présence (« 1 », « Oui »).
+    None si aucune ne le dit clairement (la variable reste détaillée modalité par
+    modalité)."""
+    if len(levels) != 2:
+        return None
+    hits = [lv for lv in levels if _level(lv).strip().lower() in _PRESENT]
+    return hits[0] if len(hits) == 1 else None
 
 
 def wilson(k: int, n: int, z: float = 1.959964) -> tuple[float, float]:
@@ -193,21 +278,48 @@ def _group_series(df: pd.DataFrame, group: str) -> tuple[pd.Series, list[Any]]:
     return g, _levels(g)
 
 
+def _same(v: Any, target: Any) -> bool:
+    return (str(v).strip().lower() == str(target).strip().lower()
+            or (_is_number(v) and _is_number(target) and float(v) == float(target)))
+
+
+def _group_event(plan: AnalysisPlan, levels: list[Any]) -> Any | None:
+    """Modalité « événement » d'un groupe à deux modalités (odds ratio), ou None."""
+    if len(levels) != 2:
+        return None
+    if plan.groups and plan.groups.event is not None:
+        hits = [lv for lv in levels if _same(lv, plan.groups.event)]
+        return hits[0] if hits else None
+    return present_level(levels)
+
+
 def run_describe(a: Describe, df: pd.DataFrame, plan: AnalysisPlan) -> dict[str, Any]:
+    """Tableau descriptif, par groupe avec p si un groupe est défini. Une variable binaire
+    dont une modalité dit la présence (« Oui », « 1 ») tient sur une ligne (« Diabète :
+    8 (16,0 %) ») ; avec deux groupes dont l'un est l'événement, l'odds ratio est donné
+    pour les associations significatives (« – » sinon)."""
     group = plan.groups.variable if (a.by_group and plan.groups) else None
     levels: list[Any] = []
     if group:
         g, levels = _group_series(df, group)
+    event = _group_event(plan, levels) if group else None
+    with_or = event is not None
     n_total = len(df)
     head = [f"Ensemble (n = {n_total})"]
     if group:
         head += [f"{lv} (n = {int((g == lv).sum())})" for lv in levels] + ["p", "Test"]
+        if with_or:
+            head.append("OR [IC 95 %]")
     rows: list[list[str]] = []
     facts: list[dict[str, Any]] = []
     methods: set[str] = set()
+    or_kinds: set[str] = set()
+    tail = 1 if with_or else 0
     for v in a.variables:
         s = df[v.name]
         label = _label(v, v.name)
+        missing = int(s.isna().sum()) if v.type != "quantitative" else int(_num(s).isna().sum())
+        name = label + (f" (manquant : {missing})" if missing else "")
         if v.type == "quantitative":
             x = _num(s)
             # Même règle pour la présentation et le test : normalité dans chaque groupe
@@ -215,9 +327,7 @@ def run_describe(a: Describe, df: pd.DataFrame, plan: AnalysisPlan) -> dict[str,
             normal = (all(is_normal(x[g == lv]) for lv in levels) if group
                       else is_normal(x))
             d = _digits(x.dropna())
-            missing = int(x.isna().sum())
-            row = [label + (f" (manquant : {missing})" if missing else ""),
-                   summary_quant(x, normal, d)]
+            row = [name, summary_quant(x, normal, d)]
             fact = {"variable": label, "n": int(x.notna().sum()), "normal": normal,
                     "summary": row[1]}
             if group:
@@ -227,35 +337,70 @@ def run_describe(a: Describe, df: pd.DataFrame, plan: AnalysisPlan) -> dict[str,
                 empty = sum(1 for part in parts if part.dropna().empty)
                 if empty:
                     test += f" ({empty} groupe(s) sans valeur exclu(s))"
-                row += [fmt_p(p), test]
+                row += [fmt_p(p), test] + ["–"] * tail
                 methods.add(test)
                 fact.update({"p": fmt_p(p), "test": test})
             rows.append(row)
             facts.append(fact)
-        else:
-            missing = int(s.isna().sum())
-            rows.append([label + (f" (manquant : {missing})" if missing else ""), ""]
-                        + ([""] * (len(levels) + 2) if group else []))
-            p_txt, test = "", ""
+            continue
+
+        var_levels = _levels(s)
+        n_ok = int(s.notna().sum())
+        present = present_level(var_levels)
+        p_val: float | None = None
+        p_txt, test = "", ""
+        if group:
+            p_val, test = test_cat(pd.crosstab(s, g))
+            p_txt = fmt_p(p_val)
+            methods.add(test)
+        or_txt = "–"
+        if with_or and present is not None and p_val is not None and p_val < plan.alpha:
+            has = s.map(lambda x, t=present: _same(x, t)).astype(bool)
+            ev = g.map(lambda x, t=event: _same(x, t)).astype(bool)
+            ok = s.notna() & g.notna()
+            a_, b_ = int((ok & has & ev).sum()), int((ok & has & ~ev).sum())
+            c_, d_ = int((ok & ~has & ev).sum()), int((ok & ~has & ~ev).sum())
+            try:
+                o, lo, hi, kind = odds_ratio_2x2(a_, b_, c_, d_, exact=test == "Fisher")
+                or_txt = fmt_or(o, lo, hi)
+                or_kinds.add(kind)
+            except (ZeroDivisionError, ValueError):
+                or_txt = "–"
+        for lv in var_levels:
+            n_lv = int((s == lv).sum())
+            facts.append({"variable": label, "level": _level(lv), "n": n_lv, "N": n_ok,
+                          "pct": pct(n_lv, n_ok)})
+        if present is not None:
+            n_lv = int((s == present).sum())
+            row = [name, f"{n_lv} ({pct(n_lv, n_ok)} %)"]
             if group:
-                tab = pd.crosstab(s, g)
-                p, test = test_cat(tab)
-                p_txt = fmt_p(p)
-                methods.add(test)
-            for k, lv in enumerate(_levels(s)):
-                n_lv, n_ok = int((s == lv).sum()), int(s.notna().sum())
-                row = [f"    {_level(lv)}", f"{n_lv} ({pct(n_lv, n_ok)} %)"]
-                if group:
-                    for glv in levels:
-                        in_g = s[g == glv]
-                        k_g, n_g = int((in_g == lv).sum()), int(in_g.notna().sum())
-                        row.append(f"{k_g} ({pct(k_g, n_g)} %)")
-                    row += [p_txt if k == 0 else "", test if k == 0 else ""]
-                rows.append(row)
-                facts.append({"variable": label, "level": _level(lv), "n": n_lv, "N": n_ok,
-                              "pct": pct(n_lv, n_ok)})
+                for glv in levels:
+                    in_g = s[g == glv]
+                    k_g, n_g = int((in_g == present).sum()), int(in_g.notna().sum())
+                    row.append(f"{k_g} ({pct(k_g, n_g)} %)")
+                row += [p_txt, test] + [or_txt] * tail
+                if or_txt != "–":
+                    facts.append({"variable": label, "or": or_txt, "p": p_txt})
+            rows.append(row)
+            continue
+        rows.append([name, ""] + ([""] * (len(levels) + 2 + tail) if group else []))
+        for k, lv in enumerate(var_levels):
+            n_lv = int((s == lv).sum())
+            row = [f"    {_level(lv)}", f"{n_lv} ({pct(n_lv, n_ok)} %)"]
+            if group:
+                for glv in levels:
+                    in_g = s[g == glv]
+                    k_g, n_g = int((in_g == lv).sum()), int(in_g.notna().sum())
+                    row.append(f"{k_g} ({pct(k_g, n_g)} %)")
+                row += [p_txt if k == 0 else "", test if k == 0 else ""] + ["–" if k == 0 else ""] * tail
+            rows.append(row)
     described = ["moyenne ± écart-type si la distribution est normale (Shapiro-Wilk), "
-                 "sinon médiane [Q1 − Q3] ; effectif (%) pour les variables qualitatives"]
+                 "sinon médiane [Q1–Q3] ; effectif (%) pour les variables qualitatives"]
+    if or_kinds:
+        described.append("odds ratio (OR) et IC 95 % ("
+                         + ", ".join(sorted("méthode exacte" if k == "exact" else k
+                                            for k in or_kinds))
+                         + "), donnés pour les associations significatives")
     return {"table": {"columns": ["Variable", *head], "rows": rows},
             "facts": facts, "methods": described + sorted(methods), "n": n_total}
 
@@ -271,7 +416,7 @@ def run_proportion(a: Proportion, df: pd.DataFrame, _: AnalysisPlan) -> dict[str
              f"{', '.join(sorted({str(v) for v in s})[:6])})."] if k == 0 else [])
     lo, hi = wilson(k, n)
     text = f"{k}/{n} ({pct(k, n)} %)"
-    ci = f"[{fmt(100 * lo)} − {fmt(100 * hi)}]"
+    ci = f"[{fmt(100 * lo)}–{fmt(100 * hi)}]"
     return {"table": {"columns": ["Événement", "n/N (%)", "IC 95 %"],
                       "rows": [[_event_label(a), text, ci + " %"]]},
             "facts": [{"event": str(a.event), "k": k, "n": n, "pct": pct(k, n),
@@ -398,7 +543,7 @@ def fmt_or(o: float, lo: float, hi: float) -> str:
     """OR [IC 95 %] ; 3 décimales près de 1 (OR par unité : 1,006 [1,001 − 1,012]), pour
     qu'un IC significatif ne s'affiche pas « 1,00 − 1,01 »."""
     digits = 3 if 0.9 <= o <= 1.1 else 2
-    return f"{fmt(o, digits)} [{fmt(lo, digits)} − {fmt(hi, digits)}]"
+    return f"{fmt(o, digits)} [{fmt(lo, digits)}–{fmt(hi, digits)}]"
 
 
 def _binary_outcome(s: pd.Series, event: Any) -> pd.Series:
@@ -478,6 +623,7 @@ def run_logistic(a: Logistic, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, An
             warnings_.append(f"OR brut non estimable pour « {col} » (séparation complète : "
                              "une modalité n'a que des événements ou aucun).")
     adjusted: dict[str, tuple[str, str]] = {}
+    hl_p: float | None = None
     if k and epv >= HARD_MIN_EPV and k > 1:
         try:
             r = fit(list(X.columns))
@@ -485,6 +631,7 @@ def run_logistic(a: Logistic, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, An
             for col in X.columns:
                 adjusted[col] = (fmt_or(math.exp(r.params[col]), ci.loc[col, 0], ci.loc[col, 1]),
                                  fmt_p(float(r.pvalues[col])))
+            hl_p = hosmer_lemeshow(data["_y"].to_numpy(), np.asarray(r.predict(), dtype=float))
         except Exception:  # noqa: BLE001
             warnings_.append("Modèle ajusté non estimable (séparation complète ou "
                              "variables redondantes).")
@@ -504,8 +651,12 @@ def run_logistic(a: Logistic, df: pd.DataFrame, _: AnalysisPlan) -> dict[str, An
                       "or_ajuste": a_or, "p_ajuste": a_p})
     return {"table": {"columns": ["Variable", "OR brut [IC 95 %]", "p", "OR ajusté [IC 95 %]",
                                   "p"], "rows": rows},
-            "facts": [{"n": n, "events": events, "parameters": k}, *facts],
-            "methods": ["régression logistique"], "n": n, "warnings": warnings_}
+            "facts": [{"n": n, "events": events, "parameters": k,
+                       **({"hosmer_lemeshow_p": fmt_p(hl_p)} if hl_p is not None else {})},
+                      *facts],
+            "methods": ["régression logistique"]
+            + (["test de Hosmer-Lemeshow"] if hl_p is not None else []),
+            "n": n, "warnings": warnings_}
 
 
 RUNNERS = {

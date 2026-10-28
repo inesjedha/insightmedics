@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse, Response
 
 from .config import settings
 from .db import SessionLocal, init_db
-from .routers import analyses, audits, client, leads
+from .routers import analyses, audits, client, leads, theses
 from .services.analyses import release_stale as release_stale_analyses
 from .services.retention import purge_expired
 from .services.unlock_jobs import release_stale_claims
@@ -74,6 +74,8 @@ app.add_middleware(
     allow_origins=settings.cors_origin_list,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Le front lit le nom des livrables (« Resultats_These_Hemothorax.docx »).
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -99,6 +101,7 @@ app.include_router(leads.router)
 app.include_router(audits.router)
 app.include_router(client.router)
 app.include_router(analyses.router)
+app.include_router(theses.router)
 
 
 @app.get("/health", tags=["ops"])
