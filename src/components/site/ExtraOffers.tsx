@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Check, FileStack, Presentation } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, FileStack, Presentation } from "lucide-react";
 import { EXTRA_OFFERS } from "@/lib/offers";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +67,54 @@ export function ExtraOffers({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Version courte pour l'accueil : deux tuiles d'une ligne sous les formules, qui mènent
+ * au formulaire de contact pré-coché. La page reste centrée sur le test et les formules.
+ */
+export function ExtraOffersStrip({ className }: { className?: string }) {
+  return (
+    <div className={cn("space-y-3", className)}>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        Et aussi
+      </p>
+      <ul className="grid gap-3 md:grid-cols-2">
+        {EXTRA_OFFERS.map((o) => {
+          const Icon = ICONS[o.id];
+          return (
+            <li key={o.id}>
+              <Link
+                to="/contact"
+                search={{ offre: o.id }}
+                className="group flex h-full items-center gap-4 rounded-md border border-border bg-card p-4 transition-colors hover:border-foreground"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent text-brand">
+                  <Icon className="h-5 w-5" aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold leading-snug">{o.shortTitle}</span>
+                  <span className="block text-sm leading-snug text-muted-foreground">
+                    {o.pitch}
+                  </span>
+                  <span className="mt-1.5 block font-display text-xl leading-none sm:hidden">
+                    {o.priceLabel}
+                  </span>
+                </span>
+                <span className="hidden shrink-0 whitespace-nowrap font-display text-2xl leading-none sm:block">
+                  {o.priceLabel}
+                </span>
+                <ChevronRight
+                  className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
+                  aria-hidden
+                />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
