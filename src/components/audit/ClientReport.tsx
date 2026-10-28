@@ -1623,8 +1623,8 @@ export function WorkbookDownload({ href }: { href: string }) {
         <div className="min-w-0 flex-[999_1_320px] space-y-1">
           <p className="text-lg font-bold">Votre classeur d'audit (Excel)</p>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            À lire d'abord · Dossiers à ouvrir, avec une colonne pour vos notes · Points à vérifier
-            · Questions pour votre directeur · Votre note en détail. Prêt à imprimer.
+            Votre bilan · Aux archives, la seule feuille à remplir (elle met votre avancement à
+            jour) · Questions au directeur · Pour aller plus loin. Prêt à imprimer.
           </p>
         </div>
         <Button asChild size="lg" variant="outline">
