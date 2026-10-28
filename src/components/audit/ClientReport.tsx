@@ -130,7 +130,7 @@ function useSavedChecks(key: string) {
   return [checks, toggle] as const;
 }
 
-function SectionTitle({
+export function SectionTitle({
   title,
   note,
   intro,
@@ -170,13 +170,19 @@ function scoreLabel(score: number): { label: string; tone: string } {
   return { label: "À reprendre en profondeur", tone: "text-destructive" };
 }
 
-function ScoreGauge({ score }: { score: number }) {
+export function ScoreGauge({
+  score,
+  caption = "Qualité de votre base",
+}: {
+  score: number;
+  caption?: string;
+}) {
   const { label, tone } = scoreLabel(score);
   const clamped = Math.max(0, Math.min(100, score));
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-muted/50 p-5">
       <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        Qualité de votre base
+        {caption}
       </span>
       <div className="flex items-baseline gap-2">
         <span className="font-display text-6xl leading-none">{fr(score)}</span>
@@ -315,7 +321,7 @@ export function ReportHero({
   );
 }
 
-function Tile({
+export function Tile({
   label,
   value,
   hint,
@@ -506,7 +512,7 @@ function rangeLabel(ids: (number | string)[], by: CopiedBlock["by"]): string {
   return a === b ? `${what} ${a}` : `${what} ${a} à ${b}`;
 }
 
-function CopiesVisual({ copies }: { copies: CopiesView }) {
+export function CopiesVisual({ copies }: { copies: CopiesView }) {
   const block = copies.blocks[0];
   if (!block) return null;
   const n = Math.min(block.length, 24);

@@ -88,21 +88,20 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
     >
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand">
-          Audit complet · {FULL_AUDIT_PRICE_LABEL}
+          Demander l'audit complet · {FULL_AUDIT_PRICE_LABEL}
         </p>
-        <h3 className="mt-2 font-display text-3xl">Recevez le plan de correction complet.</h3>
+        <h3 className="mt-2 font-display text-3xl">Laissez-nous vos coordonnées.</h3>
         <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-          Laissez vos coordonnées : nous vous rappelons sous 48 h ouvrées pour régler le paiement,
-          puis nous lançons votre audit complet. Vous recevez ensuite un lien privé vers vos
-          résultats et vos livrables.
+          Nous vous rappelons sous 48 h ouvrées pour régler le paiement, puis nous lançons votre
+          audit complet. Vous recevez ensuite un lien privé vers vos résultats et vos livrables.
         </p>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
         {[
-          "Calculé par notre code sur vos données",
-          "Données anonymisées",
           "Vous ne payez qu'après nous avoir parlé",
+          "Rappel sous 48 h ouvrées",
+          "Votre fichier supprimé au bout de 30 jours",
         ].map((t) => (
           <span key={t} className="inline-flex items-center gap-1.5">
             <CheckCircle2 className="h-4 w-4 text-brand" aria-hidden />

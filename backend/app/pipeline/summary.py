@@ -36,7 +36,8 @@ def key_counts(profiling: dict[str, Any] | None) -> dict[str, Any]:
     }
 
 
-def copies_view(profiling: dict[str, Any] | None) -> dict[str, Any] | None:
+def copies_view(profiling: dict[str, Any] | None, *,
+                lines_only: bool = False) -> dict[str, Any] | None:
     """Ce que la page montre des lignes recopiées : blocs (numéros d'inclusion si
     l'identifiant n'est pas lui-même une donnée identifiante, sinon numéros de ligne) et
     ressemblance, comparée à celle de deux patients ordinaires. Aucune valeur de cellule."""
@@ -49,7 +50,9 @@ def copies_view(profiling: dict[str, Any] | None) -> dict[str, Any] | None:
     if not (blocks or n_identical or n_near):
         return None
     pii = {p.get("column") for p in (profiling or {}).get("pii_candidates") or []}
-    show_ids = s.get("id_column") not in pii
+    # `lines_only` : page publique (aperçu gratuit, servi par identifiant d'audit) — jamais
+    # de numéro d'inclusion ni de dossier, seulement des numéros de ligne.
+    show_ids = not lines_only and s.get("id_column") not in pii
     similarities = [e.get("similarity") for e in near.get("examples") or [] if e.get("similarity")]
     return {
         "blocks": [{

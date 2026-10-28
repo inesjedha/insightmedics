@@ -172,9 +172,9 @@ export function AuditTeaser() {
           ))}
         </ol>
         <p className="mt-10 max-w-3xl text-[15px] leading-relaxed text-background/75">
-          Besoin d'aller plus loin ? L'audit complet ({FULL_AUDIT_PRICE_LABEL}) vous remet le
-          verdict d'exploitabilité, le plan de correction détaillé, un rapport Word, un classeur
-          Excel et votre base nettoyée.
+          Besoin d'aller plus loin ? L'audit complet ({FULL_AUDIT_PRICE_LABEL}) vous dit si votre
+          base est exploitable et vous remet vos missions aux archives, les questions pour votre
+          directeur et un classeur Excel prêt à imprimer.
         </p>
         <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
           <Button

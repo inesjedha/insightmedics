@@ -15,6 +15,7 @@ from ..config import settings
 from ..db import get_db
 from ..models import Audit, AuditStatus
 from ..pipeline.ingest import IngestError
+from ..pipeline.preview_view import preview_view
 from ..schemas import AuditEvent, AuditResult
 from ..services import audits as service
 from ..services import notify, unlock_jobs
@@ -150,6 +151,17 @@ def get_score_detail(audit_id: str, db: Session = Depends(get_db)) -> dict[str, 
     if not audit or not audit.score_detail:
         raise HTTPException(404, "Audit introuvable")
     return audit.score_detail
+
+
+@router.get("/{audit_id}/preview")
+def get_preview_view(audit_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Aperçu gratuit en mots simples : verdict, constats prouvés, contrôles faits et
+    réservés à l'audit complet. Sans nom ni numéro de dossier (pipeline/preview_view.py)."""
+    audit = db.get(Audit, audit_id)
+    if (not audit or audit.status == AuditStatus.FAILED or not audit.profiling
+            or not audit.score_detail):
+        raise HTTPException(404, "Audit introuvable")
+    return preview_view(audit.profiling, audit.score_detail)
 
 
 @router.get("/{audit_id}/assessment", dependencies=[Depends(require_admin)])

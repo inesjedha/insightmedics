@@ -130,7 +130,7 @@ class AuditResult(CamelModel):
             patient_min=counts["patients_min"],
             duplicated_rows=counts["duplicated_rows"],
             missing_useful_pct=counts["missing_useful_pct"] or (a.missing_pct or 0),
-            copies=copies_view(a.profiling),
+            copies=copies_view(a.profiling, lines_only=view == "public"),
             issues=[AuditIssue(**i) for i in a.issues or []],
             needs_human_review=bool(a.needs_human_review),
             status=a.status,  # type: ignore[arg-type]  # colonne String, valeurs AuditStatus

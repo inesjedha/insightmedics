@@ -96,7 +96,7 @@ def test_api_upload_et_lecture(dirty_csv: Path):
     audit_id = body["id"]
     assert client.get(f"/audit/{audit_id}").status_code == 200
     events = client.get(f"/audit/{audit_id}/events").json()
-    assert any("Parsing OK" in e["message"] for e in events)
+    assert any("Fichier lu" in e["message"] for e in events)
 
 
 def test_api_refuse_mauvais_format():

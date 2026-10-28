@@ -14,6 +14,7 @@ import type {
   ClientDetail,
   LeadUpdate,
   PreviewDetail,
+  PreviewView,
   ScoreDetail,
 } from "./types";
 
@@ -62,11 +63,11 @@ export function uploadAudit(file: File, protocol?: File | null): Promise<AuditRe
 /** Journal et score détaillé de l'aperçu (le jugement IA, payant, n'est servi que par /r/:token). */
 export async function getPreviewDetail(id: string): Promise<PreviewDetail> {
   const base = `/audit/${encodeURIComponent(id)}`;
-  const [events, scoreDetail] = await Promise.all([
+  const [events, view] = await Promise.all([
     requestOrNull<AuditEvent[]>(`${base}/events`),
-    requestOrNull<ScoreDetail>(`${base}/score`),
+    requestOrNull<PreviewView>(`${base}/preview`),
   ]);
-  return { events: events ?? [], scoreDetail };
+  return { events: events ?? [], view };
 }
 
 // --- Audit : administration ---
