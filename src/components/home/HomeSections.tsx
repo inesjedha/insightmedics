@@ -11,7 +11,8 @@ import { Section, SectionHeader } from "@/components/site/Section";
 import { siteConfig } from "@/lib/site-config";
 import hamzaPhoto from "@/assets/team/hamza-ben-kheder.jpg";
 import inesPhoto from "@/assets/team/ines-ben-amor.jpg";
-import { FULL_AUDIT_PRICE_LABEL, OFFERS, getExtraOffer, getOffer, weeksLabel } from "@/lib/offers";
+import { FULL_AUDIT_PRICE_LABEL, OFFERS, getOffer, weeksLabel } from "@/lib/offers";
+import { ExtraOffersStrip } from "@/components/site/ExtraOffers";
 
 const analyses = getOffer("analyses");
 const these = getOffer("these");
@@ -423,17 +424,7 @@ export function ServicesTeaser() {
         </li>
       </ul>
 
-      <p className="mt-6 text-[15px] text-muted-foreground">
-        Aussi&nbsp;: la saisie de vos fiches papier en base de données (sur devis) et votre
-        présentation de soutenance ({getExtraOffer("soutenance").priceLabel}).{" "}
-        <Link
-          to="/tarifs"
-          hash="en-plus"
-          className="font-semibold text-brand underline-offset-4 hover:underline"
-        >
-          Voir ces services
-        </Link>
-      </p>
+      <ExtraOffersStrip className="mt-8" />
     </Section>
   );
 }
@@ -493,8 +484,8 @@ function TestimonialCard({ t, className }: { t: Testimonial; className?: string 
       <span aria-hidden className="font-display text-5xl leading-none text-brand">
         “
       </span>
-      <blockquote className="mt-1 text-[15px] leading-relaxed">{t.quote}</blockquote>
-      <figcaption className="mt-5 border-t border-border pt-3">
+      <blockquote className="mb-5 mt-1 text-[15px] leading-relaxed">{t.quote}</blockquote>
+      <figcaption className="mt-auto border-t border-border pt-3">
         <p className="font-display text-xl leading-none">{t.name}</p>
         <p className="mt-1 text-sm text-muted-foreground">
           {t.role} · {t.city}
@@ -515,10 +506,10 @@ export function Testimonials() {
       <div className="mt-10 sm:hidden">
         <TestimonialsMobileCarousel items={TESTIMONIALS} />
       </div>
-      {/* Colonnes « mur de notes » : pas de trou en fin de grille avec 5 témoignages. */}
-      <div className="mt-10 hidden gap-4 sm:block sm:columns-2 lg:columns-3">
+      {/* Grille : toutes les cartes d'une même rangée ont la même hauteur. */}
+      <div className="mt-10 hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3">
         {TESTIMONIALS.map((t) => (
-          <TestimonialCard key={t.name + t.city} t={t} className="mb-4 break-inside-avoid" />
+          <TestimonialCard key={t.name + t.city} t={t} className="h-full" />
         ))}
       </div>
     </Section>

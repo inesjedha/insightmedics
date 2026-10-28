@@ -138,6 +138,8 @@ type ExtraOffer = {
   priceLabel: string;
   /** Ce qui fait le prix, ou le délai. */
   priceNote: string;
+  /** Une phrase, pour l'accueil. */
+  pitch: string;
   description: string;
   features: string[];
   ctaLabel: string;
@@ -157,6 +159,7 @@ export const EXTRA_OFFERS: ExtraOffer[] = [
     priceLabel: "Sur devis",
     priceNote:
       "Selon le nombre de fiches et de données par fiche. Devis gratuit, avant de commencer.",
+    pitch: "Vos fiches papier, scans ou PDF transformés en base Excel ou SPSS.",
     description:
       "Vos données sont sur fiches papier, en scans ou en PDF ? Nous les saisissons dans une base Excel ou SPSS structurée, prête pour l'audit et l'analyse.",
     features: [
@@ -174,6 +177,7 @@ export const EXTRA_OFFERS: ExtraOffer[] = [
     price: 200,
     priceLabel: formatPrice(200),
     priceNote: "Délai convenu avec vous selon la date de votre soutenance.",
+    pitch: "Les diapositives de votre soutenance, construites à partir de votre thèse.",
     description:
       "Les diapositives de votre soutenance, construites à partir de votre thèse : claires, au bon rythme pour le jury.",
     features: [
