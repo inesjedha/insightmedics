@@ -1,17 +1,18 @@
-"""Classeur Excel remis à l'étudiant avec l'audit : 4 onglets, courts et actionnables.
+"""Classeur Excel remis à l'étudiant avec l'audit : 4 onglets, calqués sur la page web.
 
-- « À lire d'abord » : verdict, note, chiffres clés, les points qui bloquent, mode d'emploi ;
-- « Dossiers à ouvrir » : la feuille de route aux archives, un dossier ou une paire par
-  ligne, avec une colonne pour noter ce qu'on y trouve ;
-- « Points à vérifier » : une ligne par point, avec ce qu'il faut vérifier et une
-  colonne « Votre décision » à remplir (listes déroulantes) ;
-- « Questions pour votre directeur » : les décisions à prendre, par priorité ;
-- « Votre note en détail » : la grille en 8 domaines, en clair, et le plafond éventuel.
+- « Votre bilan » : le verdict, quatre chiffres, l'avancement (mis à jour par Excel), les
+  missions en blocs lisibles, et le mode d'emploi ;
+- « Aux archives » : la SEULE feuille à remplir. Un dossier (ou une paire) par ligne,
+  groupés par mission, avec un statut à choisir et ce que l'étudiant a trouvé ; une ligne
+  vérifiée devient verte ;
+- « Questions au directeur » : une question par bloc, options A/B/C et ce qu'elles
+  changent, notre conseil, la décision retenue et sa date ;
+- « Pour aller plus loin » : les points relevés un par un, et la note point par point.
 
-Le classeur expert (10 onglets, report_xlsx.py) reste disponible dans l'admin. Les
-patients sont désignés par leur numéro d'inclusion ; si la colonne identifiant est une
-donnée identifiante (numéro de dossier…), ses valeurs ne sont pas reprises.
-100 % déterministe : seuls les textes viennent de l'audit IA, déjà nettoyés et plafonnés.
+Le classeur expert reste dans l'admin (report_xlsx.py). Les patients sont désignés par
+leur numéro d'inclusion ; si la colonne identifiant est une donnée identifiante (numéro de
+dossier…), ses valeurs ne sont pas reprises. 100 % déterministe : seuls les textes
+viennent de l'audit IA, déjà nettoyés, relus en mots simples et plafonnés.
 """
 
 from __future__ import annotations
@@ -20,89 +21,35 @@ import io
 from typing import Any
 
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.utils import get_column_letter
+from openpyxl.cell.rich_text import CellRichText, TextBlock
+from openpyxl.cell.text import InlineFont
+from openpyxl.formatting.rule import FormulaRule
+from openpyxl.styles import Alignment
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.worksheet import Worksheet
 
+from . import xlsx_style as st
 from .llm2 import PRIORITY_LABELS, PRIORITY_ORDER
 from .summary import key_counts
 
 ANALYSIS_OFFER = "l'analyse statistique (500 DT, livrée en 1 semaine)"
 CONTACT_EMAIL = "helpinsightmedics@gmail.com"
 WHATSAPP_DISPLAY = "+216 96 389 570"
+DOCUMENT = "Audit de votre base"
 
-INK = "111827"
-FONT = "Calibri"
-TITLE = Font(name=FONT, bold=True, size=16, color=INK)
-H2 = Font(name=FONT, bold=True, size=12, color=INK)
-BOLD = Font(name=FONT, bold=True, size=11, color=INK)
-NORM = Font(name=FONT, size=11, color=INK)
-MUTED = Font(name=FONT, size=10, color="4B5563")
-HEAD_FONT = Font(name=FONT, bold=True, size=11, color="FFFFFF")
-HEAD_FILL = PatternFill("solid", fgColor="1F3FD1")  # bleu Insight Medics
-INPUT_HEAD_FONT = Font(name=FONT, bold=True, size=11, color=INK)
-INPUT_FILL = PatternFill("solid", fgColor="FFF8D6")
-WRAP = Alignment(wrap_text=True, vertical="top")
-LINE = Border(bottom=Side(style="thin", color="E5E7EB"))
-HEAD_LINE = Border(bottom=Side(style="medium", color="9AA3B5"))
+SHEET_BILAN = "Votre bilan"
+SHEET_ARCHIVES = "Aux archives"
+SHEET_QUESTIONS = "Questions au directeur"
+SHEET_DETAIL = "Pour aller plus loin"
 
-# Gravité de l'anomalie → priorité lue par l'étudiant (et sa couleur).
+# Gravité de l'anomalie → priorité lue par l'étudiant.
 SEVERITY_PRIORITY = {"critique": "avant_analyse", "majeure": "importante",
                      "moderee": "facultative", "mineure": "facultative"}
-PRIORITY_FILL = {"avant_analyse": PatternFill("solid", fgColor="FBE4E1"),
-                 "importante": PatternFill("solid", fgColor="FDF0D8"),
-                 "facultative": PatternFill("solid", fgColor="EEF0F4")}
-DECISION_CHOICES = ["À vérifier", "Vérifié : c'est correct", "Corrigé dans la base",
-                    "Même patient saisi deux fois", "Patients différents", "Introuvable dans le dossier"]
 
-
-def _table(ws: Worksheet, row: int, headers: list[str], widths: list[int],
-           input_cols: tuple[int, ...] = ()) -> int:
-    """Écrit une ligne d'en-têtes ; renvoie la ligne suivante."""
-    for j, (h, w) in enumerate(zip(headers, widths, strict=True), start=1):
-        c = ws.cell(row=row, column=j, value=h)
-        c.font = INPUT_HEAD_FONT if j in input_cols else HEAD_FONT
-        c.fill = INPUT_FILL if j in input_cols else HEAD_FILL
-        c.alignment = Alignment(wrap_text=True, vertical="center")
-        c.border = HEAD_LINE
-        ws.column_dimensions[get_column_letter(j)].width = w
-    ws.freeze_panes = ws.cell(row=row + 1, column=1)
-    ws.print_title_rows = f"{row}:{row}"  # en-têtes répétés à chaque page imprimée
-    return row + 1
-
-
-def _print_setup(ws: Worksheet, tab_color: str) -> None:
-    """Paysage, ajusté à la largeur de la page ; couleur d'onglet."""
-    ws.sheet_properties.tabColor = tab_color
-    ws.page_setup.orientation = "landscape"
-    ws.page_setup.fitToWidth = 1
-    ws.page_setup.fitToHeight = 0
-    ws.sheet_properties.pageSetUpPr.fitToPage = True
-
-
-def _row(ws: Worksheet, row: int, values: list[Any], input_cols: tuple[int, ...] = ()) -> None:
-    for j, v in enumerate(values, start=1):
-        c = ws.cell(row=row, column=j, value=v)
-        c.font = NORM
-        c.alignment = WRAP
-        c.border = LINE
-        if j in input_cols:
-            c.fill = INPUT_FILL
-
-
-def _text(ws: Worksheet, row: int, value: str, font: Font = NORM, merge_to: int = 6) -> int:
-    c = ws.cell(row=row, column=1, value=value)
-    c.font = font
-    c.alignment = WRAP
-    if merge_to > 1:
-        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=merge_to)
-    return row + 1
-
-
-def _fr(value: Any) -> str:
-    """Nombre à la française (virgule décimale)."""
-    return str(value).replace(".", ",")
+TODO = "À vérifier"
+NOT_FOUND = "Introuvable dans le dossier"
+STATUSES = [TODO, "Confirmé tel quel", "Corrigé (voir à droite)", "Même patient saisi deux fois",
+            "Patients différents", NOT_FOUND]
 
 
 def _rows_label(f: dict, hide_ids: bool) -> str:
@@ -121,200 +68,368 @@ def _variable(f: dict) -> str:
     return f.get("column") or "—"
 
 
-# ---------------------------------------------------------------- onglets
+def _plural(n: int, word: str) -> str:
+    return f"{n} {word}{'s' if n > 1 else ''}"
 
-def _sheet_read_first(wb: Workbook, prof: dict, score: dict, assess: dict, n_findings: int,
-                      n_blocking_findings: int) -> None:
-    ws = wb.create_sheet("À lire d'abord")
-    ws.sheet_view.showGridLines = False
-    for col, w in zip("ABCDEF", [24, 22, 22, 22, 22, 22], strict=True):
-        ws.column_dimensions[col].width = w
 
-    counts = key_counts(prof)
+def _light(assess: dict) -> str:
+    missions = assess.get("missions") or []
+    if missions:
+        return "rouge" if any(m.get("feu") == "rouge" for m in missions) else "orange"
+    return "rouge" if assess.get("blocking_points") else "vert"
+
+
+# ---------------------------------------------------------------- « Aux archives »
+
+def _archive_items(assess: dict, findings: list[dict], hide_ids: bool) -> list[dict]:
+    items = [{"lignes": c.get("lignes", ""), "patients": c.get("patients", ""),
+              "colonne": c.get("colonne", ""), "valeur": c.get("valeur", ""),
+              "check": c.get("check", ""), "mission": c.get("mission")}
+             for c in assess.get("checklist") or []]
+    if items:
+        return items
+    # Audits antérieurs au bilan v3 : une ligne par anomalie à vérifier au dossier.
+    return [{"lignes": "", "patients": _rows_label(f, hide_ids), "colonne": _variable(f),
+             "valeur": f.get("observed") or "", "check": f.get("check_fr") or f.get("title_fr", ""),
+             "mission": None}
+            for f in findings if f.get("requires_source_verification")]
+
+
+def _column_label(colonne: str) -> str:
+    """« toutes » (paire de lignes jumelles) → « Toute la ligne »."""
+    return "Toute la ligne" if colonne.strip().lower() in ("toutes", "toute", "all") else colonne
+
+
+ARCHIVE_WIDTHS = [5, 13, 12, 19, 15, 33, 21, 26]
+STATUS_COL, FOUND_COL = 7, 8
+
+
+def _sheet_archives(wb: Workbook, assess: dict, findings: list[dict],
+                    hide_ids: bool) -> tuple[str, int]:
+    """Renvoie (plage des statuts, nombre de dossiers) pour l'avancement du bilan."""
+    ws = wb.create_sheet(SHEET_ARCHIVES)
+    st.setup_sheet(ws, ARCHIVE_WIDTHS, "11643A", DOCUMENT)
+    last = len(ARCHIVE_WIDTHS)
+    row = st.title_block(
+        ws, "Insight Medics · Audit de votre base", "Aux archives : les dossiers à ouvrir",
+        "Un dossier (ou une paire de dossiers) par ligne, du plus urgent au moins urgent. "
+        "Remplissez les deux colonnes jaunes : le bilan se met à jour tout seul.", last)
+    items = _archive_items(assess, findings, hide_ids)
+    head = st.header_row(ws, row, ["N°", "Ligne du fichier", "Patient(s)", "Colonne",
+                                   "Valeur actuelle", "À vérifier dans le dossier", "Statut",
+                                   "Ce que vous avez trouvé"], input_cols=(STATUS_COL, FOUND_COL))
+    if not items:
+        st.merged_text(ws, head, 1, last, "Aucun dossier à vérifier.", st.SUBTITLE)
+        return "", 0
+
+    missions = assess.get("missions") or []
+    groups: dict[int | None, list[dict]] = {}
+    for it in items:
+        m = it.get("mission")
+        key = m if isinstance(m, int) and 1 <= m <= len(missions) else None
+        groups.setdefault(key, []).append(it)
+    order = sorted(k for k in groups if k is not None) + ([None] if None in groups else [])
+
+    status = DataValidation(type="list", formula1='"' + ",".join(STATUSES) + '"',
+                            allow_blank=True, showErrorMessage=False)
+    ws.add_data_validation(status)
+    row, n, first = head, 0, head
+    for key in order:
+        if key is not None or len(order) > 1:
+            if key is None:
+                bg, ink, text = st.SURFACE, st.INK, "Autres vérifications"
+            else:
+                m = missions[key - 1]
+                bg, ink, label = st.LIGHT.get(m.get("feu", "orange"), st.LIGHT["orange"])
+                text = f"Mission {key} · {label} · {m.get('title', '')}"
+            row = st.band(ws, row, text, bg, ink, last, size=11)
+        for it in groups[key]:
+            n += 1
+            patients = str(it["patients"])
+            if patients[:1].isdigit():
+                patients = f"n° {patients}"
+            row = st.data_row(ws, row, [n, it["lignes"], patients, _column_label(it["colonne"]),
+                                        it["valeur"], it["check"], TODO, ""],
+                              input_cols=(STATUS_COL, FOUND_COL), center_cols=(1,))
+            status.add(ws.cell(row=row - 1, column=STATUS_COL).coordinate)
+    end = row - 1
+    # Ligne verte une fois vérifiée, grise si le dossier est introuvable.
+    rng = f"A{first}:H{end}"
+    s = f"$G{first}"
+    ws.conditional_formatting.add(rng, FormulaRule(
+        formula=[f'AND({s}<>"",{s}<>"{TODO}",{s}<>"{NOT_FOUND}")'],
+        fill=st.fill(st.GREEN_BG), font=st.font(color=st.GREEN_INK)))
+    ws.conditional_formatting.add(rng, FormulaRule(
+        formula=[f'{s}="{NOT_FOUND}"'], fill=st.fill(st.GREY_BG),
+        font=st.font(color=st.GREY_INK)))
+    ws.auto_filter.ref = f"A{head - 1}:H{end}"
+    return f"'{SHEET_ARCHIVES}'!$G${first}:$G${end}", n
+
+
+# ---------------------------------------------------------------- « Votre bilan »
+
+BILAN_WIDTHS = [24, 32, 32, 32]
+
+
+def _tile(ws: Worksheet, row: int, col: int, label: str, value: Any, hint: str,
+          ink: str = st.INK) -> None:
+    for r, (text, style) in enumerate(((label, st.SMALL), (value, st.font(20, bold=True, color=ink)),
+                                       (hint, st.SMALL))):
+        c = ws.cell(row=row + r, column=col, value=text)
+        c.font = style
+        c.fill = st.fill(st.SURFACE)
+        c.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True,
+                                indent=1)
+
+
+def _mission_block(ws: Worksheet, row: int, i: int, m: dict, last: int) -> int:
+    bg, ink, label = st.LIGHT.get(m.get("feu", "orange"), st.LIGHT["orange"])
+    row = st.band(ws, row, f"Mission {i} · {label} · {m.get('title', '')}", bg, ink, last, 12)
+    todo = "\n".join(f"• {a}" for a in m.get("a_faire") or [])
+    who = " · ".join(x for x in [
+        f"Qui : {m['qui']}" if m.get("qui") else "",
+        f"À rouvrir : {m['a_rouvrir']}" if m.get("a_rouvrir") else "",
+        f"Terminé quand {m['termine_quand']}" if m.get("termine_quand") else ""] if x)
+    for name, text in (("Ce que nous avons vu", m.get("vu", "")),
+                       ("Pourquoi c'est important", m.get("pourquoi", "")),
+                       ("À faire", todo), ("En pratique", who)):
+        if not text:
+            continue
+        c = ws.cell(row=row, column=1, value=name)
+        c.font = st.font(10, bold=True, color=st.MUTED_INK)
+        c.alignment = st.WRAP_TOP
+        st.merged_text(ws, row, 2, last, text, st.BODY)
+        for j in range(1, last + 1):
+            ws.cell(row=row, column=j).border = st.ROW_LINE
+        row += 1
+    return row + 1
+
+
+def _sheet_bilan(wb: Workbook, ws: Worksheet, prof: dict, score: dict, assess: dict,
+                 archive_range: str, n_records: int, n_questions: int) -> None:
+    st.setup_sheet(ws, BILAN_WIDTHS, st.BRAND, DOCUMENT)
+    last = len(BILAN_WIDTHS)
     headline = assess.get("headline") or {}
     verdict = assess.get("exploitability_verdict") or {}
     title = headline.get("title") or verdict.get("label") or "Audit de votre base"
     subtitle = headline.get("subtitle") or verdict.get("justification_fr") or ""
+    light = _light(assess)
+    row = st.title_block(ws, "Insight Medics · Audit de votre base", title, subtitle, last)
+    # Pastille du feu devant le verdict, dans sa couleur (texte enrichi).
+    ink = {"rouge": st.RED_INK, "orange": st.ORANGE_INK, "vert": st.GREEN_INK}[light]
+    ws.cell(row=2, column=1).value = CellRichText(
+        TextBlock(InlineFont(rFont=st.FONT, sz=18, b=True, color=ink), "● "),
+        TextBlock(InlineFont(rFont=st.FONT, sz=18, b=True, color=st.INK), title))
 
-    row = _text(ws, 1, "Audit de votre base — Insight Medics", MUTED)
-    row = _text(ws, row, title, TITLE)
-    if subtitle:
-        row = _text(ws, row, subtitle)
-    row += 1
+    counts = key_counts(prof)
+    patients: Any = counts["patients"]
+    hint = "dans votre tableau"
+    if counts["duplicated_rows"] and counts["patients_min"] < counts["patients"]:
+        patients = f"{counts['patients_min']} à {counts['patients']}"
+        hint = "selon les copies que vous confirmerez"
+    note = score.get("score_final")
+    missions = assess.get("missions") or []
+    n_red = sum(1 for m in missions if m.get("feu") == "rouge")
+    _tile(ws, row, 1, "Patients", patients, hint)
+    _tile(ws, row, 2, "Qualité de votre base", f"{st.fr_num(note)} / 100" if note is not None
+          else "—", score.get("niveau_qualite", ""))
+    _tile(ws, row, 3, "Missions", len(missions) or len(assess.get("blocking_points") or []),
+          f"dont {_plural(n_red, 'rouge')}" if missions else "points à régler",
+          st.RED_INK if n_red else st.INK)
+    _tile(ws, row, 4, "Questions au directeur", n_questions, "à trancher ensemble")
+    for r, h in ((row, 18), (row + 1, 34), (row + 2, 18)):
+        ws.row_dimensions[r].height = h
+    row += 4
 
-    note = f"{_fr(score.get('score_final', '—'))}/100 — {score.get('niveau_qualite', '')}"
-    ws.cell(row=row, column=1, value="Qualité de la base").font = BOLD
-    ws.cell(row=row, column=2, value=note).font = H2
-    row += 1
     caps = score.get("plafonds_appliques") or []
     if caps:
-        row = _text(ws, row, f"Note limitée à {_fr(score.get('score_final'))} : {caps[0]['defaut']}. "
-                             f"Sans ce problème, les 8 points totaliseraient {_fr(score.get('score_brut'))}.",
-                    MUTED)
-    row += 1
+        row = st.merged_text(ws, row, 1, last, f"Votre note ne peut pas dépasser "
+                             f"{caps[0]['plafond']}/100 tant que ce problème reste : "
+                             f"{caps[0]['defaut'].lower()}.", st.SMALL)
+    if n_records:
+        row = st.section(ws, row + 1, "Votre avancement", last)
+        c = ws.cell(row=row, column=1,
+                    value=f'=COUNTIFS({archive_range},"<>{TODO}",{archive_range},"<>")'
+                          f'&" dossier(s) vérifié(s) sur {n_records}"')
+        c.font = st.font(14, bold=True, color=st.GREEN_INK)
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=2)
+        ws.row_dimensions[row].height = 24
+        st.link(ws, row, 3, "→ Remplir l'onglet « Aux archives »", SHEET_ARCHIVES)
+        row += 1
 
-    patients = counts["patients"]
-    if counts["duplicated_rows"] and counts["patients_min"] < patients:
-        patients = f"{counts['patients_min']} à {counts['patients']}"
-    missions = assess.get("missions") or []
-    n_points = len(assess.get("blocking_points") or []) or n_blocking_findings
-    n_red = sum(1 for m in missions if m.get("feu") == "rouge")
-    tiles = [("Patients", patients),
-             ("Saisis deux fois ?", counts["duplicated_rows"]),
-             ("Cases vides", f"{_fr(counts['missing_useful_pct'])} %"),
-             ("Missions", f"{len(missions)} (dont {n_red} rouges)") if missions
-             else ("Points bloquants", n_points)]
-    for j, (label, value) in enumerate(tiles, start=1):
-        ws.cell(row=row, column=j, value=label).font = MUTED
-        c = ws.cell(row=row + 1, column=j, value=value)
-        c.font = H2
-        c.alignment = Alignment(horizontal="left")
-    row += 2
-    if counts["template_rows"]:
-        row = _text(ws, row, f"+ {counts['template_rows']} ligne(s) modèle de la fiche, "
-                             "qui ne sont pas des patients.", MUTED)
-    row += 1
-
-    points = assess.get("blocking_points") or []
     if missions:
-        row = _text(ws, row, "Vos missions", H2)
-        row = _table(ws, row, ["N°", "Mission", "Pourquoi c'est important", "À faire",
-                               "Qui · à rouvrir · terminé quand"], [24, 44, 34, 44, 34])
+        row = st.section(ws, row + 1, "Vos missions, de la plus urgente à la moins urgente",
+                         last)
+        row = st.merged_text(ws, row, 1, last, "Commencez par les rouges : tant qu'elles ne "
+                             "sont pas terminées, aucun résultat de votre thèse n'est fiable.",
+                             st.SUBTITLE) + 1
         for i, m in enumerate(missions, start=1):
-            light = "Rouge" if m.get("feu") == "rouge" else "Orange"
-            mission = f"{light} — {m.get('title', '')}" + (f"\n{m['vu']}" if m.get("vu") else "")
-            todo = "\n".join(f"• {a}" for a in m.get("a_faire") or [])
-            who = " · ".join(x for x in [m.get("qui", ""), m.get("a_rouvrir", ""),
-                                         m.get("termine_quand", "")] if x)
-            _row(ws, row, [i, mission, m.get("pourquoi", ""), todo, who])
-            ws.cell(row=row, column=1).fill = PRIORITY_FILL[
-                "avant_analyse" if m.get("feu") == "rouge" else "importante"]
+            row = _mission_block(ws, row, i, m, last)
+    else:
+        points = assess.get("blocking_points") or []
+        if points:
+            row = st.section(ws, row + 1, "Ce qui bloque votre analyse", last)
+            for i, bp in enumerate(points, start=1):
+                row = _mission_block(ws, row, i, {"feu": "rouge", "title": bp.get("title", ""),
+                                                  "vu": bp.get("what", ""),
+                                                  "pourquoi": bp.get("why", ""),
+                                                  "a_faire": [bp["todo"]] if bp.get("todo")
+                                                  else []}, last)
+
+    for label, items in (("Ce qui est déjà en ordre", assess.get("deja_en_ordre") or []),
+                         ("Ce que nous corrigeons pour vous (rien à faire de votre côté)",
+                          assess.get("nous_corrigeons") or [])):
+        if items:
+            row = st.section(ws, row, label, last)
+            for item in items:
+                row = st.merged_text(ws, row, 1, last, f"✓ {item}", st.BODY)
             row += 1
-        ws.freeze_panes = None
-        row += 1
-        for label, items in (("Ce qui est déjà en ordre", assess.get("deja_en_ordre") or []),
-                             ("Ce que nous corrigeons pour vous (rien à faire de votre côté)",
-                              assess.get("nous_corrigeons") or [])):
-            if items:
-                row = _text(ws, row, label, H2)
-                for item in items:
-                    row = _text(ws, row, f"• {item}")
-                row += 1
-    elif points:
-        row = _text(ws, row, "Les points qui bloquent votre analyse", H2)
-        row = _table(ws, row, ["N°", "Le problème", "Pourquoi c'est grave", "Que faire"],
-                     [24, 44, 40, 40])
-        for i, bp in enumerate(points, start=1):
-            problem = bp.get("title", "")
-            if bp.get("what"):
-                problem += "\n" + bp["what"]
-            _row(ws, row, [i, problem, bp.get("why", ""), bp.get("todo", "")])
-            row += 1
-        ws.freeze_panes = None
-        row += 1
 
-    row = _text(ws, row, "Comment utiliser ce classeur", H2)
-    for line in [
-        "1. Onglet « Dossiers à ouvrir » : la liste des dossiers à sortir des archives, et ce "
-        "qu'il faut y relever. Notez ce que vous trouvez dans la colonne jaune.",
-        "2. Onglet « Questions pour votre directeur » : apportez-les à votre prochain rendez-vous.",
-        "3. Onglet « Points à vérifier » : le détail de chaque point, si vous voulez comprendre.",
-        f"4. Renvoyez-nous ce classeur rempli avec votre base corrigée : nous réalisons "
-        f"{ANALYSIS_OFFER} et vous remettons la base nettoyée, les tableaux et les tests.",
-        f"Dr Hamza sur WhatsApp : {WHATSAPP_DISPLAY} · {CONTACT_EMAIL}",
-    ]:
-        row = _text(ws, row, line)
-    _print_setup(ws, "1F3FD1")
+    row = st.section(ws, row, "Comment utiliser ce classeur", last)
+    steps = [(f"1. Ouvrez les dossiers de l'onglet « {SHEET_ARCHIVES} » et notez ce que vous "
+              "trouvez dans les colonnes jaunes.", SHEET_ARCHIVES),
+             (f"2. Apportez l'onglet « {SHEET_QUESTIONS} » à votre prochain rendez-vous avec "
+              "votre directeur.", SHEET_QUESTIONS),
+             (f"3. Renvoyez-nous le classeur rempli : nous corrigeons la base nous-mêmes, puis "
+              f"nous réalisons {ANALYSIS_OFFER}.", None)]
+    for text, sheet in steps:
+        row = st.merged_text(ws, row, 1, last - 1, text, st.BODY)
+        if sheet:
+            st.link(ws, row - 1, last, "Ouvrir l'onglet →", sheet)
+    row = st.merged_text(ws, row + 1, 1, last, f"Une question ? Dr Hamza sur WhatsApp : "
+                         f"{WHATSAPP_DISPLAY} · {CONTACT_EMAIL}", st.SMALL)
 
 
-def _sheet_findings(wb: Workbook, findings: list[dict], hide_ids: bool) -> None:
-    ws = wb.create_sheet("Points à vérifier")
-    ws.sheet_view.showGridLines = False
-    ws.cell(row=1, column=1, value="Points à vérifier dans vos dossiers").font = TITLE
-    ws.cell(row=2, column=1, value="Une ligne par point. Remplissez « Votre décision », puis "
-            "renvoyez-nous le classeur avec votre base corrigée.").font = MUTED
-    headers = ["N°", "Priorité", "Inclusion(s)", "Colonne", "Ce qui ne va pas", "Détail",
-               "Ce qu'il faut vérifier", "Votre décision", "Fait"]
-    row = _table(ws, 4, headers, [6, 16, 18, 22, 38, 52, 32, 26, 8], input_cols=(8, 9))
-    if not findings:
-        ws.cell(row=row, column=1, value="Aucune anomalie à vérifier.").font = MUTED
-        return
+# ---------------------------------------------------------------- « Questions au directeur »
 
-    decision = DataValidation(type="list", formula1='"' + ",".join(DECISION_CHOICES) + '"',
-                              allow_blank=True)
-    done = DataValidation(type="list", formula1='"Oui,Non"', allow_blank=True)
-    ws.add_data_validation(decision)
-    ws.add_data_validation(done)
-
-    ordered = sorted(findings, key=lambda f: PRIORITY_ORDER[
-        SEVERITY_PRIORITY.get(f.get("severity", ""), "facultative")])
-    first = row
-    for i, f in enumerate(ordered, start=1):
-        prio = SEVERITY_PRIORITY.get(f.get("severity", ""), "facultative")
-        check = f.get("check_fr") or f.get("proposed_correction") or ""
-        _row(ws, row, [i, PRIORITY_LABELS[prio], _rows_label(f, hide_ids), _variable(f),
-                       f.get("title_fr", ""), f.get("explanation_fr", ""), check, "", ""],
-             input_cols=(8, 9))
-        ws.cell(row=row, column=2).fill = PRIORITY_FILL[prio]
-        row += 1
-    decision.add(f"H{first}:H{row - 1}")
-    done.add(f"I{first}:I{row - 1}")
-    ws.auto_filter.ref = f"A{first - 1}:I{row - 1}"
-    _print_setup(ws, "B42318")
+QUESTION_WIDTHS = [22, 40, 40, 30]
 
 
-def _sheet_questions(wb: Workbook, decisions: list[dict]) -> None:
-    ws = wb.create_sheet("Questions pour votre directeur")
-    ws.sheet_view.showGridLines = False
-    ws.cell(row=1, column=1, value="Questions pour votre directeur de thèse").font = TITLE
-    ws.cell(row=2, column=1, value="À trancher ensemble, de préférence par écrit, avant "
-            "l'analyse statistique.").font = MUTED
-    row = _table(ws, 4, ["N°", "Priorité", "Question", "Options", "Ce que ça change",
-                         "Notre recommandation", "Votre réponse"],
-                 [6, 18, 50, 30, 40, 40, 30], input_cols=(7,))
+def _sheet_questions(wb: Workbook, decisions: list[dict]) -> int:
+    ws = wb.create_sheet(SHEET_QUESTIONS)
+    st.setup_sheet(ws, QUESTION_WIDTHS, "8A4B08", DOCUMENT)
+    last = len(QUESTION_WIDTHS)
+    row = st.title_block(ws, "Insight Medics · Audit de votre base",
+                         "Questions pour votre directeur de thèse",
+                         "À trancher ensemble, de préférence par écrit, avant l'analyse. "
+                         "Notez la décision retenue dans la case jaune.", last)
     if not decisions:
-        ws.cell(row=row, column=1, value="Aucune question à trancher.").font = MUTED
-        return
-    for i, d in enumerate(decisions, start=1):
+        st.merged_text(ws, row, 1, last, "Aucune question à trancher.", st.SUBTITLE)
+        return 0
+    ordered = sorted(decisions, key=lambda d: PRIORITY_ORDER.get(d.get("priority") or
+                                                                 "importante", 1))
+    for i, d in enumerate(ordered, start=1):
         prio = d.get("priority") or "importante"
-        choices = d.get("choices") or []
-        options = ("\n".join(f"{chr(65 + k)}. {c.get('label', '')}" for k, c in enumerate(choices))
-                   if choices else " / ".join(d.get("options") or []))
-        effects = ("\n".join(f"{chr(65 + k)}. {c.get('consequence', '')}"
-                              for k, c in enumerate(choices) if c.get("consequence"))
-                   if choices else "") or d.get("consequence_fr", "")
-        _row(ws, row, [i, PRIORITY_LABELS.get(prio, "Importante"), d.get("question_fr", ""),
-                       options, effects, d.get("recommendation_fr", ""), ""], input_cols=(7,))
-        ws.cell(row=row, column=2).fill = PRIORITY_FILL.get(prio, PRIORITY_FILL["importante"])
-        row += 1
-    _print_setup(ws, "8A4B08")
+        bg, ink = st.PRIORITY_STYLE.get(prio, st.PRIORITY_STYLE["importante"])
+        row = st.band(ws, row, f"Question {i} · {PRIORITY_LABELS.get(prio, 'Importante')}",
+                      bg, ink, last, 10.5)
+        row = st.merged_text(ws, row, 1, last, d.get("question_fr", ""), st.BODY_BOLD)
+        choices = d.get("choices") or [{"label": o, "consequence": ""}
+                                       for o in d.get("options") or []]
+        letters = []
+        for k, ch in enumerate(choices):
+            letter = chr(65 + k)
+            letters.append(letter)
+            c = ws.cell(row=row, column=1, value=f"Option {letter}")
+            c.font = st.font(10.5, bold=True, color=st.BRAND_DARK)
+            c.alignment = st.WRAP_TOP
+            st.merged_text(ws, row, 2, 2, ch.get("label", ""), st.BODY_BOLD)
+            st.merged_text(ws, row, 3, last, ch.get("consequence", "") or "", st.BODY)
+            st.fit_height(ws, row, [(ch.get("label", ""), st.span_width(ws, 2, 2), 11),
+                                    (ch.get("consequence", ""), st.span_width(ws, 3, last), 11)])
+            for j in range(1, last + 1):
+                ws.cell(row=row, column=j).border = st.ROW_LINE
+            row += 1
+        if not choices and d.get("consequence_fr"):
+            row = st.merged_text(ws, row, 1, last, d["consequence_fr"], st.BODY)
+        if d.get("recommendation_fr"):
+            c = ws.cell(row=row, column=1, value="Notre conseil")
+            c.font = st.font(10.5, bold=True, color=st.MUTED_INK)
+            c.alignment = st.WRAP_TOP
+            st.merged_text(ws, row, 2, last, d["recommendation_fr"], st.BODY)
+            row += 1
+        c = ws.cell(row=row, column=1, value="Décision retenue")
+        c.font = st.font(10.5, bold=True)
+        c.alignment = Alignment(vertical="center")
+        pick = ws.cell(row=row, column=2, value="")
+        pick.fill = st.fill(st.INPUT)
+        pick.border = st.BOX
+        if letters:
+            dv = DataValidation(type="list", formula1='"' + ",".join(
+                [f"Option {x}" for x in letters] + ["Autre (voir à droite)"]) + '"',
+                allow_blank=True, showErrorMessage=False)
+            ws.add_data_validation(dv)
+            dv.add(pick.coordinate)
+        note = ws.cell(row=row, column=3, value="Date et remarques : ")
+        note.fill = st.fill(st.INPUT)
+        note.font = st.SMALL
+        note.alignment = st.WRAP_TOP
+        ws.merge_cells(start_row=row, start_column=3, end_row=row, end_column=last)
+        ws.row_dimensions[row].height = 30
+        row += 2
+    return len(ordered)
 
+
+# ---------------------------------------------------------------- « Pour aller plus loin »
+
+DETAIL_WIDTHS = [5, 15, 15, 21, 32, 46]
 
 # Motifs internes de la grille, inutiles pour l'étudiant (« analyse fine au M5 »,
 # « statut : sous_conditions », « hash SHA-256 »…).
 _INTERNAL_MOTIF = ("statut :", "M4", "M5", "jalon", "hash", "inévaluable", "points accordés")
 
-
-# Les 8 domaines de la grille, en mots simples (même libellés que la page d'audit).
+# Les 8 domaines de la grille, en mots simples (mêmes libellés que la page d'audit).
 DOMAIN_PLAIN = {1: "Chaque patient compté une seule fois", 2: "Des cases remplies",
                 3: "Des valeurs possibles", 4: "Des colonnes qui ne se contredisent pas",
                 5: "Un tableau fidèle à votre protocole", 6: "Un critère principal mesurable",
                 7: "Des colonnes expliquées", 8: "Prêt pour les calculs prévus"}
 
 
-def _sheet_score(wb: Workbook, score: dict) -> None:
-    ws = wb.create_sheet("Votre note en détail")
-    ws.sheet_view.showGridLines = False
-    ws.cell(row=1, column=1, value="Votre note, point par point").font = TITLE
-    ws.cell(row=2, column=1, value=f"Note : {_fr(score.get('score_final'))}/100 — "
-            f"{score.get('niveau_qualite', '')}. Total des 8 points : "
-            f"{_fr(score.get('score_brut'))}/100.").font = NORM
-    row = 3
+def _sheet_detail(wb: Workbook, findings: list[dict], score: dict, hide_ids: bool) -> None:
+    ws = wb.create_sheet(SHEET_DETAIL)
+    st.setup_sheet(ws, DETAIL_WIDTHS, "4B5563", DOCUMENT)
+    last = len(DETAIL_WIDTHS)
+    row = st.title_block(ws, "Insight Medics · Audit de votre base", "Pour aller plus loin",
+                         "Le détail de chaque point relevé, et votre note point par point. "
+                         "Rien à remplir ici : tout ce qui est à faire est dans les autres "
+                         "onglets.", last)
+
+    row = st.section(ws, row, f"Les {len(findings)} points relevés", last)
+    if findings:
+        row = st.header_row(ws, row, ["N°", "Priorité", "Patient(s)", "Colonne",
+                                      "Ce qui ne va pas", "Explication"], freeze=False)
+        ordered = sorted(findings, key=lambda f: PRIORITY_ORDER[
+            SEVERITY_PRIORITY.get(f.get("severity", ""), "facultative")])
+        for i, f in enumerate(ordered, start=1):
+            prio = SEVERITY_PRIORITY.get(f.get("severity", ""), "facultative")
+            row = st.data_row(ws, row, [i, PRIORITY_LABELS[prio], _rows_label(f, hide_ids),
+                                        _variable(f), f.get("title_fr", ""),
+                                        f.get("explanation_fr", "")], bold_cols=(5,),
+                              center_cols=(1,))
+            bg, ink = st.PRIORITY_STYLE[prio]
+            cell = ws.cell(row=row - 1, column=2)
+            cell.fill = st.fill(bg)
+            cell.font = st.font(10, bold=True, color=ink)
+    else:
+        row = st.merged_text(ws, row, 1, last, "Aucun point relevé.", st.SUBTITLE)
+
+    row = st.section(ws, row + 1, "Votre note, point par point", last)
+    note = (f"Note : {st.fr_num(score.get('score_final'))}/100 ({score.get('niveau_qualite', '')})."
+            f" Total des 8 points : {st.fr_num(score.get('score_brut'))}/100.")
     for cap in score.get("plafonds_appliques") or []:
-        ws.cell(row=row, column=1, value=f"La note ne peut pas dépasser {cap['plafond']}/100 "
-                f"tant que ce problème reste : {cap['defaut'].lower()}.").font = MUTED
-        row += 1
-    row = _table(ws, row + 1, ["Ce que nous vérifions", "Points", "Ce qui coûte des points"], [44, 12, 90])
+        note += (f" La note ne peut pas dépasser {cap['plafond']}/100 tant que ce problème "
+                 f"reste : {cap['defaut'].lower()}.")
+    row = st.merged_text(ws, row, 1, last, note, st.BODY)
+    head = ["Ce que nous vérifions", "", "", "Points", "Ce qui coûte des points", ""]
+    for j, h in enumerate(head, start=1):
+        c = ws.cell(row=row, column=j, value=h or None)
+        c.font = st.HEADER
+        c.fill = st.fill(st.BRAND)
+        c.alignment = st.WRAP_CENTER
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
+    ws.merge_cells(start_row=row, start_column=5, end_row=row, end_column=6)
+    ws.row_dimensions[row].height = 22
+    row += 1
     for d in score.get("domaines") or []:
         losses = []
         for c in d.get("criteres") or []:
@@ -323,50 +438,22 @@ def _sheet_score(wb: Workbook, score: dict) -> None:
             motif = c.get("motif") or ""
             if any(token in motif for token in _INTERNAL_MOTIF):
                 motif = ""
-            losses.append(f"{c['critere']} ({_fr(c['obtenu'])}/{c['max']})"
+            losses.append(f"• {c['critere']} ({st.fr_num(c['obtenu'])}/{c['max']})"
                           + (f" : {motif}" if motif else ""))
-        name = DOMAIN_PLAIN.get(d["domaine"], d["nom"])
-        _row(ws, row, [f"{d['domaine']}. {name}", f"{_fr(d['obtenu'])} / {d['max']}",
-                       "\n".join(losses) or "Rien à signaler"])
-        ws.cell(row=row, column=1).font = BOLD
+        name = f"{d['domaine']}. {DOMAIN_PLAIN.get(d['domaine'], d['nom'])}"
+        ratio = d["obtenu"] / d["max"] if d.get("max") else 0
+        ink = st.GREEN_INK if ratio >= 0.8 else st.ORANGE_INK if ratio >= 0.55 else st.RED_INK
+        st.merged_text(ws, row, 1, 3, name, st.BODY_BOLD)
+        pts = ws.cell(row=row, column=4, value=f"{st.fr_num(d['obtenu'])} / {d['max']}")
+        pts.font = st.font(11, bold=True, color=ink)
+        pts.alignment = st.CENTER
+        text = "\n".join(losses) or "Rien à signaler"
+        st.merged_text(ws, row, 5, last, text, st.BODY)
+        st.fit_height(ws, row, [(name, st.span_width(ws, 1, 3), 11),
+                                (text, st.span_width(ws, 5, last), 11)])
+        for j in range(1, last + 1):
+            ws.cell(row=row, column=j).border = st.ROW_LINE
         row += 1
-    _print_setup(ws, "4B5563")
-
-
-CHECK_STATUSES = '"À vérifier,Confirmé tel quel,Corrigé dans le dossier"'
-
-
-def _sheet_checklist(wb: Workbook, assess: dict, findings: list[dict], hide_ids: bool) -> None:
-    """Liste de vérification (bilan v3) : triée par urgence, avec la ligne du fichier, la
-    colonne, la valeur actuelle, et un statut que l'étudiant remplit."""
-    ws = wb.create_sheet("Dossiers à ouvrir")
-    ws.sheet_view.showGridLines = False
-    ws.cell(row=1, column=1, value="Dossiers à ouvrir aux archives").font = TITLE
-    ws.cell(row=2, column=1, value="Un dossier ou une paire de dossiers par ligne, du plus "
-            "urgent au moins urgent. Remplissez les colonnes jaunes.").font = MUTED
-    row = _table(ws, 4, ["N°", "Ligne du fichier", "Patient(s)", "Colonne", "Valeur actuelle",
-                         "Question à vérifier dans le dossier", "Mission", "Statut",
-                         "Ce que vous avez trouvé"],
-                 [6, 16, 14, 22, 18, 46, 9, 22, 36], input_cols=(8, 9))
-    items = [[c.get("lignes", ""), c.get("patients", ""), c.get("colonne", ""),
-              c.get("valeur", ""), c.get("check", ""), c.get("mission") or ""]
-             for c in assess.get("checklist") or []]
-    if not items:  # audits antérieurs : une ligne par anomalie à vérifier au dossier
-        items = [["", _rows_label(f, hide_ids), _variable(f), f.get("observed") or "",
-                  f.get("check_fr") or f.get("title_fr", ""), ""]
-                 for f in findings if f.get("requires_source_verification")]
-    if not items:
-        ws.cell(row=row, column=1, value="Aucun dossier à vérifier.").font = MUTED
-        _print_setup(ws, "11643A")
-        return
-    status = DataValidation(type="list", formula1=CHECK_STATUSES, allow_blank=True)
-    ws.add_data_validation(status)
-    first = row
-    for i, item in enumerate(items, start=1):
-        _row(ws, row, [i, *item, "À vérifier", ""], input_cols=(8, 9))
-        row += 1
-    status.add(f"H{first}:H{row - 1}")
-    _print_setup(ws, "11643A")
 
 
 # ---------------------------------------------------------------- assemblage
@@ -378,15 +465,16 @@ def build_client_workbook(profiling: dict, score_detail: dict, ai_audit: dict | 
     id_col = (profiling.get("structure") or {}).get("id_column")
     pii_cols = {p.get("column") for p in profiling.get("pii_candidates") or []}
     hide_ids = bool(id_col and id_col in pii_cols)
-    n_blocking = sum(1 for f in findings if f.get("severity") == "critique")
 
     wb = Workbook()
-    wb.remove(wb.active)
-    _sheet_read_first(wb, profiling, score_detail, assess, len(findings), n_blocking)
-    _sheet_checklist(wb, assess, findings, hide_ids)
-    _sheet_findings(wb, findings, hide_ids)
-    _sheet_questions(wb, decisions)
-    _sheet_score(wb, score_detail)
+    bilan = wb.active
+    bilan.title = SHEET_BILAN
+    archive_range, n_records = _sheet_archives(wb, assess, findings, hide_ids)
+    n_questions = _sheet_questions(wb, decisions)
+    _sheet_detail(wb, findings, score_detail, hide_ids)
+    _sheet_bilan(wb, bilan, profiling, score_detail, assess, archive_range, n_records,
+                 n_questions)
+    wb.active = 0
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()

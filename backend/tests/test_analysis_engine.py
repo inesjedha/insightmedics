@@ -244,3 +244,12 @@ def test_redaction_ia_refusee_si_chiffre_invente(monkeypatch):
     out, notes = llm_write.run_write_llm(ctx)
     assert out is not None and out.sections[0].paragraphs == ["31 patients sur 36 (86,1 %)."]
     assert any("tentative 2" in n for n in notes)
+
+
+def test_tableau_de_proportion_affiche_un_libelle_et_pas_un_code():
+    from app.analysis.plan import Proportion
+    from app.analysis.stats import run_proportion
+
+    a = Proportion(kind="proportion", id="p", title="Succès complet", variable="s", event=1)
+    out = run_proportion(a, pd.DataFrame({"s": [1, 1, 0]}), AnalysisPlan())
+    assert out["table"]["rows"][0][0] == "Succès complet"

@@ -273,11 +273,19 @@ def run_proportion(a: Proportion, df: pd.DataFrame, _: AnalysisPlan) -> dict[str
     text = f"{k}/{n} ({pct(k, n)} %)"
     ci = f"[{fmt(100 * lo)} − {fmt(100 * hi)}]"
     return {"table": {"columns": ["Événement", "n/N (%)", "IC 95 %"],
-                      "rows": [[a.event_label or str(a.event), text, ci + " %"]]},
+                      "rows": [[_event_label(a), text, ci + " %"]]},
             "facts": [{"event": str(a.event), "k": k, "n": n, "pct": pct(k, n),
                        "ci_low": fmt(100 * lo), "ci_high": fmt(100 * hi),
                        "missing": int(df[a.variable].isna().sum())}],
             "methods": ["IC 95 % de Wilson"], "n": n, "warnings": warn}
+
+
+def _event_label(a: Proportion) -> str:
+    """Libellé de la ligne : celui du plan ; à défaut, le titre de l'analyse quand
+    l'événement est un code (« 1 » ne dit rien au lecteur d'un tableau de thèse)."""
+    if a.event_label.strip():
+        return a.event_label
+    return a.title if _is_number(a.event) else str(a.event)
 
 
 def _is_number(v: Any) -> bool:

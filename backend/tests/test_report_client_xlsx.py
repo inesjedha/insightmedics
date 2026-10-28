@@ -27,45 +27,47 @@ def _values(ws):
     return [v for row in ws.iter_rows(values_only=True) for v in row if v not in (None, "")]
 
 
-def test_cinq_onglets_dans_l_ordre():
-    assert _wb(NEW_FIELDS).sheetnames == ["À lire d'abord", "Dossiers à ouvrir",
-                                          "Points à vérifier",
-                                          "Questions pour votre directeur", "Votre note en détail"]
+def _text(ws) -> str:
+    return " ".join(str(v) for v in _values(ws))
 
 
-def test_dossiers_a_ouvrir_depuis_la_checklist_ou_les_anomalies():
+def test_quatre_onglets_dans_l_ordre():
+    wb = _wb(NEW_FIELDS)
+    assert wb.sheetnames == ["Votre bilan", "Aux archives", "Questions au directeur",
+                             "Pour aller plus loin"]
+    assert wb.active.title == "Votre bilan"
+
+
+def test_aux_archives_depuis_la_checklist_ou_les_anomalies():
     with_list = _wb({**NEW_FIELDS, "checklist": [{"patients": "4 et 34",
                                                   "check": "Même patient ou deux patients ?"}]})
-    assert "4 et 34" in _values(with_list["Dossiers à ouvrir"])
+    assert "n° 4 et 34" in _values(with_list["Aux archives"])
     old = _wb()  # SYNTH_AI : F002 demande une vérification au dossier
-    assert "Modalité rare" in _values(old["Dossiers à ouvrir"])
+    assert "Modalité rare" in _text(old["Aux archives"])
 
 
 def test_score_en_clair_sans_motifs_internes():
-    vals = " ".join(str(v) for v in _values(_wb(NEW_FIELDS)["Votre note en détail"]))
+    vals = _text(_wb(NEW_FIELDS)["Pour aller plus loin"])
+    assert "Votre note, point par point" in vals
     for token in ("statut :", "M5", "hash"):
         assert token not in vals
 
 
-def test_a_lire_d_abord_verdict_et_points_bloquants():
-    vals = _values(_wb(NEW_FIELDS)["À lire d'abord"])
-    assert "Exploitable après 3 vérifications" in vals
-    assert any(isinstance(v, str) and v.startswith("14 patients saisis deux fois") for v in vals)
-    assert "Double comptage." in vals
+def test_bilan_verdict_et_points_bloquants():
+    ws = _wb(NEW_FIELDS)["Votre bilan"]
+    assert "Exploitable après 3 vérifications" in str(ws["A2"].value)   # pastille + verdict
+    vals = _text(ws)
+    assert "14 patients saisis deux fois" in vals and "Double comptage." in vals
 
 
 def test_ancien_audit_sans_nouveaux_champs_reste_lisible():
-    vals = _values(_wb()["À lire d'abord"])
-    assert "exploitable avec réserves" in vals  # repli sur le verdict
+    assert "exploitable avec réserves" in str(_wb()["Votre bilan"]["A2"].value)
 
 
-def test_anomalies_triees_par_priorite_avec_colonne_decision():
-    ws = _wb(NEW_FIELDS)["Points à vérifier"]
-    header = [c.value for c in ws[4]]
-    assert header[7] == "Votre décision"
-    assert ws["B5"].value == "Avant toute analyse"   # la critique d'abord
-    assert ws["B6"].value == "Facultative"
-    assert ws.data_validations.dataValidation  # listes déroulantes présentes
+def test_points_releves_tries_par_priorite():
+    vals = _values(_wb(NEW_FIELDS)["Pour aller plus loin"])
+    first, last = vals.index("Avant toute analyse"), vals.index("Facultative")
+    assert first < last
 
 
 def test_identifiants_masques_si_la_colonne_identifiant_est_identifiante():
@@ -74,18 +76,24 @@ def test_identifiants_masques_si_la_colonne_identifiant_est_identifiante():
     prof["pii_candidates"] = [{"column": "dossier"}]
     findings = [{"id": "F1", "severity": "critique", "anomaly_class": "A",
                  "certainty": "certain", "row_ids": ["DOS-123"], "title_fr": "t",
-                 "explanation_fr": "e"}]
-    vals = _values(_wb({"findings": findings}, prof)["Points à vérifier"])
-    assert "DOS-123" not in vals
+                 "explanation_fr": "e", "requires_source_verification": True}]
+    wb = _wb({"findings": findings}, prof)
+    for name in wb.sheetnames:
+        assert "DOS-123" not in _text(wb[name])
 
 
-def test_questions_et_score():
-    wb = _wb(NEW_FIELDS)
-    assert "Fusionner les doublons ?" in _values(wb["Questions pour votre directeur"])
-    assert "Votre note, point par point" in _values(wb["Votre note en détail"])
+def test_questions_en_blocs_avec_decision_retenue():
+    fields = {**NEW_FIELDS, "client_decisions": [{"question_fr": "Exclure ?", "choices": [
+        {"label": "Les garder", "consequence": "Limites"},
+        {"label": "Les exclure", "consequence": "Flux"}], "recommendation_fr": "Garder."}]}
+    ws = _wb(fields)["Questions au directeur"]
+    vals = _text(ws)
+    assert "Option A" in vals and "Les exclure" in vals and "Flux" in vals
+    assert "Décision retenue" in vals and "Notre conseil" in vals
+    assert ws.data_validations.dataValidation   # liste Option A / B / Autre
 
 
-def test_bilan_v3_missions_statut_et_choix():
+def test_bilan_v3_missions_avancement_et_statuts():
     fields = {**NEW_FIELDS,
               "missions": [{"feu": "rouge", "title": "Des patients saisis deux fois ?",
                             "vu": "Lignes 36 à 49.", "a_faire": ["Ouvrir les dossiers."],
@@ -93,15 +101,30 @@ def test_bilan_v3_missions_statut_et_choix():
               "deja_en_ordre": ["Chaque ligne a un numéro d'inclusion."],
               "checklist": [{"patients": "4 et 34", "lignes": "lignes 6 et 36",
                              "colonne": "toutes", "valeur": "identiques",
-                             "check": "Même patient ?", "mission": 1}],
-              "client_decisions": [{"question_fr": "Exclure ?", "choices": [
-                  {"label": "Les garder", "consequence": "Limites"},
-                  {"label": "Les exclure", "consequence": "Flux"}]}]}
+                             "check": "Même patient ?", "mission": 1}]}
     wb = _wb(fields)
-    first = " ".join(str(v) for v in _values(wb["À lire d'abord"]))
-    assert "Rouge — Des patients saisis deux fois ?" in first
-    assert "Chaque ligne a un numéro d'inclusion." in first
-    checklist = _values(wb["Dossiers à ouvrir"])
-    assert "lignes 6 et 36" in checklist and "À vérifier" in checklist
-    questions = " ".join(str(v) for v in _values(wb["Questions pour votre directeur"]))
-    assert "A. Les garder" in questions and "B. Flux" in questions
+    bilan = _text(wb["Votre bilan"])
+    assert "Mission 1 · Rouge · Des patients saisis deux fois ?" in bilan
+    assert "✓ Chaque ligne a un numéro d'inclusion." in bilan
+    formulas = [c.value for row in wb["Votre bilan"].iter_rows() for c in row
+                if isinstance(c.value, str) and c.value.startswith("=COUNTIFS")]
+    assert formulas and "Aux archives" in formulas[0]
+    archives = wb["Aux archives"]
+    vals = _values(archives)
+    assert "lignes 6 et 36" in vals and "À vérifier" in vals and "Toute la ligne" in vals
+    assert "Mission 1 · Rouge · Des patients saisis deux fois ?" in vals
+    assert archives.conditional_formatting  # ligne verte une fois vérifiée
+
+
+def test_impression_a4_et_pied_de_page():
+    for ws in _wb(NEW_FIELDS).worksheets:
+        assert str(ws.page_setup.paperSize) == str(ws.PAPERSIZE_A4)
+        assert "Insight Medics" in ws.oddFooter.left.text
+
+
+def test_textes_longs_jamais_coupes():
+    long = "Une phrase très longue qui décrit un problème. " * 12
+    ws = _wb({**NEW_FIELDS, "missions": [{"feu": "orange", "title": "Long", "vu": long}]})[
+        "Votre bilan"]
+    rows = [c.row for row in ws.iter_rows() for c in row if c.value == long]
+    assert rows and ws.row_dimensions[rows[0]].height >= 15 * 4
