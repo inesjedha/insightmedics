@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { FileBarChart2, FileText, ShieldCheck, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -6,6 +6,76 @@ import { cn } from "@/lib/utils";
 /** Extensions acceptées par le backend (backend/app/services/audits.py). */
 const DATA_ACCEPT = ".sav,.xlsx,.xls,.csv";
 const PROTOCOL_ACCEPT = ".docx,.pdf,.txt";
+
+/** L'attribut `accept` ne filtre que la fenêtre « Choisir un fichier », pas un dépôt. */
+function hasAcceptedExtension(file: File, accept: string): boolean {
+  const name = file.name.toLowerCase();
+  return accept.split(",").some((ext) => name.endsWith(ext.trim()));
+}
+
+/**
+ * Glisser-déposer d'un fichier sur une zone. Le compteur évite le clignotement : le
+ * navigateur envoie un `dragleave` à chaque passage au-dessus d'un élément enfant.
+ * Un fichier lâché à côté d'une zone ne doit pas ouvrir le fichier à la place de la page
+ * (comportement par défaut du navigateur) : on l'empêche au niveau de la fenêtre.
+ */
+function useFileDrop({
+  accept,
+  disabled,
+  onFile,
+}: {
+  accept: string;
+  disabled?: boolean;
+  onFile: (f: File) => void;
+}) {
+  const depth = useRef(0);
+  const [dragging, setDragging] = useState(false);
+  const [rejected, setRejected] = useState<string | null>(null);
+
+  useEffect(() => {
+    const block = (e: globalThis.DragEvent) => {
+      if (e.dataTransfer?.types.includes("Files")) e.preventDefault();
+    };
+    window.addEventListener("dragover", block);
+    window.addEventListener("drop", block);
+    return () => {
+      window.removeEventListener("dragover", block);
+      window.removeEventListener("drop", block);
+    };
+  }, []);
+
+  const handlers = {
+    onDragEnter: (e: DragEvent) => {
+      e.preventDefault();
+      if (disabled) return;
+      depth.current += 1;
+      setDragging(true);
+    },
+    onDragOver: (e: DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = disabled ? "none" : "copy";
+    },
+    onDragLeave: () => {
+      depth.current = Math.max(0, depth.current - 1);
+      if (depth.current === 0) setDragging(false);
+    },
+    onDrop: (e: DragEvent) => {
+      e.preventDefault();
+      depth.current = 0;
+      setDragging(false);
+      if (disabled) return;
+      const f = e.dataTransfer.files?.[0];
+      if (!f) return;
+      if (!hasAcceptedExtension(f, accept)) {
+        setRejected(f.name);
+        return;
+      }
+      setRejected(null);
+      onFile(f);
+    },
+  };
+  return { dragging, rejected, clearRejected: () => setRejected(null), handlers };
+}
 
 export function AuditUploader({
   file,
@@ -17,25 +87,18 @@ export function AuditUploader({
   disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [drag, setDrag] = useState(false);
+  const { dragging, rejected, clearRejected, handlers } = useFileDrop({
+    accept: DATA_ACCEPT,
+    disabled,
+    onFile,
+  });
 
   return (
     <div
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDrag(true);
-      }}
-      onDragLeave={() => setDrag(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDrag(false);
-        if (disabled) return;
-        const f = e.dataTransfer.files?.[0] ?? null;
-        if (f) onFile(f);
-      }}
+      {...handlers}
       className={cn(
         "rounded-md border-2 border-dashed bg-card p-8 text-center transition-colors",
-        drag ? "border-brand bg-accent" : "border-foreground/30",
+        dragging ? "border-brand bg-accent" : "border-foreground/30",
         disabled && "opacity-60",
       )}
     >
@@ -50,7 +113,10 @@ export function AuditUploader({
         type="file"
         accept={DATA_ACCEPT}
         className="hidden"
-        onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          clearRejected();
+          onFile(e.target.files?.[0] ?? null);
+        }}
         disabled={disabled}
         aria-label="Base de données à auditer"
       />
@@ -60,6 +126,13 @@ export function AuditUploader({
           Choisir un fichier
         </Button>
       </div>
+
+      {rejected && (
+        <p role="alert" className="mt-4 text-sm text-destructive">
+          « {rejected} » n'est pas une base de données. Formats acceptés : SPSS (.sav), Excel
+          (.xlsx, .xls) ou CSV.
+        </p>
+      )}
 
       {file && (
         <div className="mt-5 inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm">
@@ -90,8 +163,20 @@ export function ProtocolUploader({
   disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { dragging, rejected, clearRejected, handlers } = useFileDrop({
+    accept: PROTOCOL_ACCEPT,
+    disabled,
+    onFile: onProtocol,
+  });
   return (
-    <div className="rounded-md border border-border bg-card/60 p-4">
+    <div
+      {...handlers}
+      className={cn(
+        "rounded-md border border-dashed p-4 transition-colors",
+        dragging ? "border-brand bg-accent" : "border-border bg-card/60",
+        disabled && "opacity-60",
+      )}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-start gap-3">
           <FileText className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
@@ -101,8 +186,8 @@ export function ProtocolUploader({
               <span className="font-normal text-muted-foreground">(optionnel)</span>
             </p>
             <p className="text-sm text-muted-foreground">
-              Word (.docx), PDF ou texte. Utile pour l'audit complet, qui vérifie que les analyses
-              prévues sont faisables avec votre base.
+              Glissez-le ici ou ajoutez-le : Word (.docx), PDF ou texte. Utile pour l'audit complet,
+              qui vérifie que les analyses prévues sont faisables avec votre base.
             </p>
           </div>
         </div>
@@ -111,7 +196,10 @@ export function ProtocolUploader({
           type="file"
           accept={PROTOCOL_ACCEPT}
           className="hidden"
-          onChange={(e) => onProtocol(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            clearRejected();
+            onProtocol(e.target.files?.[0] ?? null);
+          }}
           disabled={disabled}
           aria-label="Protocole de recherche (optionnel)"
         />
@@ -141,6 +229,12 @@ export function ProtocolUploader({
           </Button>
         )}
       </div>
+      {rejected && (
+        <p role="alert" className="mt-3 text-sm text-destructive">
+          « {rejected} » n'est pas au bon format. Formats acceptés : Word (.docx), PDF ou texte
+          (.txt).
+        </p>
+      )}
     </div>
   );
 }
