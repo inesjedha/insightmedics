@@ -18,7 +18,7 @@ os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", f"sqlite:///{_T
 os.environ["STORAGE_DIR"] = str(_TMP / "storage")
 os.environ["ANTHROPIC_API_KEY"] = ""
 os.environ["ADMIN_API_KEY"] = ""
-os.environ["RESEND_API_KEY"] = ""          # jamais de vrai mail depuis les tests
+os.environ["BREVO_API_KEY"] = ""            # jamais de vrai mail depuis les tests
 
 import pytest  # noqa: E402 — après la configuration de l'environnement
 
