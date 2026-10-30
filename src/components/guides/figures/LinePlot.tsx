@@ -9,9 +9,9 @@ import { COMPARE_FILL, COMPARE_STROKE, lin } from "@/components/guides/figures/s
  * Sert de base aux courbes de puissance, de précision et de valeurs prédictives.
  */
 
-export type Tone = "brand" | "compare";
+type Tone = "brand" | "compare";
 
-export type Axis = {
+type Axis = {
   min: number;
   max: number;
   ticks: number[];
@@ -19,7 +19,7 @@ export type Axis = {
   title: string;
 };
 
-export type Series = {
+type Series = {
   id: string;
   label: string;
   points: [number, number][];
@@ -28,7 +28,7 @@ export type Series = {
   area?: boolean;
 };
 
-export type Mark = {
+type Mark = {
   x: number;
   y: number;
   /** Lignes du libellé : la première en encre (gras si `bold`), les suivantes en gris. */
@@ -43,9 +43,9 @@ export type Mark = {
   title: string;
 };
 
-export type Ref = { v: number; label?: string; labelAnchor?: "start" | "end" };
+type Ref = { v: number; label?: string; labelAnchor?: "start" | "end" };
 
-export type Scales = { sx: (v: number) => number; sy: (v: number) => number };
+type Scales = { sx: (v: number) => number; sy: (v: number) => number };
 
 const lineCls = (t: Tone = "brand") => (t === "brand" ? "stroke-brand" : COMPARE_STROKE);
 const dotCls = (t: Tone = "brand") => (t === "brand" ? "fill-brand" : COMPARE_FILL);
