@@ -1,5 +1,9 @@
+/** Rubrique de la page /guides. */
+export type GuideCategory = "statistiques" | "preparer" | "rediger" | "format";
+
 export type GuideMeta = {
   slug: string;
+  category: GuideCategory;
   /** Titre affiché (h1). */
   title: string;
   /** Balise <title>, ≤ 60 caractères avec « | Insight Medics ». */

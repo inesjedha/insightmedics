@@ -3,6 +3,7 @@ import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
   slug: "quel-test-statistique-choisir-these-medecine",
+  category: "statistiques",
   title: "Quel test statistique choisir pour votre thèse de médecine ?",
   seoTitle: "Quel test statistique choisir pour sa thèse de médecine",
   description:

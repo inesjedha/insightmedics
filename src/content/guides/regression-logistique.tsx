@@ -3,6 +3,7 @@ import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
   slug: "regression-logistique-interpreter-odds-ratio-these",
+  category: "statistiques",
   title: "Régression logistique : interpréter un odds ratio dans votre thèse",
   seoTitle: "Régression logistique et odds ratio : interpréter en thèse",
   description:
