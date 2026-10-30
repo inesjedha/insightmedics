@@ -101,3 +101,36 @@ export function Table({
     </div>
   );
 }
+
+/**
+ * Figure d'un guide : schéma SVG dessiné dans la page, ou image d'un livrable. La légende dit
+ * ce que montre la figure ; `source` précise d'où viennent les chiffres (exemple fictif du
+ * guide, livrable de démonstration…).
+ */
+export function Figure({
+  caption,
+  source,
+  children,
+  wide,
+}: {
+  caption: string;
+  source?: string;
+  children: ReactNode;
+  /** Déborde la colonne de texte sur grand écran (schémas larges, pages de thèse). */
+  wide?: boolean;
+}) {
+  return (
+    <figure
+      className={cn(
+        "mt-8 rounded-md border border-foreground/80 bg-card p-4 sm:p-6",
+        wide && "lg:-mr-24",
+      )}
+    >
+      <div className="text-foreground">{children}</div>
+      <figcaption className="mt-4 border-t border-border pt-3 text-sm leading-snug">
+        <span className="font-semibold text-foreground">{caption}</span>
+        {source && <span className="mt-1 block text-muted-foreground">{source}</span>}
+      </figcaption>
+    </figure>
+  );
+}
