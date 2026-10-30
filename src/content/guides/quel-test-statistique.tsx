@@ -1,8 +1,10 @@
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { TestDecisionTree } from "@/components/guides/figures/DecisionTree";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
   slug: "quel-test-statistique-choisir-these-medecine",
+  category: "statistiques",
   title: "Quel test statistique choisir pour votre thèse de médecine ?",
   seoTitle: "Quel test statistique choisir pour sa thèse de médecine",
   description:
@@ -11,7 +13,7 @@ export const meta: GuideMeta = {
   datePublished: "2026-10-26",
   readingMinutes: 9,
   shortAnswer:
-    "Le test dépend de trois choses : le type de la variable étudiée (quantitative ou qualitative), le nombre de groupes comparés, et le fait que les mesures soient indépendantes ou appariées. Pour comparer une moyenne entre deux groupes indépendants : test t de Student (ou Mann-Whitney si la distribution est très asymétrique). Pour comparer des pourcentages : Chi-2 (ou Fisher si les effectifs attendus sont inférieurs à 5). Pour tenir compte de plusieurs facteurs à la fois : une régression.",
+    "Le test dépend de trois choses : le type de la variable étudiée (quantitative ou qualitative), le nombre de groupes comparés, et le fait que les mesures soient indépendantes ou appariées. Pour comparer une variable quantitative entre deux groupes indépendants : test t de Student (ou Mann-Whitney si la distribution est très asymétrique). Pour comparer des pourcentages : Chi-2 (ou Fisher si un effectif attendu est inférieur à 5 dans un tableau 2 × 2). Pour tenir compte de plusieurs facteurs à la fois : une régression.",
   toc: [
     ["question", "Partez de votre question"],
     ["variables", "Le type de vos variables"],
@@ -98,7 +100,7 @@ export function Body() {
       <H2 id="tableau">Le tableau de décision</H2>
       <Table
         caption="Quel test pour comparer une variable entre des groupes"
-        head={["Variable étudiée", "Groupes", "Test paramétrique", "Alternative"]}
+        head={["Variable étudiée", "Groupes", "Test de référence", "Alternative"]}
         rows={[
           ["Quantitative", "2 groupes indépendants", "t de Student", "Mann-Whitney"],
           ["Quantitative", "2 mesures appariées", "t de Student apparié", "Wilcoxon"],
@@ -108,7 +110,7 @@ export function Body() {
             "Qualitative",
             "Groupes indépendants",
             "Chi-2 de Pearson",
-            "Fisher (effectifs attendus < 5)",
+            "Fisher (tableau 2 × 2 avec un effectif attendu < 5)",
           ],
           ["Qualitative binaire", "2 mesures appariées", "McNemar", "—"],
           [
@@ -120,6 +122,21 @@ export function Body() {
           ["Délai jusqu'à un événement", "2 groupes ou plus", "Log-rank (Kaplan-Meier)", "—"],
         ]}
       />
+      <P>
+        Pour une variable quantitative, l'alternative est le test non paramétrique, à préférer quand
+        la distribution est très asymétrique ou l'effectif petit. Pour une variable qualitative, ce
+        sont les effectifs attendus qui décident : dans un tableau 2 × 2, Fisher remplace le Chi-2
+        dès qu'un effectif attendu est inférieur à 5 ; dans un tableau plus grand, le Chi-2 reste
+        acceptable si au plus 20 % des cases ont un effectif attendu inférieur à 5 et aucune
+        inférieur à 1. Le Chi-2, McNemar et le log-rank ne sont pas des tests paramétriques : ils
+        figurent dans la colonne « référence » parce qu'ils sont le premier choix.
+      </P>
+      <Figure
+        caption="Figure 1. Le choix du test en trois questions : le type de la variable étudiée, les groupes comparés, puis la distribution ou les effectifs"
+        source="Même contenu que le tableau de décision ci-dessus, lu de gauche à droite."
+      >
+        <TestDecisionTree />
+      </Figure>
 
       <H2 id="ajustement">Plusieurs facteurs à la fois : la régression</H2>
       <P>
@@ -146,8 +163,9 @@ export function Body() {
       />
       <P>
         Règle de prudence : prévoyez environ dix événements par variable introduite dans le modèle
-        (dix décès pour chaque facteur testé en régression logistique). Au-delà, le modèle devient
-        instable et ses résultats peu fiables.
+        (en régression logistique, dix patients de la modalité la moins fréquente, par exemple dix
+        décès, pour chaque facteur testé). En dessous de ce repère, le modèle devient instable et
+        ses résultats peu fiables.
       </P>
 
       <H2 id="cas">Les cas fréquents en thèse</H2>
@@ -172,8 +190,8 @@ export function Body() {
       <H2 id="erreurs">Les erreurs qui reviennent</H2>
       <List
         items={[
-          "Multiplier les tests sur vingt variables sans le dire : sur vingt comparaisons, une sortira significative par hasard.",
-          "Utiliser le Chi-2 avec des effectifs attendus inférieurs à 5 au lieu du test exact de Fisher.",
+          "Multiplier les tests sur vingt variables sans le dire : sur vingt comparaisons sans aucune différence réelle, une en moyenne sortira significative par hasard, et le risque d'au moins un faux positif atteint 64 %.",
+          "Utiliser le Chi-2 sur un tableau 2 × 2 avec un effectif attendu inférieur à 5 au lieu du test exact de Fisher.",
           "Comparer avant et après traitement avec un test pour groupes indépendants.",
           "Donner une valeur de p sans l'effet mesuré ni son intervalle de confiance.",
           "Confondre significativité statistique et pertinence clinique : une différence de 1 mmHg peut être significative sur 5 000 patients sans rien changer pour eux.",
@@ -189,12 +207,15 @@ export function Body() {
         et la gestion des données manquantes. Par exemple :
       </P>
       <Note>
-        « Les variables quantitatives ont été exprimées en moyenne ± écart-type ou en médiane
-        [intervalle interquartile] selon leur distribution, et comparées par le test t de Student ou
-        le test de Mann-Whitney. Les variables qualitatives ont été exprimées en effectif
-        (pourcentage) et comparées par le test du Chi-2 ou le test exact de Fisher. Les facteurs
-        associés au décès à 90 jours ont été recherchés par régression logistique multivariée. Le
-        seuil de significativité a été fixé à 5 %. Les analyses ont été réalisées avec SPSS. »
+        « Les analyses ont été réalisées avec le logiciel [IBM SPSS Statistics, version …]. Les
+        variables quantitatives ont été exprimées en moyenne ± écart-type lorsque leur distribution
+        était normale (test de Shapiro-Wilk et histogramme), en médiane [intervalle interquartile]
+        dans le cas contraire, et comparées respectivement par le test t de Student et par le test
+        de Mann-Whitney. Les variables qualitatives ont été exprimées en effectif (pourcentage) et
+        comparées par le test du Chi-2, ou par le test exact de Fisher lorsqu'un effectif attendu
+        était inférieur à 5. Les facteurs associés au décès à 90 jours ont été recherchés par
+        régression logistique multivariée. Les pourcentages ont été calculés sur les données
+        disponibles. Le seuil de significativité a été fixé à 5 %, pour des tests bilatéraux. »
       </Note>
       <P>
         Vous ne savez pas par où commencer ? Testez d'abord votre base : vous saurez en quelques

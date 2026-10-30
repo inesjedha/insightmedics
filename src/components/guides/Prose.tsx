@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { frTypo } from "@/lib/typo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -99,5 +100,30 @@ export function Table({
         </tbody>
       </table>
     </div>
+  );
+}
+
+/**
+ * Figure d'un guide : schéma SVG dessiné dans la page, ou image d'un livrable. La légende dit
+ * ce que montre la figure ; `source` précise d'où viennent les chiffres (exemple fictif du
+ * guide, livrable de démonstration…).
+ */
+export function Figure({
+  caption,
+  source,
+  children,
+}: {
+  caption: string;
+  source?: string;
+  children: ReactNode;
+}) {
+  return (
+    <figure className="mt-8 rounded-md border border-foreground/80 bg-card p-4 sm:p-6">
+      <div className="text-foreground">{children}</div>
+      <figcaption className="mt-4 border-t border-border pt-3 text-sm leading-snug">
+        <span className="font-semibold text-foreground">{frTypo(caption)}</span>
+        {source && <span className="mt-1 block text-muted-foreground">{frTypo(source)}</span>}
+      </figcaption>
+    </figure>
   );
 }

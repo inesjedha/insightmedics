@@ -4,7 +4,7 @@ import { FinalCTA } from "@/components/site/FinalCTA";
 import { PageHero } from "@/components/site/PageHero";
 import { Section } from "@/components/site/Section";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { GUIDES, guidePath } from "@/content/guides";
+import { CATEGORIES, GUIDES, guidePath } from "@/content/guides";
 import { absoluteUrl, breadcrumbLd, pageHead } from "@/lib/seo";
 import { siteConfig } from "@/lib/site-config";
 
@@ -45,34 +45,42 @@ function GuidesPage() {
         }
         description="Des réponses précises aux questions que se posent les étudiants en médecine au moment d'analyser leur base, avec des exemples chiffrés et des modèles de rédaction."
       />
-      <Section>
-        <ul className="grid gap-6 md:grid-cols-2">
-          {GUIDES.map((g) => (
-            <li key={g.slug}>
-              <Link
-                to="/guides/$slug"
-                params={{ slug: g.slug }}
-                className="group flex h-full flex-col rounded-md border border-foreground bg-card p-6 transition-shadow hover:shadow-offset sm:p-7"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  {g.readingMinutes} min de lecture
-                </p>
-                <h2 className="mt-3 font-display text-3xl leading-tight">{g.title}</h2>
-                <p className="mt-3 flex-1 text-[15px] leading-relaxed text-muted-foreground">
-                  {g.description}
-                </p>
-                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
-                  Lire le guide
-                  <ArrowRight
-                    className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-                    aria-hidden
-                  />
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </Section>
+      {CATEGORIES.map((c) => {
+        const items = GUIDES.filter((g) => g.category === c.id);
+        if (!items.length) return null;
+        return (
+          <Section key={c.id} className="py-10 sm:py-14">
+            <h2 className="font-display text-4xl leading-tight">{c.title}</h2>
+            <p className="mt-2 text-muted-foreground">{c.description}</p>
+            <ul className="mt-8 grid gap-6 md:grid-cols-2">
+              {items.map((g) => (
+                <li key={g.slug}>
+                  <Link
+                    to="/guides/$slug"
+                    params={{ slug: g.slug }}
+                    className="group flex h-full flex-col rounded-md border border-foreground bg-card p-6 transition-shadow hover:shadow-offset sm:p-7"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      {g.readingMinutes} min de lecture
+                    </p>
+                    <h3 className="mt-3 font-display text-3xl leading-tight">{g.title}</h3>
+                    <p className="mt-3 flex-1 text-[15px] leading-relaxed text-muted-foreground">
+                      {g.description}
+                    </p>
+                    <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
+                      Lire le guide
+                      <ArrowRight
+                        className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                        aria-hidden
+                      />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Section>
+        );
+      })}
       <FinalCTA
         title={
           <>

@@ -1,8 +1,10 @@
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { OddsRatioForest } from "@/components/guides/figures/ConfidenceIntervals";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
   slug: "regression-logistique-interpreter-odds-ratio-these",
+  category: "statistiques",
   title: "Régression logistique : interpréter un odds ratio dans votre thèse",
   seoTitle: "Régression logistique et odds ratio : interpréter en thèse",
   description:
@@ -84,6 +86,12 @@ export function Body() {
         signifie que vos données ne permettent pas de conclure. Écrivez « aucune association
         significative n'a été mise en évidence », et non « le facteur n'a pas d'influence ».
       </Note>
+      <Figure
+        caption="Figure 1. Lire un odds ratio et son IC 95 % sur une échelle logarithmique : tout se joue par rapport à la ligne verticale OR = 1"
+        source="Odds ratios ajustés de l'exemple rédigé plus bas (décès à 90 jours), puis les deux intervalles cités dans cette partie, dont le texte ne donne que les bornes."
+      >
+        <OddsRatioForest />
+      </Figure>
 
       <H2 id="ajuste">OR brut et OR ajusté</H2>
       <P>
@@ -93,11 +101,16 @@ export function Body() {
       </P>
       <P>
         La différence entre les deux est souvent l'information la plus intéressante de votre thèse.
-        Si l'âge a un OR brut de 2,8 mais un OR ajusté de 1,2 non significatif, c'est que l'effet
-        apparent de l'âge passait en réalité par un autre facteur (les patients âgés étant, par
-        exemple, plus graves à l'admission). On parle de <strong>facteur de confusion</strong>.
+        Si l'âge a un OR brut de 2,8 mais un OR ajusté de 1,2 non significatif, l'association
+        apparente de l'âge s'explique probablement, en grande partie, par un autre facteur du
+        modèle, lié à la fois à l'âge et à l'événement (les patients âgés étant, par exemple, plus
+        graves à l'admission). On parle de <strong>facteur de confusion</strong>. Si ce facteur est
+        au contraire une conséquence de l'âge, on parle plutôt de facteur intermédiaire : la
+        distinction relève du raisonnement clinique, pas du logiciel.
       </P>
-      <P>Présentez les deux côte à côte : c'est la norme dans les revues et les jurys.</P>
+      <P>
+        Présentez les deux côte à côte : c'est l'usage dans la plupart des revues et des thèses.
+      </P>
 
       <H2 id="quantitatif">Un facteur quantitatif</H2>
       <P>
@@ -142,20 +155,25 @@ export function Body() {
       </P>
       <H3>Respecter le nombre d'événements</H3>
       <P>
-        Comptez environ <strong>dix événements par variable</strong> introduite. Avec 45 décès,
-        visez quatre à cinq variables au plus. Au-delà, les OR deviennent instables et leurs
-        intervalles très larges.
+        Comptez environ <strong>dix événements par variable</strong> introduite, en comptant la
+        modalité la moins fréquente de l'issue (les décès s'ils sont minoritaires) et k − 1
+        variables pour un facteur qualitatif à k modalités. Avec 45 décès, visez quatre à cinq
+        variables au plus. Au-delà, les OR deviennent instables et leurs intervalles très larges.
       </P>
       <H3>Vérifier le modèle</H3>
       <List
         items={[
           <>
             <strong>Multicolinéarité</strong> : deux variables très liées (poids et IMC) se
-            disputent le même effet. Le facteur d'inflation de la variance (VIF) aide à la repérer.
+            disputent le même effet. Le facteur d'inflation de la variance (VIF) aide à la repérer
+            (la régression logistique de SPSS ne le donne pas : on l'obtient en lançant une
+            régression linéaire avec les mêmes variables, option des diagnostics de colinéarité).
           </>,
           <>
             <strong>Calibration</strong> : le test de Hosmer-Lemeshow vérifie que les probabilités
-            prédites correspondent aux fréquences observées (p &gt; 0,05 attendu).
+            prédites correspondent aux fréquences observées. Un p &gt; 0,05 ne met pas en évidence
+            de mauvaise calibration, sans la prouver bonne : ce test manque de puissance sur un
+            petit effectif et devient très sensible sur un grand.
           </>,
           <>
             <strong>Discrimination</strong> : l'aire sous la courbe ROC du modèle (AUC) mesure sa
