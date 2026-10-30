@@ -1,5 +1,5 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -126,6 +126,19 @@ export function Body() {
         une fois la figure insérée. La légende reste liée à sa figure : jamais une légende seule en
         haut de page.
       </P>
+      <Figure
+        caption="Exemple de diagramme de flux : 134 patients recueillis, 14 exclus avec leur motif, 120 analysés puis répartis en deux groupes"
+        source="Page de démonstration produite par notre chaîne de mise en page, sur une étude fictive."
+      >
+        <img
+          src="/guides/exemples/figure-flux.png"
+          alt="Diagramme de flux : bandeau Sélection, 134 patients recueillis, 14 exclus (dossier incomplet : 9 ; chirurgie associée : 5), 120 patients analysés ; bandeau Répartition, 21 avec complication (17,5 %) et 99 sans complication (82,5 %)"
+          width={1800}
+          height={1144}
+          loading="lazy"
+          className="mx-auto h-auto w-full max-w-[520px] rounded border border-border bg-white"
+        />
+      </Figure>
 
       <H2 id="typographie">La typographie française, partout</H2>
       <P>
@@ -263,6 +276,57 @@ export function Body() {
         ordinateur, le PDF les remplace par une police voisine. Gardez les styles du gabarit tels
         quels et produisez le PDF final sur un poste où ces polices sont installées.
       </P>
+      <Figure
+        caption="La même page de Résultats (titre, paragraphe, Tableau IX et Figure 5) mise en forme à la charte de chacune des quatre facultés (pour Monastir, la charte des mémoires, texte en 12)"
+        source="Page de démonstration produite par notre chaîne de mise en page, sur une étude fictive."
+      >
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <img
+              src="/guides/exemples/resultats-fms.png"
+              alt="Page 41 d'un chapitre Résultats à la charte de Sousse : titre « IV. FACTEURS ASSOCIÉS AUX COMPLICATIONS : » en capitales, sous-titre « 1. Analyse univariée : » en petites capitales, paragraphe justifié avec les p en gras, Tableau IX à légende bleue en gras italique au-dessus, puis Figure 5 en boîtes à moustaches légendée en dessous"
+              width={1406}
+              height={1988}
+              loading="lazy"
+              className="mx-auto h-auto w-full max-w-[520px] rounded border border-border bg-white"
+            />
+            <p className="mt-2 text-center text-sm text-muted-foreground">Sousse (FMS)</p>
+          </div>
+          <div>
+            <img
+              src="/guides/exemples/resultats-fmt.png"
+              alt="Page 41 d'un chapitre Résultats à la charte de Tunis : texte en police sans empattement, titres « 5. Facteurs associés aux complications » en bleu et « 5.1. Analyse univariée », Tableau IX à légende alignée à gauche, une ligne sur deux sur fond bleu pâle, puis Figure 5 en boîtes à moustaches"
+              width={1406}
+              height={1988}
+              loading="lazy"
+              className="mx-auto h-auto w-full max-w-[520px] rounded border border-border bg-white"
+            />
+            <p className="mt-2 text-center text-sm text-muted-foreground">Tunis (FMT)</p>
+          </div>
+          <div>
+            <img
+              src="/guides/exemples/resultats-fmm.png"
+              alt="Page 41 d'un chapitre Résultats à la charte de Monastir : en-tête bleu avec le titre de la thèse, titre « 3. Facteurs associés aux complications » en petites capitales bleu nuit, paragraphe avec retrait de première ligne, Tableau IX à légende centrée en gras, puis Figure 5 en boîtes à moustaches"
+              width={1406}
+              height={1988}
+              loading="lazy"
+              className="mx-auto h-auto w-full max-w-[520px] rounded border border-border bg-white"
+            />
+            <p className="mt-2 text-center text-sm text-muted-foreground">Monastir (FMM)</p>
+          </div>
+          <div>
+            <img
+              src="/guides/exemples/resultats-fmsf.png"
+              alt="Page 41 d'un chapitre Résultats à la charte de Sfax : texte en Times New Roman 14, titre « 3. FACTEURS ASSOCIÉS AUX COMPLICATIONS » sans deux-points, « 3.1. Analyse univariée » plus en retrait, Tableau IX en texte bleuté avec abréviations explicitées dans la note ; la figure passe à la page suivante"
+              width={1406}
+              height={1988}
+              loading="lazy"
+              className="mx-auto h-auto w-full max-w-[520px] rounded border border-border bg-white"
+            />
+            <p className="mt-2 text-center text-sm text-muted-foreground">Sfax (FMSf)</p>
+          </div>
+        </div>
+      </Figure>
 
       <H2 id="titres">Numérotation des titres : quatre systèmes</H2>
       <P>

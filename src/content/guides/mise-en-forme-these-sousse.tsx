@@ -1,5 +1,5 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -229,6 +229,19 @@ export function Body() {
         </GuideLink>
         .
       </P>
+      <Figure
+        caption="Une page de Résultats à la charte de Sousse : titres en AvantGarde (ici une police libre très proche) terminés par « : », légendes en Souvenir gras italique bleu, tableau en Times New Roman 11"
+        source="Page de démonstration produite par notre chaîne de mise en page, sur une étude fictive."
+      >
+        <img
+          src="/guides/exemples/resultats-fms.png"
+          alt="Page 41 d'un chapitre Résultats à la charte de Sousse : titre « IV. FACTEURS ASSOCIÉS AUX COMPLICATIONS : » en capitales, sous-titre « 1. Analyse univariée : » en petites capitales, paragraphe justifié avec les p en gras, Tableau IX à légende bleue en gras italique au-dessus, puis Figure 5 en boîtes à moustaches légendée en dessous"
+          width={1406}
+          height={1988}
+          loading="lazy"
+          className="mx-auto h-auto w-full max-w-[520px] rounded border border-border bg-white"
+        />
+      </Figure>
 
       <H2 id="pagination">En-têtes, pagination et pages liminaires</H2>
       <List

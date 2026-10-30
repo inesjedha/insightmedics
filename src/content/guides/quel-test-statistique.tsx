@@ -1,4 +1,5 @@
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { TestDecisionTree } from "@/components/guides/figures/DecisionTree";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -121,6 +122,12 @@ export function Body() {
           ["Délai jusqu'à un événement", "2 groupes ou plus", "Log-rank (Kaplan-Meier)", "—"],
         ]}
       />
+      <Figure
+        caption="Figure 1. Le choix du test en trois questions : le type de la variable étudiée, les groupes comparés, puis la distribution"
+        source="Même contenu que le tableau de décision ci-dessus, lu de gauche à droite."
+      >
+        <TestDecisionTree />
+      </Figure>
 
       <H2 id="ajustement">Plusieurs facteurs à la fois : la régression</H2>
       <P>

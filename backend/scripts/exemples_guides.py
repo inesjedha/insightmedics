@@ -3,7 +3,7 @@
 Ce script régénère, à partir d'une étude de démonstration FICTIVE, les images montrées dans
 le guide pilier et dans les quatre guides par faculté :
 
-- `resultats-<fms|fmt|fmm|fmsf>.png` (+ `.webp`) : une page du chapitre Résultats mise en
+- `resultats-<fms|fmt|fmm|fmsf>.png` : une page du chapitre Résultats mise en
   page par notre moteur (`app.theses.render_docx`) à la charte de chaque faculté (titre
   numéroté de la faculté, paragraphe, appel et tableau, puis figure), convertie en PDF par
   LibreOffice puis en PNG ;
@@ -66,13 +66,17 @@ from app.theses.resultats import thesis_table
 
 SEED = 20261324
 N_RECUEILLIS = 134
-EXCLUSIONS = [("Dossier médical incomplet", 9), ("Autre geste chirurgical associé", 5)]
+EXCLUSIONS = [("Dossier incomplet", 9), ("Chirurgie associée", 5)]
 GROUPE = "Complication"
 AVEC, SANS = "Avec complication", "Sans complication"
 TITRE_THESE = "Complications après cholécystectomie : facteurs associés"
 DPI_PAGE = 170                       # une page A4 : 1405 × 1988 px
 LARGEUR_FIGURE_WEB = 1800            # px, figures seules (affichées à 520 px au plus)
-POIDS_MAX_WEBP = 300_000             # octets
+# Diagramme de flux : le moteur centre les bras sous la page et place le tronc sous le cadre
+# « Patients analysés » (à 0,6 + 0,21 × largeur) ; au-delà de 10,69 cm de large, le tronc
+# tombe à gauche de la barre de répartition sans la toucher. À 10,69 cm, il tombe
+# exactement sur l'axe du premier bras.
+LARGEUR_FLUX_CM = 10.69
 
 REPO = Path(__file__).resolve().parents[2]
 OUT = REPO / "public" / "guides" / "exemples"
@@ -83,6 +87,19 @@ NUMERO_PARTIE = {"FMS": 4, "FMT": 5, "FMM": 3, "FMSf": 3}
 PREMIER_TABLEAU = 9                  # « Tableau IX » : les tableaux précédents sont ailleurs
 PREMIERE_FIGURE = 5
 PAGE_AFFICHEE = 41
+# Largeur des figures dans la page, dans la plage relevée sur les thèses de chaque faculté
+# (la hauteur des boîtes à moustaches est fixe : 7 cm).
+LARGEUR_FIGURE_CM = {"FMS": 15.0, "FMT": 14.0, "FMM": 14.5, "FMSf": 15.0}
+GLUON = "\u2060"                     # U+2060 WORD JOINER : interdit la coupure
+# Largeur relative des colonnes du tableau (Variable, Ensemble, Avec, Sans, p, OR [IC 95 %]),
+# réglée pour la police et la largeur de tableau de chaque charte : aucun mot coupé dans
+# l'en-tête (« complication »), « < 0,001 » et les effectifs sur une ligne.
+COLONNES = {
+    "FMS": [3.35, 2.25, 2.55, 2.55, 1.6, 3.2],     # 15,5 cm, Times 11
+    "FMT": [2.85, 2.15, 2.6, 2.6, 1.7, 2.6],       # 14,5 cm, Tahoma 9,5
+    "FMM": [3.6, 2.2, 2.5, 2.5, 1.6, 3.6],         # 16 cm, Times 10
+    "FMSf": [3.35, 2.3, 2.6, 2.6, 1.65, 3.5],      # 16 cm, Times 11
+}
 
 # Polices de la charte → police libre voisine, pour la conversion en PDF seulement.
 SUBSTITUTS = {
@@ -209,7 +226,7 @@ def dessiner(df: pd.DataFrame, calc: dict, dossier: Path, font: str, largeur_cm:
     flux = [{"label": "Dossiers recueillis", "n": N_RECUEILLIS}]
     flux += [{"label": lab, "excluded": k} for lab, k in EXCLUSIONS]
     flux.append({"label": "Patients analysés", "n": len(df)})
-    p_flux = figures.flow_diagram(flux, dossier / f"flux-{suffixe}.png", font, 14.3,
+    p_flux = figures.flow_diagram(flux, dossier / f"flux-{suffixe}.png", font, LARGEUR_FLUX_CM,
                                   arms=[(AVEC, calc["n_avec"]), (SANS, calc["n_sans"])])
     d = calc["facts"]["duree"]
     p_txt = re.sub(r"\*", "", p_gras(d["p"]))
@@ -227,13 +244,19 @@ def chapitre(code: str, calc: dict, texte: str, image: Path, largeur_cm: float) 
     c = get_charte(code)
     table = thesis_table(calc["result"], "Comparaison des patients avec et sans complication "
                          "(N = 120)", "fr", 0.05, [])
-    note = table.note
+    # Aucune variable n'est résumée par sa moyenne : la note générique est ajustée.
+    note = table.note.replace("moyenne ± écart-type ou ", "")
+    assert note != table.note, table.note
     if code == "FMSf":
         # Sfax : abréviations interdites dans les tableaux, sauf explicitées dans la note.
         note += (" OR : odds ratio ; IC 95 % : intervalle de confiance à 95 % ; Q1–Q3 : "
                  "premier et troisième quartiles.")
-    table = TableBlock(**{**table.model_dump(), "note": note,
-                          "col_widths": [3.0, 2.3, 2.5, 2.5, 1.7, 3.5]})
+    # Colonne OR : un gluon (U+2060) de part et d'autre du tiret de l'IC, pour qu'un OR trop
+    # long passe à la ligne à l'espace (« 14,60 / [2,17–165,59] ») et non au milieu de l'IC.
+    rows = [[*row[:-1], row[-1].replace("–", GLUON + "–" + GLUON) if "[" in row[-1] else row[-1]]
+            for row in table.rows]
+    table = TableBlock(**{**table.model_dump(), "note": note, "rows": rows,
+                          "col_widths": COLONNES[code]})
     blocks = [
         HeadingBlock(level=0, text="Facteurs associés aux complications",
                      number=NUMERO_PARTIE[code]),
@@ -316,13 +339,6 @@ def ecrire_png(img: Image.Image, path: Path, couleurs: int | None = None) -> Non
     img.save(path, optimize=True)
 
 
-def ecrire_webp(img: Image.Image, path: Path) -> None:
-    for qualite in (90, 85, 80, 75, 70, 60):
-        img.save(path, "WEBP", quality=qualite, method=6)
-        if path.stat().st_size <= POIDS_MAX_WEBP:
-            return
-    raise RuntimeError(f"{path.name} : plus de {POIDS_MAX_WEBP} octets")
-
 
 def reduire(path: Path, largeur: int) -> Image.Image:
     img = Image.open(path).convert("RGB")
@@ -347,12 +363,11 @@ def main() -> None:
         # Une page de chapitre par faculté.
         for code in FACULTIES:
             c = get_charte(code)
-            largeur = 11.0 if code == "FMSf" else 12.0
+            largeur = LARGEUR_FIGURE_CM[code]
             _, image = dessiner(df, calc, dossier, c.figure_font, largeur, code)
             docx = render(chapitre(code, calc, texte, image, largeur), c, TITRE_THESE)
             page = en_png(docx, dossier, f"resultats-{code.lower()}")
             ecrire_png(page, OUT / f"resultats-{code.lower()}.png", 128)
-            ecrire_webp(page, OUT / f"resultats-{code.lower()}.webp")
         shutil.rmtree(dossier / "lo-profil", ignore_errors=True)
     for path in sorted(OUT.iterdir()):
         with Image.open(path) as im:

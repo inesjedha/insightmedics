@@ -1,5 +1,7 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { RetroFlow } from "@/components/guides/figures/FlowDiagram";
+import { FormSketch } from "@/components/guides/figures/FormSketch";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -141,6 +143,12 @@ export function Body() {
         </GuideLink>
         .
       </P>
+      <Figure
+        caption="Figure 1. Questions ouvertes ou questions fermées : la seconde fiche se saisit sans interprétation"
+        source="Questions reprises du tableau ci-dessus. La case « non renseigné » distingue « le dossier dit non » de « le dossier ne dit rien »."
+      >
+        <FormSketch />
+      </Figure>
       <H3>Fiche papier ou saisie directe ?</H3>
       <P>
         Saisir directement dans Excel pendant la lecture des dossiers évite une étape, mais demande
@@ -276,6 +284,12 @@ export function Body() {
         </GuideLink>
         .
       </P>
+      <Figure
+        caption="Figure 2. Le même exemple sous forme de diagramme de flux, tel qu'il apparaîtra en Figure 1 de vos Résultats"
+        source="Exemple fictif de ce guide : cholécystectomies pour lithiase, 2021–2023. 412 − (37 + 25 + 18) = 332 ; 214 + 118 = 332."
+      >
+        <RetroFlow />
+      </Figure>
 
       <H2 id="confidentialite">Confidentialité et éthique</H2>
       <P>

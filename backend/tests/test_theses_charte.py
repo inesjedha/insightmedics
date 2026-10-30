@@ -108,3 +108,16 @@ def test_appel_sans_tableau_refuse():
     with pytest.raises(RenderError):
         render(ThesisDoc(chapters=[Chapter(key="resultats", name="Résultats", blocks=blocks)]),
                CHARTES["FMM"])
+
+
+def test_boites_memes_quartiles_que_le_tableau():
+    """La boîte d'une figure montre le « médiane [Q1–Q3] » du tableau (méthode SPSS)."""
+    import pandas as pd
+
+    from app.analysis.stats import quartiles
+    from app.theses.figures import box_stats
+
+    values = [35, 40, 50, 55, 55, 60, 65, 65, 70, 80, 80, 85, 95, 130]
+    b = box_stats(values)
+    assert (b["q1"], b["med"], b["q3"]) == quartiles(pd.Series(values))
+    assert b["whishi"] == 95 and b["whislo"] == 35               # 130 hors des moustaches

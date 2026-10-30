@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { EntryGrid, Recoding } from "@/components/guides/figures/DataGrid";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -146,6 +147,12 @@ export function Body() {
         date. Le diabète, absent de la cellule d'origine, n'est saisi 0 que si le dossier indique
         explicitement son absence ; sinon, la cellule reste vide.
       </P>
+      <Figure
+        caption="Figure 1. La même patiente, saisie dans une seule cellule puis en base exploitable"
+        source="Exemple de ce guide. Le diabète n'est saisi 0 que si le dossier indique explicitement son absence."
+      >
+        <EntryGrid />
+      </Figure>
 
       <H2 id="codage">Coder les variables qualitatives</H2>
       <H3>Des codes numériques, toujours les mêmes</H3>
@@ -184,6 +191,12 @@ export function Body() {
         colonne 0/1 par réponse. Une seule colonne « fièvre, toux, dyspnée » oblige à tout
         redécouper à la main.
       </P>
+      <Figure
+        caption="Figure 2. Une réponse, un code : harmoniser le texte libre et les données inconnues avant l'analyse"
+        source="Écritures tirées des erreurs 3 et 7 du tableau ci-dessus. Un 0 ne reste que si la valeur vaut réellement zéro."
+      >
+        <Recoding />
+      </Figure>
 
       <H2 id="formats">Dates, unités et variables calculées</H2>
       <H3>Les dates</H3>

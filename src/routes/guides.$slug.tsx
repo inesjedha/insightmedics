@@ -2,7 +2,7 @@ import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { Prose } from "@/components/guides/Prose";
 import { FinalCTA } from "@/components/site/FinalCTA";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { GUIDES, getGuide, guidePath } from "@/content/guides";
+import { getGuide, guidePath, relatedGuides } from "@/content/guides";
 import { articleLd, breadcrumbLd, pageHead } from "@/lib/seo";
 import { siteConfig } from "@/lib/site-config";
 
@@ -46,7 +46,7 @@ function GuidePage() {
   const { slug } = Route.useParams();
   const g = getGuide(slug);
   if (!g) return null;
-  const others = GUIDES.filter((o) => o.slug !== g.slug);
+  const others = relatedGuides(g);
   const updated = g.dateModified ?? g.datePublished;
 
   return (

@@ -1,5 +1,6 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { PowerCurve, PrecisionCurve } from "@/components/guides/figures/PowerCurve";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -145,6 +146,12 @@ export function Body() {
         estimer une prévalence de 5 % « entre 0 et 10 % » n'apprend rien. Choisissez alors une
         précision plus fine, de l'ordre de la moitié de la prévalence attendue ou moins.
       </P>
+      <Figure
+        caption="Figure 1. La précision s'améliore vite au début, puis lentement : passer de ± 7 à ± 5 points demande presque deux fois plus de patients"
+        source="Demi-largeur de l'IC 95 % d'une proportion, 1,96 × √[p(1 − p) / n] ; points repris du tableau ci-dessus."
+      >
+        <PrecisionCurve />
+      </Figure>
 
       <H2 id="comparaison">Comparer deux groupes</H2>
       <P>
@@ -245,6 +252,12 @@ export function Body() {
         80 % habituellement visés. Autrement formulé : avec cet effectif, seule une différence
         d'environ 15 % contre 34 %, ou plus grande, serait détectée avec une puissance de 80 %.
       </P>
+      <Figure
+        caption="Figure 2. Puissance pour détecter une baisse de l'infection de 30 % à 15 %, selon le nombre de patients par groupe"
+        source="Exemple fictif de ce guide : α = 5 % bilatéral, formule simplifiée présentée plus haut. Les logiciels donnent 62 à 64 % pour 80 patients par groupe selon la méthode."
+      >
+        <PowerCurve />
+      </Figure>
       <Note>
         Ne calculez pas une « puissance a posteriori » à partir de la différence observée dans vos
         résultats : elle découle directement de la valeur de p et n'apporte aucune information. La

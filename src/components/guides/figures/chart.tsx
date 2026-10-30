@@ -10,7 +10,7 @@ import { FONT, NARROW, WIDE } from "@/components/guides/figures/scale";
 export function Responsive({ render }: { render: (w: number) => ReactNode }) {
   return (
     <div className="@container">
-      <div className="@min-[520px]:hidden">{render(NARROW)}</div>
+      <div className="mx-auto max-w-[440px] @min-[520px]:hidden">{render(NARROW)}</div>
       <div className="hidden @min-[520px]:block">{render(WIDE)}</div>
     </div>
   );
@@ -273,7 +273,9 @@ export function LegendItem({
           className={className}
         />
       )}
-      {kind === "rect" && <rect x={x} y={y - 11} width={14} height={12} rx={3} className={className} />}
+      {kind === "rect" && (
+        <rect x={x} y={y - 11} width={14} height={12} rx={3} className={className} />
+      )}
       {kind === "dot" && <circle cx={x + 7} cy={y - 4.5} r={5} className={className} />}
       <Txt x={x + (kind === "line" ? 24 : 20)} y={y}>
         {label}
@@ -307,6 +309,79 @@ export function Arrow({
     <g className={className} fill="none" strokeWidth={1.5} strokeLinecap="round">
       <line x1={x1} y1={y1} x2={x2} y2={y2} />
       <path d={`M${hx1},${hy1}L${x2},${y2}L${hx2},${hy2}`} strokeLinejoin="round" />
+    </g>
+  );
+}
+
+/**
+ * Boîte de diagramme : fond de carte (ou bleu pâle si `strong`), coins de 6 px, lignes de texte
+ * centrées ou alignées à gauche. La première ligne peut être en gras.
+ */
+export function Box({
+  x,
+  y,
+  w,
+  h,
+  lines,
+  strong,
+  dashed,
+  danger,
+  align = "middle",
+  boldFirst,
+  boldLast,
+  lh = 17,
+  size,
+  title,
+}: {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  lines: ReactNode[];
+  strong?: boolean;
+  dashed?: boolean;
+  danger?: boolean;
+  align?: "start" | "middle";
+  boldFirst?: boolean;
+  boldLast?: boolean;
+  lh?: number;
+  size?: number;
+  title?: string;
+}) {
+  const tx = align === "middle" ? x + w / 2 : x + 12;
+  const ty = y + h / 2 - ((lines.length - 1) * lh) / 2 + 4.5;
+  return (
+    <g>
+      {title && <title>{title}</title>}
+      {/* Le trait reste à l'intérieur de la boîte : rien n'est rogné au bord du dessin. */}
+      <rect
+        x={x + (strong ? 1 : 0.5)}
+        y={y + (strong ? 1 : 0.5)}
+        width={w - (strong ? 2 : 1)}
+        height={h - (strong ? 2 : 1)}
+        rx={6}
+        strokeWidth={strong ? 2 : 1}
+        strokeDasharray={dashed ? "5 4" : undefined}
+        className={cn(
+          strong ? "fill-accent stroke-brand" : "fill-card",
+          !strong && (danger ? "stroke-destructive" : "stroke-foreground/45"),
+        )}
+      />
+      <text x={tx} y={ty} textAnchor={align} fontSize={size}>
+        {lines.map((l, i) => (
+          <tspan
+            key={i}
+            x={tx}
+            dy={i === 0 ? 0 : lh}
+            className={cn(
+              danger ? "fill-destructive" : "fill-foreground",
+              ((boldFirst && i === 0) || (boldLast && i === lines.length - 1)) && "font-semibold",
+            )}
+          >
+            {l}
+          </tspan>
+        ))}
+      </text>
     </g>
   );
 }

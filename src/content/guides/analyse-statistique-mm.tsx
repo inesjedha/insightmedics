@@ -1,5 +1,7 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { ExpectedCounts } from "@/components/guides/figures/ConfusionMatrix";
+import { CoherenceMap } from "@/components/guides/figures/FlowDiagram";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -161,6 +163,12 @@ export function Body() {
         inférieur à 5 : le test exact de Fisher s'impose, même si les effectifs observés semblent
         corrects.
       </P>
+      <Figure
+        caption="Figure 1. Calculer les effectifs théoriques avant de choisir entre Chi² et Fisher"
+        source="Exemple fictif de ce guide : 70 patients, 40 dans le groupe A et 30 dans le groupe B, 8 complications au total. Les effectifs observés n'interviennent pas dans ce calcul."
+      >
+        <ExpectedCounts />
+      </Figure>
       <Note>
         Dans la sortie de SPSS, retenez la ligne du Chi² de Pearson, et non celle de la correction
         pour continuité (Yates). Pour le test t, SPSS affiche deux lignes, variances égales et
@@ -320,6 +328,12 @@ export function Body() {
         Relisez ce tableau après avoir fini les Résultats : ajoutez ce qui manque, retirez ce qui
         n'a pas été fait.
       </P>
+      <Figure
+        caption="Figure 2. Chaque méthode annoncée a son résultat, chaque résultat a sa méthode"
+        source="Plan de l'analyse statistique de l'étude fictive ci-dessus ; en bas, les deux discordances que le jury repère le plus vite."
+      >
+        <CoherenceMap />
+      </Figure>
 
       <H2 id="erreurs">Les erreurs fréquentes</H2>
       <List

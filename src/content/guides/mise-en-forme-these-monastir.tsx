@@ -1,5 +1,5 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -216,6 +216,19 @@ export function Body() {
         </GuideLink>
         .
       </P>
+      <Figure
+        caption="Une page de Résultats à la charte des mémoires de Monastir (texte en Times New Roman 12) : titres bleus (le premier niveau en petites capitales), légendes centrées en gras, tableau sur 16 cm"
+        source="Page de démonstration produite par notre chaîne de mise en page, sur une étude fictive."
+      >
+        <img
+          src="/guides/exemples/resultats-fmm.png"
+          alt="Page 41 d'un chapitre Résultats à la charte de Monastir : en-tête bleu avec le titre de la thèse, titre « 3. Facteurs associés aux complications » en petites capitales bleu nuit, paragraphe avec retrait de première ligne, Tableau IX à légende centrée en gras, puis Figure 5 en boîtes à moustaches"
+          width={1406}
+          height={1988}
+          loading="lazy"
+          className="mx-auto h-auto w-full max-w-[520px] rounded border border-border bg-white"
+        />
+      </Figure>
 
       <H2 id="pagination">En-têtes, pagination et pages liminaires</H2>
       <List

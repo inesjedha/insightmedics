@@ -1,5 +1,7 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { ConfusionMatrix } from "@/components/guides/figures/ConfusionMatrix";
+import { PrevalenceCurve, RocCurve } from "@/components/guides/figures/RocCurve";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -70,6 +72,12 @@ export function Body() {
         décrivent ce que vaut un résultat pour le patient en face de vous : ce sont elles qui
         intéressent le clinicien, mais elles sont plus fragiles.
       </P>
+      <Figure
+        caption="Figure 1. Lire un tableau 2 × 2 : la sensibilité et la spécificité se lisent en colonne, les valeurs prédictives en ligne"
+        source="Exemple fictif de ce guide : 150 enfants, dont 60 appendicites, CRP au seuil de 30 mg/L."
+      >
+        <ConfusionMatrix />
+      </Figure>
       <H3>Pourquoi VPP et VPN dépendent de la prévalence</H3>
       <P>
         Un même test, avec la même sensibilité et la même spécificité, n'a pas la même VPP aux
@@ -86,6 +94,12 @@ export function Body() {
           ["2 %", "6,6 %", "99,6 %"],
         ]}
       />
+      <Figure
+        caption="Figure 2. À sensibilité et spécificité égales, la VPP s'effondre quand la maladie devient rare"
+        source="Sensibilité 85,0 % et spécificité 75,6 % fixes ; VPP et VPN calculées par le théorème de Bayes pour chaque prévalence. Les points sont ceux du tableau ci-dessus."
+      >
+        <PrevalenceCurve />
+      </Figure>
       <P>
         Conséquence directe :{" "}
         <strong>VPP et VPN ne se calculent pas dans une étude cas-témoins</strong>. Si vous avez
@@ -236,6 +250,12 @@ export function Body() {
         proportions. Les VPP et VPN sont interprétables parce que les patients sont consécutifs :
         dans un cas-témoins, on s'arrêterait à la sensibilité et à la spécificité.
       </P>
+      <Figure
+        caption="Figure 3. Courbe ROC de la CRP : chaque point est un seuil, le seuil de Youden est le plus éloigné de la diagonale"
+        source="Exemple fictif de ce guide : 150 enfants, dont 60 appendicites. Courbe empirique construite pour passer par les cinq seuils du tableau, avec une aire de 0,874."
+      >
+        <RocCurve />
+      </Figure>
       <P>
         Si l'objectif était de ne manquer aucune appendicite, le seuil de 20 mg/L (sensibilité 91,7
         %) serait plus logique, au prix de davantage de faux positifs (spécificité 61,1 %).

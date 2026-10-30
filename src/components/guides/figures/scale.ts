@@ -51,3 +51,25 @@ export const vBarPath = (x: number, w: number, yTop: number, yBase: number, r = 
     x + w
   },${yTop + rr}V${yBase}Z`;
 };
+
+/** Fonction de répartition de la loi normale centrée réduite (Abramowitz et Stegun 7.1.26). */
+export const normCdf = (z: number) => {
+  const t = 1 / (1 + (0.3275911 * Math.abs(z)) / Math.SQRT2);
+  const e =
+    1 -
+    t *
+      (0.254829592 +
+        t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429)))) *
+      Math.exp(-(z * z) / 2);
+  return z >= 0 ? (1 + e) / 2 : (1 - e) / 2;
+};
+
+/** Valeurs régulières de `a` à `b` (inclus) par pas de `step`. */
+export const range = (a: number, b: number, step: number) =>
+  Array.from({ length: Math.floor((b - a) / step + 1e-9) + 1 }, (_, i) => a + i * step);
+
+/**
+ * Petit texte des schémas (légendes d'axe, notes) : 12 sur grand écran, 12,5 sur téléphone,
+ * pour rester au-dessus de 11 px affichés même sur un écran de 360 px de large.
+ */
+export const small = (narrow: boolean) => (narrow ? 12.5 : 12);

@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { BarVsBox } from "@/components/guides/figures/BarVsBox";
+import { TableAnatomy } from "@/components/guides/figures/TableAnatomy";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -176,6 +178,12 @@ export function Body() {
           "Visez une quinzaine de lignes au plus : au-delà, découpez par famille de variables (terrain, clinique, biologie).",
         ]}
       />
+      <Figure
+        caption="Figure 1. Anatomie d'un tableau de comparaison aux normes : les six points que le jury vérifie"
+        source="Tableau IV fictif de ce guide : 120 patients opérés, dont 40 avec complication postopératoire."
+      >
+        <TableAnatomy />
+      </Figure>
       <P>
         Pour chaque ligne, le test dépend du type de variable et de sa distribution : voyez{" "}
         <GuideLink slug="quel-test-statistique-choisir-these-medecine">
@@ -215,6 +223,12 @@ export function Body() {
           "une figure qui répète exactement un tableau.",
         ]}
       />
+      <Figure
+        caption="Figure 2. La même durée opératoire, mal puis bien représentée"
+        source="Tableau IV fictif de ce guide : médianes 93 min [67–118] et 73 min [60–93]. À gauche, barres 3D des seules médianes, titre dans l'image, sans unité ni effectif ; à droite, médiane et quartiles. Dans votre thèse, gardez les moustaches calculées par le logiciel."
+      >
+        <BarVsBox />
+      </Figure>
       <P>
         Une figure lisible a des axes nommés avec leurs unités, des effectifs visibles, une virgule
         décimale, des couleurs distinguables par un lecteur daltonien et des caractères assez grands

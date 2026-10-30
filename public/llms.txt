@@ -33,6 +33,14 @@
 
 - [Quel test statistique choisir pour votre thèse de médecine ?](https://www.insightmedics.fr/guides/quel-test-statistique-choisir-these-medecine)
 - [Régression logistique : interpréter un odds ratio dans votre thèse](https://www.insightmedics.fr/guides/regression-logistique-interpreter-odds-ratio-these)
+- [Calculer la taille d'échantillon de sa thèse de médecine](https://www.insightmedics.fr/guides/calculer-taille-echantillon-these-medecine)
+- [Courbe ROC et seuil optimal : le guide pour votre thèse](https://www.insightmedics.fr/guides/courbe-roc-seuil-optimal-these)
+- [Valeur de p et intervalle de confiance : interpréter sans se tromper](https://www.insightmedics.fr/guides/interpreter-valeur-p-intervalle-confiance-these)
+- [Préparer sa base Excel ou SPSS : les 10 erreurs qui retardent l'analyse](https://www.insightmedics.fr/guides/preparer-base-donnees-excel-spss-these)
+- [Étude rétrospective sur dossiers : de la fiche papier à une base exploitable](https://www.insightmedics.fr/guides/etude-retrospective-dossiers-base-donnees-these)
+- [Rédiger la partie « Analyse statistique » du Matériel et méthodes](https://www.insightmedics.fr/guides/rediger-analyse-statistique-materiel-methodes-these)
+- [Présenter les résultats de sa thèse : tableaux et figures aux normes](https://www.insightmedics.fr/guides/presenter-resultats-these-tableaux-figures)
+- [Réussir sa présentation de soutenance de thèse de médecine](https://www.insightmedics.fr/guides/presentation-soutenance-these-medecine)
 
 ## Contact
 

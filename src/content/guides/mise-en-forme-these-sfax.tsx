@@ -1,5 +1,5 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -210,6 +210,19 @@ export function Body() {
         </GuideLink>
         .
       </P>
+      <Figure
+        caption="Une page de Résultats à la charte de Sfax : Times New Roman 14, titres sans « : », tableau bleuté dont les abréviations sont explicitées dans la note ; la figure, trop haute, passe à la page suivante"
+        source="Page de démonstration produite par notre chaîne de mise en page, sur une étude fictive."
+      >
+        <img
+          src="/guides/exemples/resultats-fmsf.png"
+          alt="Page 41 d'un chapitre Résultats à la charte de Sfax : texte en Times New Roman 14, titre « 3. FACTEURS ASSOCIÉS AUX COMPLICATIONS » sans deux-points, « 3.1. Analyse univariée » plus en retrait, Tableau IX en texte bleuté avec abréviations explicitées dans la note ; la figure passe à la page suivante"
+          width={1406}
+          height={1988}
+          loading="lazy"
+          className="mx-auto h-auto w-full max-w-[520px] rounded border border-border bg-white"
+        />
+      </Figure>
 
       <H2 id="pagination">En-têtes, pagination et pages liminaires</H2>
       <List

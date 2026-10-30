@@ -1,5 +1,6 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { SlideBeforeAfter, TimePlan } from "@/components/guides/figures/SlideSketch";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -90,6 +91,12 @@ export function Body() {
           ["Remerciements", "1", "30 s", "Bref, sans liste de noms interminable"],
         ]}
       />
+      <Figure
+        caption="Figure 1. Pour 15 minutes de parole, les résultats et la discussion prennent 8 minutes"
+        source="Répartition du tableau ci-dessus, partie par partie, sur une frise de 15 minutes."
+      >
+        <TimePlan />
+      </Figure>
       <P>
         Total : 15 à 20 diapositives pour 15 minutes. Les méthodes doivent permettre au jury de
         juger vos résultats : une diapositive sur la population et le recueil, une sur le critère de
@@ -145,6 +152,12 @@ export function Body() {
         mention discrète : « Âge, sexe, tabagisme, HTA et autres antécédents : différence non
         significative ».
       </P>
+      <Figure
+        caption="Figure 2. La même diapositive de résultats, avant et après réduction du tableau"
+        source="Exemple fictif de ce guide : diabète chez 9 patients sur 20 avec récidive contre 5 sur 40 sans récidive. Le tableau de la première diapositive est figuré, sans données."
+      >
+        <SlideBeforeAfter />
+      </Figure>
       <P>
         Pour choisir entre tableau et figure dans la thèse elle-même, voir notre guide{" "}
         <GuideLink slug="presenter-resultats-these-tableaux-figures">

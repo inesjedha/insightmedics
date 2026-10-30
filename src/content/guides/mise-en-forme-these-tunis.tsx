@@ -1,5 +1,5 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -224,6 +224,19 @@ export function Body() {
         </GuideLink>
         .
       </P>
+      <Figure
+        caption="Une page de Résultats à la charte de Tunis : Tahoma 11 (ici une police libre voisine), titres numérotés « 5. » et « 5.1. », légende du tableau alignée à gauche, une ligne sur deux sur fond bleu pâle"
+        source="Page de démonstration produite par notre chaîne de mise en page, sur une étude fictive."
+      >
+        <img
+          src="/guides/exemples/resultats-fmt.png"
+          alt="Page 41 d'un chapitre Résultats à la charte de Tunis : texte en police sans empattement, titres « 5. Facteurs associés aux complications » en bleu et « 5.1. Analyse univariée », Tableau IX à légende alignée à gauche, une ligne sur deux sur fond bleu pâle, puis Figure 5 en boîtes à moustaches"
+          width={1406}
+          height={1988}
+          loading="lazy"
+          className="mx-auto h-auto w-full max-w-[520px] rounded border border-border bg-white"
+        />
+      </Figure>
 
       <H2 id="pagination">En-têtes, pagination et pages liminaires</H2>
       <List

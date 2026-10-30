@@ -166,7 +166,11 @@ def flow_diagram(flow: list[dict[str, Any]], path: Path, font: str, width_cm: fl
             ya = yb - 0.35 - 1.1
             hub = y2 - 0.22
             ax.plot([cx + cw / 2, cx + cw / 2], [y2, hub], color=INK, lw=0.8)
-            ax.plot([xs[0] + aw / 2, xs[-1] + aw / 2], [hub, hub], color=INK, lw=0.8)
+            # La barre de répartition va jusqu'au trait qui descend de « Patients analysés »,
+            # même quand la boîte est décalée à gauche des groupes (figure large).
+            left = min(xs[0] + aw / 2, cx + cw / 2)
+            right = max(xs[-1] + aw / 2, cx + cw / 2)
+            ax.plot([left, right], [hub, hub], color=INK, lw=0.8)
             for i, (label, n) in enumerate(arms):
                 color = GROUPS[i % len(GROUPS)]
                 ax.plot([xs[i] + aw / 2, xs[i] + aw / 2], [hub, yb + band_h], color=INK, lw=0.8)
@@ -213,14 +217,28 @@ def bars(labels: list[str], counts: list[int], total: int, path: Path, font: str
 
 # ---------------------------------------------------------------- boîtes par groupe
 
+def box_stats(values: list[float]) -> dict[str, float]:
+    """Boîte d'un groupe avec les quartiles du tableau (méthode SPSS, HAVERAGE) : la figure
+    et le « médiane [Q1–Q3] » du tableau donnent les mêmes chiffres. Moustaches de Tukey :
+    valeur observée la plus éloignée à moins de 1,5 écart interquartile de la boîte."""
+    import numpy as np
+
+    arr = np.asarray(values, dtype=float)
+    q1, med, q3 = np.percentile(arr, [25, 50, 75], method="weibull")
+    iqr = q3 - q1
+    inside = arr[(arr >= q1 - 1.5 * iqr) & (arr <= q3 + 1.5 * iqr)]
+    return {"med": float(med), "q1": float(q1), "q3": float(q3),
+            "whislo": float(inside.min()), "whishi": float(inside.max())}
+
+
 def boxes(groups: list[tuple[str, list[float]]], ylabel: str, p_text: str, test: str,
           path: Path, font: str, width_cm: float) -> Path:
     """Boîtes à moustaches par groupe, points individuels, p et test sous la figure."""
     with plt.rc_context(_style(font)):
         fig, ax = plt.subplots(figsize=(width_cm * CM, 7.0 * CM))
         data = [v for _, v in groups]
-        bp = ax.boxplot(data, widths=0.5, patch_artist=True, showfliers=False,
-                        medianprops={"color": INK, "lw": 1.2})
+        bp = ax.bxp([box_stats(v) for v in data], widths=0.5, patch_artist=True,
+                    showfliers=False, medianprops={"color": INK, "lw": 1.2})
         for i, patch in enumerate(bp["boxes"]):
             patch.set_facecolor(["#DCE9F5", "#F9E2D2", "#DDF1EE", "#ECE5F3"][i % 4])
             patch.set_edgecolor(GROUPS[i % len(GROUPS)])

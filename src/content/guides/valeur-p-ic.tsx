@@ -1,5 +1,7 @@
 import { GuideLink } from "@/components/guides/GuideLink";
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { CiBySampleSize } from "@/components/guides/figures/ConfidenceIntervals";
+import { AlphaInflation } from "@/components/guides/figures/PowerCurve";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -100,6 +102,12 @@ export function Body() {
           ["240", "75,0 % contre 60,0 %", "15,0 points [6,7 ; 23,3]", "< 0,001"],
         ]}
       />
+      <Figure
+        caption="Figure 1. La même différence de 15 points : avec 60 patients par groupe, l'intervalle contient 0 ; avec 240, il l'exclut"
+        source="Exemple fictif de ce guide : cicatrisation à 3 mois de 75,0 % (pansement A) contre 60,0 % (pansement B). Carré : différence observée ; trait : IC 95 %."
+      >
+        <CiBySampleSize />
+      </Figure>
       <P>
         Avec 60 patients par groupe, l'intervalle va de −1,5 à 31,5 points : il est compatible avec
         une absence de différence, mais aussi avec un bénéfice de plus de 30 points. L'étude manque
@@ -193,6 +201,12 @@ export function Body() {
         indépendants). Un résultat significatif isolé, au milieu de vingt comparaisons, est donc à
         lire avec prudence.
       </P>
+      <Figure
+        caption="Figure 2. Plus on multiplie les tests, plus un faux positif devient probable : 64,2 % de risque avec 20 comparaisons"
+        source="Probabilité d'obtenir au moins un p < 0,05 alors qu'aucune différence n'existe, 1 − 0,95ⁿ pour n tests indépendants au seuil de 5 %."
+      >
+        <AlphaInflation />
+      </Figure>
       <List
         items={[
           "Définissez un objectif principal et un critère de jugement principal avant l'analyse : c'est sur lui que porte la conclusion.",

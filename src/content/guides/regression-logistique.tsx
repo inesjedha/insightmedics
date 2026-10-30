@@ -1,4 +1,5 @@
-import { H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { Figure, H2, H3, List, Note, P, ShortAnswer, Table } from "@/components/guides/Prose";
+import { OddsRatioForest } from "@/components/guides/figures/ConfidenceIntervals";
 import type { GuideMeta } from "@/content/guides/types";
 
 export const meta: GuideMeta = {
@@ -85,6 +86,12 @@ export function Body() {
         signifie que vos données ne permettent pas de conclure. Écrivez « aucune association
         significative n'a été mise en évidence », et non « le facteur n'a pas d'influence ».
       </Note>
+      <Figure
+        caption="Figure 1. Lire un odds ratio et son IC 95 % sur une échelle logarithmique : tout se joue par rapport à la ligne verticale OR = 1"
+        source="Odds ratios ajustés de l'exemple rédigé plus bas (décès à 90 jours), puis les deux intervalles cités dans cette partie, dont le texte ne donne que les bornes."
+      >
+        <OddsRatioForest />
+      </Figure>
 
       <H2 id="ajuste">OR brut et OR ajusté</H2>
       <P>

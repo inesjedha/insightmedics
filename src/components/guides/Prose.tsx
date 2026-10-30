@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { frTypo } from "@/lib/typo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -120,8 +121,8 @@ export function Figure({
     <figure className="mt-8 rounded-md border border-foreground/80 bg-card p-4 sm:p-6">
       <div className="text-foreground">{children}</div>
       <figcaption className="mt-4 border-t border-border pt-3 text-sm leading-snug">
-        <span className="font-semibold text-foreground">{caption}</span>
-        {source && <span className="mt-1 block text-muted-foreground">{source}</span>}
+        <span className="font-semibold text-foreground">{frTypo(caption)}</span>
+        {source && <span className="mt-1 block text-muted-foreground">{frTypo(source)}</span>}
       </figcaption>
     </figure>
   );
