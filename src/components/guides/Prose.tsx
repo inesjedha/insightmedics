@@ -111,21 +111,13 @@ export function Figure({
   caption,
   source,
   children,
-  wide,
 }: {
   caption: string;
   source?: string;
   children: ReactNode;
-  /** Déborde la colonne de texte sur grand écran (schémas larges, pages de thèse). */
-  wide?: boolean;
 }) {
   return (
-    <figure
-      className={cn(
-        "mt-8 rounded-md border border-foreground/80 bg-card p-4 sm:p-6",
-        wide && "lg:-mr-24",
-      )}
-    >
+    <figure className="mt-8 rounded-md border border-foreground/80 bg-card p-4 sm:p-6">
       <div className="text-foreground">{children}</div>
       <figcaption className="mt-4 border-t border-border pt-3 text-sm leading-snug">
         <span className="font-semibold text-foreground">{caption}</span>
