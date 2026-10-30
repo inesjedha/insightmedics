@@ -261,10 +261,7 @@ export function Body() {
         type cas-témoins. Pour une mesure continue, ajoutez la courbe ROC, l'aire sous la courbe
         (ASC) avec son IC 95 % et la méthode de choix du seuil (indice de Youden ou seuil publié).
         Le détail est dans notre guide{" "}
-        <GuideLink slug="courbe-roc-seuil-optimal-these">
-          courbe ROC et seuil optimal
-        </GuideLink>
-        .
+        <GuideLink slug="courbe-roc-seuil-optimal-these">courbe ROC et seuil optimal</GuideLink>.
       </P>
       <H3>Données appariées</H3>
       <P>

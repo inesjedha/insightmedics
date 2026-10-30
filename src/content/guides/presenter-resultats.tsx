@@ -219,10 +219,7 @@ export function Body() {
         Une figure lisible a des axes nommés avec leurs unités, des effectifs visibles, une virgule
         décimale, des couleurs distinguables par un lecteur daltonien et des caractères assez grands
         une fois insérée dans la page. Pour la courbe ROC en particulier, voyez notre guide sur la{" "}
-        <GuideLink slug="courbe-roc-seuil-optimal-these">
-          courbe ROC et le seuil optimal
-        </GuideLink>
-        .
+        <GuideLink slug="courbe-roc-seuil-optimal-these">courbe ROC et le seuil optimal</GuideLink>.
       </P>
 
       <H2 id="numerotation">Numéroter et appeler tableaux et figures</H2>
