@@ -59,7 +59,7 @@ export function Body() {
             intervalle de confiance à 95 %.
           </>,
           <>
-            <strong>Objectifs secondaires</strong>, dans l'ordre de votre fiche d'inscription.
+            <strong>Objectifs secondaires</strong>, dans l'ordre où ils ont été annoncés.
           </>,
           <>
             <strong>Facteurs associés</strong> : comparaisons univariées par famille de facteurs,
@@ -68,11 +68,11 @@ export function Body() {
         ]}
       />
       <P>
-        La grille d'évaluation du jury de la Faculté de médecine de Tunis, par exemple, vérifie
-        précisément ces points : la population (avec un diagramme de flux si besoin), l'objectif
-        principal, les objectifs secondaires, l'absence de commentaire et de données hors objectifs,
-        des tableaux et figures sans redite avec le texte, numérotés et appelés, aucune discordance
-        entre texte, tableaux et figures, et des verbes au passé.
+        La grille d'évaluation du jury publiée par la Faculté de médecine de Tunis, par exemple,
+        vérifie précisément ces points : la population (avec un diagramme de flux si besoin),
+        l'objectif principal, les objectifs secondaires, l'absence de commentaire et de données hors
+        objectifs, des tableaux et figures sans redite avec le texte, numérotés et appelés, aucune
+        discordance entre texte, tableaux et figures, et des verbes au passé.
       </P>
 
       <H2 id="regles">Les règles de rédaction</H2>
@@ -246,10 +246,10 @@ export function Body() {
         ]}
       />
       <P>
-        Dans les thèses des facultés tunisiennes, l'usage est de numéroter les tableaux en chiffres
-        romains (Tableau I, II, III) et les figures en chiffres arabes (Figure 1, 2, 3). Les règles
-        de présentation varient toutefois d'une faculté à l'autre : vérifiez celles de la vôtre dans
-        notre guide de la{" "}
+        Dans les thèses des quatre facultés de médecine tunisiennes que nous avons étudiées, l'usage
+        relevé est de numéroter les tableaux en chiffres romains (Tableau I, II, III) et les figures
+        en chiffres arabes (Figure 1, 2, 3). Les règles de présentation varient toutefois d'une
+        faculté à l'autre : vérifiez celles de la vôtre dans notre guide de la{" "}
         <GuideLink slug="mise-en-forme-these-medecine-tunisie">
           mise en forme de la thèse de médecine en Tunisie
         </GuideLink>

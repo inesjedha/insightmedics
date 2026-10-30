@@ -253,8 +253,9 @@ export function Body() {
       <P>
         Pourquoi c'est important : si une donnée inconnue est saisie 0 (« non »), les pourcentages
         sont faussés sans que personne le voie. Si elle est saisie « NR » dans une colonne de
-        nombres, SPSS transforme toute la colonne en texte. Une cellule vide est simplement exclue
-        du calcul, et le dénominateur réel s'affiche dans vos tableaux (par exemple 34/48).
+        nombres, SPSS, selon les options d'import, lit toute la colonne comme du texte ou transforme
+        les « NR » en valeurs manquantes sans le signaler. Une cellule vide est exclue du calcul, et
+        le dénominateur réel s'affiche dans vos tableaux (par exemple 34/48).
       </P>
       <P>
         Cette règle se retrouve dans votre M&M, qui doit dire comment les données manquantes ont été
@@ -335,28 +336,28 @@ export function Body() {
       <List
         items={[
           <>
-            <strong>Étiquette</strong> : le libellé complet (« Créatinine à l'admission (µmol/L) »),
+            <strong>Libellé</strong> : l'intitulé complet (« Créatinine à l'admission (µmol/L) »),
             qui apparaîtra dans les tableaux.
           </>,
           <>
-            <strong>Valeurs</strong> : les étiquettes de valeurs (1 = « Homme », 2 = « Femme »).
-            Sans elles, vos tableaux affichent des 1 et des 2.
+            <strong>Valeurs</strong> : les libellés de valeurs (1 = « Homme », 2 = « Femme »). Sans
+            elles, vos tableaux affichent des 1 et des 2.
           </>,
           <>
             <strong>Manquant</strong> : les codes de valeurs manquantes (9, 99, 999), s'il y en a.
           </>,
           <>
             <strong>Mesure</strong> : Échelle pour les quantitatives, Ordinale pour les classes
-            ordonnées, Nominale pour les catégories sans ordre. Ce réglage conditionne les analyses
-            proposées.
+            ordonnées, Nominale pour les catégories sans ordre. Certaines boîtes de dialogue, comme
+            l'éditeur de graphiques, en tiennent compte.
           </>,
         ]}
       />
       <P>
         Vérifiez enfin le type de chaque variable : une colonne quantitative importée en « Chaîne »
-        contient au moins une cellule de texte (un « NR », une unité, une virgule mal placée). Elle
-        ne pourra pas être moyennée tant qu'elle n'est pas corrigée. Une base propre permet ensuite
-        de choisir sereinement{" "}
+        contient en général au moins une cellule de texte (un « NR », une unité, une virgule mal
+        placée). Elle ne pourra pas être moyennée tant qu'elle n'est pas corrigée. Une base propre
+        permet ensuite de choisir sereinement{" "}
         <GuideLink slug="quel-test-statistique-choisir-these-medecine">
           le test statistique adapté
         </GuideLink>
@@ -366,8 +367,8 @@ export function Body() {
       <P>
         Avant l'import, gardez une seule feuille de données, vérifiez que la première ligne contient
         bien les noms des variables et supprimez les lignes vides ou de commentaires sous le tableau
-        : une ligne vide importée devient un patient fantôme, qui fausse l'effectif et les
-        pourcentages.
+        : une ligne vide ou de commentaire importée peut devenir un patient fantôme, qui fausse
+        l'effectif et les pourcentages.
       </P>
 
       <H2 id="checklist">La check-list finale</H2>

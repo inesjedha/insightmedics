@@ -102,11 +102,14 @@ export function Body() {
       </Figure>
       <P>
         Conséquence directe :{" "}
-        <strong>VPP et VPN ne se calculent pas dans une étude cas-témoins</strong>. Si vous avez
-        recruté 50 malades et 50 témoins, la « prévalence » de 50 % de votre échantillon est fixée
-        par vous, pas par la réalité. Les valeurs prédictives qui en découleraient ne veulent rien
-        dire. Donnez-les seulement si votre échantillon reflète la population visée (patients
-        consécutifs, recrutement exhaustif sur une période).
+        <strong>
+          VPP et VPN ne se lisent pas directement dans le tableau d'une étude cas-témoins
+        </strong>
+        . Si vous avez recruté 50 malades et 50 témoins, la « prévalence » de 50 % de votre
+        échantillon est fixée par vous, pas par la réalité. Les valeurs prédictives calculées sur ce
+        tableau ne veulent rien dire. Donnez-les seulement si votre échantillon reflète la
+        population visée (patients consécutifs, recrutement exhaustif sur une période), ou
+        recalculez-les par le théorème de Bayes à partir d'une prévalence publiée, en le précisant.
       </P>
 
       <H2 id="courbe">Construire et lire la courbe ROC</H2>
@@ -266,8 +269,8 @@ export function Body() {
         Vous voulez savoir si la CRP fait mieux que le taux de leucocytes, mesuré chez les mêmes
         enfants ? Comparer les deux AUC « à l'œil », ou vérifier si leurs intervalles de confiance
         se chevauchent, ne suffit pas. Les deux mesures viennent des mêmes patients : leurs AUC sont
-        corrélées. Le test adapté est le <strong>test de DeLong</strong>, qui tient compte de cet
-        appariement et donne une valeur de p pour la différence entre les deux aires.
+        corrélées. Le test le plus utilisé est le <strong>test de DeLong</strong>, qui tient compte
+        de cet appariement et donne une valeur de p pour la différence entre les deux aires.
       </P>
       <P>
         Sur la figure, superposez les deux courbes, une couleur par marqueur, avec la diagonale en
@@ -335,9 +338,9 @@ export function Body() {
       <H2 id="erreurs">Les erreurs fréquentes</H2>
       <List
         items={[
-          "Choisir le seuil sur les données de l'étude sans le dire. Un seuil de Youden calculé sur votre échantillon y est forcément flatteur : annoncez-le et citez ce point dans les limites.",
-          "Obtenir une AUC inférieure à 0,5 et l'interpréter. C'est presque toujours une variable inversée : mauvais sens du test dans les options, ou codage de la variable d'état à l'envers.",
-          "Calculer une VPP et une VPN dans une étude cas-témoins.",
+          "Choisir le seuil sur les données de l'étude sans le dire. Un seuil de Youden calculé sur votre échantillon y donne en général des performances optimistes : annoncez-le et citez ce point dans les limites.",
+          "Obtenir une AUC inférieure à 0,5 et l'interpréter. C'est le plus souvent une variable inversée : mauvais sens du test dans les options, ou codage de la variable d'état à l'envers.",
+          "Calculer une VPP et une VPN sur le tableau d'une étude cas-témoins.",
           "Prendre un p < 0,05 pour une preuve de bonne performance : une AUC de 0,62 peut être significative sur un grand effectif et rester faible.",
           "Comparer deux marqueurs mesurés chez les mêmes patients par le chevauchement des intervalles, au lieu du test de DeLong.",
           "Donner la sensibilité et la spécificité sans intervalle de confiance, ou sans préciser le seuil.",

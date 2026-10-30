@@ -195,11 +195,11 @@ export function Body() {
 
       <H2 id="multiples">Les tests multiples</H2>
       <P>
-        Chaque test réalisé au seuil de 5 % comporte 5 % de risque de faux positif. Si vous comparez
-        20 variables entre deux groupes qui ne diffèrent en réalité sur aucune, la probabilité
-        d'obtenir au moins un p &lt; 0,05 est d'environ 64 % (1 − 0,95²⁰, pour des tests
-        indépendants). Un résultat significatif isolé, au milieu de vingt comparaisons, est donc à
-        lire avec prudence.
+        Quand aucune différence n'existe, chaque test réalisé au seuil de 5 % a 5 % de risque de
+        donner un faux positif. Si vous comparez 20 variables entre deux groupes qui ne diffèrent en
+        réalité sur aucune, la probabilité d'obtenir au moins un p &lt; 0,05 est d'environ 64 % (1 −
+        0,95²⁰, pour des tests indépendants). Un résultat significatif isolé, au milieu de vingt
+        comparaisons, est donc à lire avec prudence.
       </P>
       <Figure
         caption="Figure 2. Plus on multiplie les tests, plus un faux positif devient probable : 64,2 % de risque avec 20 comparaisons"

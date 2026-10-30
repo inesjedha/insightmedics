@@ -251,12 +251,12 @@ export function Body() {
           [
             "Valeur de p",
             "Que signifie p = 0,07 ici ?",
-            "Absence de différence mise en évidence, pas preuve d'absence d'effet",
+            "Pas de différence significative mise en évidence, ce qui ne prouve pas l'absence d'effet",
           ],
           [
             "Intervalle de confiance",
             "Votre OR de 4,1 a un IC très large : qu'en concluez-vous ?",
-            "Une association probable mais estimée avec peu de précision",
+            "Si l'IC exclut 1 : une association mise en évidence, mais dont l'ampleur est estimée avec peu de précision",
           ],
           [
             "Biais",

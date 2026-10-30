@@ -43,17 +43,19 @@ export function Body() {
       </P>
       <P>
         Son numéro et la forme de son titre dépendent de votre faculté : chiffres romains ou arabes,
-        capitales ou non, deux-points final ou non. Par exemple, la Faculté de médecine de Sfax
-        impose une numérotation exclusivement en chiffres arabes, sans « : » après les titres. Avant
-        de numéroter, vérifiez les règles de votre faculté dans notre guide{" "}
+        capitales ou non, deux-points final ou non. Par exemple, les « Recommandations du
+        déroulement et la rédaction des thèses » de la Faculté de médecine de Sfax demandent une
+        numérotation exclusivement en chiffres arabes, sans « : » après les titres. Avant de
+        numéroter, vérifiez les règles de votre faculté dans notre guide{" "}
         <GuideLink slug="mise-en-forme-these-medecine-tunisie">
           mise en forme de la thèse de médecine en Tunisie
         </GuideLink>
         .
       </P>
       <P>
-        Le registre est celui de tout le M&amp;M : verbes au passé, tournures impersonnelles (« ont
-        été comparées », « a été retenu »), jamais « nous avons choisi ».
+        Le registre est celui de tout le M&amp;M : verbes au passé, le plus souvent en tournures
+        impersonnelles (« ont été comparées », « a été retenu ») plutôt que « nous avons choisi ».
+        Si votre faculté ou votre directeur a une préférence, suivez-la dans toute la thèse.
       </P>
 
       <H2 id="ordre">Le contenu obligatoire, dans l'ordre</H2>
@@ -88,8 +90,8 @@ export function Body() {
       <H3>Le logiciel</H3>
       <P>
         Déclarez le logiciel <strong>que vous avez réellement utilisé</strong>, avec sa version : «
-        IBM SPSS Statistics, version 26 », par exemple. SPSS est le plus courant chez les étudiants
-        tunisiens ; un autre logiciel convient tout autant, à condition de le déclarer avec sa
+        IBM SPSS Statistics, version 26 », par exemple. SPSS est très utilisé par les étudiants en
+        médecine ; un autre logiciel convient tout autant, à condition de le déclarer avec sa
         version, qui figure dans le menu « Aide ». Si la saisie a été faite sous Excel, vous pouvez
         le préciser.
       </P>
@@ -131,12 +133,12 @@ export function Body() {
           [
             "Qualitative, groupes indépendants",
             "Chi² de Pearson (sans correction de Yates)",
-            "Tous les effectifs théoriques ≥ 5",
+            "Tableau 2 × 2 : tous les effectifs théoriques ≥ 5 (tableau plus grand : au plus 20 % des cases < 5, aucune < 1)",
           ],
           [
             "Qualitative, petits effectifs",
             "Test exact de Fisher",
-            "Au moins un effectif théorique < 5",
+            "Tableau 2 × 2 : au moins un effectif théorique < 5",
           ],
           [
             "Quantitative, 2 groupes",
@@ -183,7 +185,8 @@ export function Body() {
         récidive), annoncez que la force de l'association a été exprimée par l'odds ratio (OR) avec
         son IC 95 %, et que l'association est significative lorsque l'intervalle ne contient pas 1.
         Si vous avez utilisé le test exact de Fisher, l'IC calculé par la méthode exacte est le plus
-        cohérent avec le p.
+        cohérent avec le p ; l'option « Risque » du tableau croisé de SPSS donne un IC asymptotique,
+        des outils comme OpenEpi proposent l'IC exact.
       </P>
       <H3>Le modèle multivarié et sa règle de sélection</H3>
       <P>

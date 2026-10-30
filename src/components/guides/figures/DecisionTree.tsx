@@ -40,7 +40,7 @@ const FAMILIES: { name: string[]; nameN: string; leaves: Leaf[] }[] = [
       {
         situation: "Groupes indépendants",
         param: ["Chi-2 de Pearson"],
-        alt: ["Fisher", "si effectifs", "attendus < 5"],
+        alt: ["Fisher (2 × 2)", "si un effectif", "attendu < 5"],
         wrap: true,
       },
       {
@@ -125,7 +125,7 @@ export function TestDecisionTree() {
 }
 
 const LABEL =
-  "Arbre de choix du test statistique. Variable quantitative : 2 groupes indépendants, t de Student ou Mann-Whitney ; 2 mesures appariées, t de Student apparié ou Wilcoxon ; 3 groupes ou plus, ANOVA ou Kruskal-Wallis ; 3 mesures répétées ou plus, ANOVA à mesures répétées ou Friedman. Variable qualitative : groupes indépendants, Chi-2 de Pearson ou Fisher si effectifs attendus inférieurs à 5 ; binaire et 2 mesures appariées, McNemar. Deux variables quantitatives : corrélation de Pearson ou de Spearman. Délai jusqu'à un événement : log-rank avec Kaplan-Meier.";
+  "Arbre de choix du test statistique. Variable quantitative : 2 groupes indépendants, t de Student ou Mann-Whitney ; 2 mesures appariées, t de Student apparié ou Wilcoxon ; 3 groupes ou plus, ANOVA ou Kruskal-Wallis ; 3 mesures répétées ou plus, ANOVA à mesures répétées ou Friedman. Variable qualitative : groupes indépendants, Chi-2 de Pearson ou Fisher si tableau 2 × 2 avec un effectif attendu inférieur à 5 ; binaire et 2 mesures appariées, McNemar. Deux variables quantitatives : corrélation de Pearson ou de Spearman. Délai jusqu'à un événement : log-rank avec Kaplan-Meier.";
 
 function Wide({ w }: { w: number }) {
   const c1 = { x: 0, w: 104 };
@@ -155,7 +155,7 @@ function Wide({ w }: { w: number }) {
       {[
         [c1.x, "Variable"],
         [c2.x, "Groupes, mesures"],
-        [c3.x, "Test paramétrique"],
+        [c3.x, "Test de référence"],
         [c4.x, "Alternative"],
       ].map(([x, t]) => (
         <Txt
@@ -266,7 +266,9 @@ function Legend({ x, y, narrow }: { x: number; y: number; narrow?: boolean }) {
     <g>
       <rect x={x} y={y - 11} width={22} height={14} rx={7} className="fill-brand" />
       <Txt x={x + 30} y={y}>
-        {narrow ? "Distribution ≈ normale" : "Distribution à peu près normale dans chaque groupe"}
+        {narrow
+          ? "Référence (quantitative : ≈ normale)"
+          : "Test de référence (variable quantitative : distribution ≈ normale)"}
       </Txt>
       <rect
         x={x}
@@ -279,8 +281,8 @@ function Legend({ x, y, narrow }: { x: number; y: number; narrow?: boolean }) {
       />
       <Txt x={x + 30} y={y + 24}>
         {narrow
-          ? "Très asymétrique ou petit effectif"
-          : "Distribution très asymétrique ou petits effectifs"}
+          ? "Alternative (asymétrie, petits effectifs)"
+          : "Alternative (quantitative très asymétrique, petits effectifs)"}
       </Txt>
     </g>
   );

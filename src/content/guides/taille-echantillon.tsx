@@ -282,9 +282,10 @@ export function Body() {
           régression logistique
         </GuideLink>
         , la contrainte principale n'est pas le nombre de patients mais le nombre d'
-        <strong>événements</strong>. La règle habituelle demande au moins dix événements par
-        variable introduite dans le modèle. On compte la modalité la moins fréquente de l'issue :
-        les décès si la mortalité est de 25 %, les survivants si elle était de 80 %.
+        <strong>événements</strong>. Le repère habituel est d'environ dix événements par variable
+        introduite dans le modèle (une variable qualitative à k modalités compte pour k − 1). On
+        compte la modalité la moins fréquente de l'issue : les décès si la mortalité est de 25 %,
+        les survivants si elle était de 80 %.
       </P>
       <P>
         Par exemple, vous voulez tester cinq facteurs et la mortalité attendue est de 25 %. Il faut
@@ -292,10 +293,11 @@ export function Body() {
         n'auriez que 30 décès environ : le modèle devrait se limiter à trois variables.
       </P>
       <P>
-        Cette règle est un minimum. En dessous, entre cinq et neuf événements par variable, un
-        modèle reste possible mais doit être présenté comme exploratoire. Avec moins de cinq
-        événements au total, on renonce aux odds ratios et on se limite à une description et à des
-        tests exacts.
+        Ce repère est discuté dans la littérature méthodologique : ce n'est ni une loi ni une
+        garantie. En dessous, entre cinq et neuf événements par variable, un modèle reste possible
+        mais doit être présenté comme exploratoire. Avec très peu d'événements (quelques-uns
+        seulement), on renonce au modèle multivarié et on se limite à une description et à des tests
+        exacts.
       </P>
 
       <H2 id="outils">Les outils et la phrase du M&M</H2>
@@ -315,8 +317,8 @@ export function Body() {
           ],
           [
             "SPSS (versions récentes)",
-            "Module d'analyse de puissance intégré",
-            "Absent des versions anciennes encore répandues",
+            "Menu d'analyse de puissance intégré (à partir de la version 27)",
+            "Absent des versions antérieures, encore répandues",
           ],
           [
             "Formules dans Excel",
