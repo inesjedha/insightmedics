@@ -1,7 +1,7 @@
 """Mails de notification à l'équipe : un formulaire du site vient d'être rempli.
 
 Filet de sécurité pour ne rien manquer si personne n'ouvre l'admin : chaque demande
-(contact, déblocage d'audit) et chaque test gratuit envoie un court mail avec les données
+(contact, déblocage d'audit, inscription au webinaire) et chaque test gratuit envoie un court mail avec les données
 saisies. Ce module ne fait que le contenu ; l'envoi passe par `mailer` (Brevo). Il ne
 bloque jamais le formulaire : il tourne en tâche de fond, et un échec est seulement
 journalisé.
@@ -18,7 +18,11 @@ from ..config import settings
 from ..models import Audit, Lead
 from . import mailer
 
-SOURCE_LABEL = {"contact": "Formulaire de contact", "audit": "Demande d'audit complet (50 DT)"}
+SOURCE_LABEL = {
+    "contact": "Formulaire de contact",
+    "audit": "Demande d'audit complet (50 DT)",
+    "webinaire": "Webinaire",
+}
 
 
 @dataclass

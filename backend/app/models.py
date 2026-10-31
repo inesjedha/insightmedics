@@ -27,7 +27,7 @@ class Lead(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     created_at: Mapped[str] = mapped_column(String, default=utcnow_iso)
-    source: Mapped[str] = mapped_column(String, default="contact")  # contact | audit
+    source: Mapped[str] = mapped_column(String, default="contact")  # contact | audit | webinaire
     priority: Mapped[str] = mapped_column(String, default="normal")  # normal | high
     name: Mapped[str | None] = mapped_column(String, nullable=True)
     email: Mapped[str] = mapped_column(String, default="")

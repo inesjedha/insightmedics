@@ -1,8 +1,9 @@
 """Mails aux étudiants : accusé de réception après un formulaire du site.
 
-Deux variantes, mêmes promesses que le site (48 h ouvrées, puis les étapes) :
+Trois variantes, mêmes promesses que le site (48 h ouvrées, puis les étapes) :
 - demande de contact : « on vous rappelle pour cadrer le travail » ;
-- demande d'audit complet : « on vous rappelle pour le paiement, puis l'audit, puis le lien ».
+- demande d'audit complet : « on vous rappelle pour le paiement, puis l'audit, puis le lien » ;
+- inscription au webinaire : la date, puis le lien de connexion, les questions, le replay.
 
 Mise en page de mail, pas de page web : les messageries (Gmail, Outlook, l'app Mail)
 ignorent le CSS moderne. D'où une table de 560 px, des styles écrits sur chaque balise
@@ -44,6 +45,7 @@ class StudentMail:
     intro: str
     steps: list[str]
     recap: list[tuple[str, str]] = field(default_factory=list)
+    link: tuple[str, str] | None = None   # (libellé, adresse) : lien discret sous le récapitulatif
 
 
 def _first_name(name: str | None) -> str:
@@ -94,10 +96,39 @@ def audit_mail(lead: Lead, audit: Audit | None) -> StudentMail:
     )
 
 
+def webinar_mail(lead: Lead) -> StudentMail:
+    """Confirmation d'inscription : titre, date et page du webinaire viennent des réglages
+    (`WEBINAR_*`), pour changer d'édition sans toucher au code."""
+    first = _first_name(lead.name)
+    title, when = settings.webinar_title, settings.webinar_when
+    return StudentMail(
+        to=lead.email,
+        subject="Votre inscription au webinaire est confirmée",
+        preheader=f"Rendez-vous le {when}. Le lien de connexion vous arrive par e-mail.",
+        kicker="Webinaire gratuit · en ligne",
+        title=(f"Merci {first}, votre inscription est confirmée." if first
+               else "Merci, votre inscription est confirmée."),
+        intro=(f"{_hello(lead.name)} vous êtes bien inscrit(e) au webinaire « {title} », "
+               f"le {when}, en ligne et gratuit."),
+        steps=[
+            "Le lien de connexion vous arrive par e-mail <b>la veille et une heure avant</b> "
+            "le début.",
+            "Préparez vos questions, et votre base si vous voulez que nous parlions de votre cas.",
+            "Le replay et les diapositives vous sont envoyés <b>le lendemain</b>.",
+        ],
+        recap=[("Webinaire", title), ("Date", when[:1].upper() + when[1:])],
+        link=("Revoir le programme", settings.webinar_url),
+    )
+
+
 def mail_for_lead(lead: Lead, audit: Audit | None = None) -> StudentMail | None:
     if not lead.email:
         return None
-    return audit_mail(lead, audit) if lead.source == "audit" else contact_mail(lead)
+    if lead.source == "audit":
+        return audit_mail(lead, audit)
+    if lead.source == "webinaire":
+        return webinar_mail(lead)
+    return contact_mail(lead)
 
 
 def send(m: StudentMail) -> bool:
@@ -126,8 +157,10 @@ def render_text(m: StudentMail) -> str:
 
     steps = "\n".join(f"{i}. {plain(s)}" for i, s in enumerate(m.steps, 1))
     recap = "\n".join(f"{k} : {v}" for k, v in m.recap if v)
+    link = f"{m.link[0]} : {m.link[1]}" if m.link else ""
     return (f"{m.title}\n\n{m.intro}\n\nLa suite\n{steps}\n\n"
             + (f"{recap}\n\n" if recap else "")
+            + (f"{link}\n\n" if link else "")
             + f"Une question d'ici là ? Répondez à ce mail ou écrivez-nous sur WhatsApp : "
               f"{_wa_link()}\n\nÀ très vite,\nL'équipe Insight Medics\n{settings.site_url}\n")
 
@@ -164,6 +197,15 @@ def _recap(recap: list[tuple[str, str]]) -> str:
     return _row(box, "", "8px 40px 0 40px")
 
 
+def _link(link: tuple[str, str] | None) -> str:
+    if link is None:
+        return ""
+    label, href = link
+    anchor = (f'<a href="{html.escape(href, quote=True)}" style="color:{BRAND};'
+              f'text-decoration:underline">{_e(label)}</a>')
+    return _row(anchor, _font(15), "14px 40px 0 40px")
+
+
 def _button(label: str, href: str) -> str:
     return (f'<a href="{html.escape(href, quote=True)}" style="display:inline-block;'
             f'background:{BRAND};color:#FFFFFF;text-decoration:none;'
@@ -193,6 +235,7 @@ def render_html(m: StudentMail) -> str:
         _row("La suite", _font(15, weight=600, line=1.4), "28px 40px 6px 40px"),
         _row(_steps(m.steps), ""),
         _recap(m.recap),
+        _link(m.link),
         _row("Une question d'ici là ? Répondez simplement à ce mail, ou écrivez-nous :",
              _font(15, color=MUTED), "28px 40px 0 40px"),
         _row(_button("Écrire sur WhatsApp", _wa_link()), "", "14px 40px 0 40px"),

@@ -58,6 +58,14 @@ class Settings(BaseSettings):
     team_reply_to: str = "helpinsightmedics@gmail.com"
     # WhatsApp de l'équipe (format international, sans +), bouton des mails aux étudiants.
     whatsapp_number: str = "21696389570"
+    # Webinaire : textes du mail de confirmation d'inscription (services/student_mail.py).
+    # Une nouvelle édition = de nouvelles valeurs, sans toucher au code. À garder alignés
+    # sur `siteConfig.webinar` du front (src/lib/site-config.ts).
+    webinar_title: str = "Les stats de ta thèse en 45 minutes"
+    # Date et heure telles qu'écrites dans le mail (espace insécable dans « 20 h »).
+    webinar_when: str = "jeudi 26 novembre 2026 à 20 h (heure de Tunis)"
+    # Page d'inscription et de programme, relative à `site_url`.
+    webinar_path: str = "/webinaire"
     # Prévenir aussi à chaque test gratuit (en plus des demandes de contact et d'audit).
     notify_on_test: bool = True
     # Adresse publique du site, pour les liens vers l'admin dans les mails.
@@ -88,6 +96,10 @@ class Settings(BaseSettings):
     @property
     def notify_email_list(self) -> list[str]:
         return [e.strip() for e in self.notify_emails.split(",") if e.strip()]
+
+    @property
+    def webinar_url(self) -> str:
+        return f"{self.site_url}{self.webinar_path}"
 
     @property
     def ai_enabled(self) -> bool:
