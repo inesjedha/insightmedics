@@ -256,7 +256,8 @@ export const filmLd: JsonLd = {
     "Statistiques et rédaction de thèse de médecine : analyses, rédaction avec vous, relecture par un médecin et un biostatisticien.",
   thumbnailUrl: absoluteUrl(poster16x9),
   contentUrl: absoluteUrl(film16x9),
-  uploadDate: "2026-10-26",
+  // Date et heure avec fuseau (ISO 8601) : Google signale une date sans fuseau.
+  uploadDate: "2026-10-26T12:00:00+01:00",
   duration: "PT52S",
   inLanguage: "fr",
   publisher: { "@id": ORG_ID },
