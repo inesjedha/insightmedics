@@ -1,6 +1,6 @@
 // Types des données échangées avec l'API — miroir de backend/app/schemas.py.
 
-export type LeadSource = "contact" | "audit";
+export type LeadSource = "contact" | "audit" | "webinaire";
 export type LeadStatus = "new" | "contacted" | "won" | "lost";
 export type LeadPriority = "normal" | "high";
 

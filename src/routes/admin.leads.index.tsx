@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { listLeads } from "@/lib/api/client";
 import type { Lead, LeadStatus } from "@/lib/api/types";
-import { LEAD_STATUS_LABELS, isFollowUpDue } from "@/lib/leads";
+import { LEAD_SOURCE_LABELS, LEAD_STATUS_LABELS, isFollowUpDue } from "@/lib/leads";
 import { cn } from "@/lib/utils";
 
 const VIEWS = ["tous", "relances", "new", "contacted", "won", "lost"] as const;
@@ -174,9 +174,7 @@ function LeadsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-muted-foreground">
-                        {l.source === "audit" ? "Audit" : "Contact"}
-                      </span>
+                      <span className="text-muted-foreground">{LEAD_SOURCE_LABELS[l.source]}</span>
                       {l.priority === "high" && (
                         <Badge className="ml-2 bg-amber-500/15 text-amber-800 hover:bg-amber-500/15">
                           Prio
