@@ -135,3 +135,52 @@ def test_origine_du_contact_enregistree_et_dans_la_notification(outbox):
     assert r.status_code == 201 and r.json()["referral"] == "Facebook"
     team = [m["body"] for m in outbox if m["body"]["tags"] == ["notification-equipe"]]
     assert "Nous a connus par : Facebook" in team[0]["textContent"]
+
+
+# ---------------------------------------------------------------- inscription au webinaire
+
+def _webinar_lead(**extra):
+    return TestClient(app).post("/leads", json={
+        "source": "webinaire", "name": "Sana Ben Ali", "email": "sana@exemple.tn",
+        "phone": "+216 20 000 000", "subject": "Webinaire du 26 novembre",
+        "message": "Faculté : Sousse\nStatut : Interne", "referral": "Groupe de promo", **extra})
+
+
+def test_inscription_au_webinaire_cree_un_lead(outbox):
+    r = _webinar_lead()
+    assert r.status_code == 201
+    body = r.json()
+    assert body["source"] == "webinaire" and body["status"] == "new"
+    assert body["referral"] == "Groupe de promo"
+
+
+def test_notification_equipe_libellee_webinaire(outbox):
+    _webinar_lead()
+    [mail] = [m["body"] for m in outbox if m["body"]["tags"] == ["notification-equipe"]]
+    assert mail["subject"] == "Nouvelle demande · Webinaire · Sana Ben Ali"
+    assert "Type : Webinaire" in mail["textContent"]
+    assert "Faculté : Sousse\nStatut : Interne" in mail["textContent"]
+    assert "Nous a connus par : Groupe de promo" in mail["textContent"]
+
+
+def test_confirmation_d_inscription_au_webinaire(outbox):
+    _webinar_lead()
+    [mail] = _student(outbox)
+    assert mail["subject"] == "Votre inscription au webinaire est confirmée"
+    text, html = mail["textContent"], mail["htmlContent"]
+    assert "Merci Sana, votre inscription est confirmée." in text
+    assert "« Les stats de ta thèse en 45 minutes »" in text
+    assert "jeudi 26 novembre 2026 à 20 h (heure de Tunis)" in text
+    assert "<b>la veille et une heure avant</b>" in html             # étapes du gabarit
+    assert "Le replay et les diapositives" in text
+    assert 'href="https://www.insightmedics.fr/webinaire"' in html
+    assert "48 h" not in text                                    # pas de promesse de rappel
+
+
+def test_mail_du_webinaire_suit_les_reglages(outbox, monkeypatch):
+    monkeypatch.setattr(settings, "webinar_title", "Survie <Kaplan-Meier>")
+    monkeypatch.setattr(settings, "webinar_when", "jeudi 7 janvier 2027 à 21 h")
+    _webinar_lead()
+    [mail] = _student(outbox)
+    assert "Jeudi 7 janvier 2027 à 21 h" in mail["textContent"]      # récapitulatif
+    assert "Survie &lt;Kaplan-Meier&gt;" in mail["htmlContent"]          # réglage échappé aussi

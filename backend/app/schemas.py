@@ -22,7 +22,7 @@ class CamelModel(BaseModel):
                               from_attributes=True)
 
 
-LeadSource = Literal["contact", "audit"]
+LeadSource = Literal["contact", "audit", "webinaire"]
 LeadPriority = Literal["normal", "high"]
 LeadStatus = Literal["new", "contacted", "won", "lost"]
 

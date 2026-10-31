@@ -13,7 +13,9 @@ import {
   Testimonials,
   ForWho,
   FinalCta,
+  WebinarStrip,
 } from "@/components/home/HomeSections";
+import { isWebinarUpcoming } from "@/lib/webinar";
 
 export const Route = createFileRoute("/")({
   head: () =>
@@ -31,6 +33,7 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   return (
     <SiteLayout>
+      {isWebinarUpcoming() && <WebinarStrip />}
       <Hero />
       <ProblemApproach />
       <AuditTeaser />

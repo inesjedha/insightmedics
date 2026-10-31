@@ -1,4 +1,11 @@
-import type { Lead, LeadStatus } from "@/lib/api/types";
+import type { Lead, LeadSource, LeadStatus } from "@/lib/api/types";
+
+/** Formulaire d'où vient le prospect, tel qu'affiché dans le CRM. */
+export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
+  contact: "Contact",
+  audit: "Audit",
+  webinaire: "Webinaire",
+};
 
 /** Libellés des statuts CRM, dans l'ordre du pipeline commercial. */
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {

@@ -7,7 +7,7 @@ import { relativeDay } from "@/lib/dates";
 import { Badge } from "@/components/ui/badge";
 import { listAudits, listLeads } from "@/lib/api/client";
 import type { AuditResult, Lead } from "@/lib/api/types";
-import { LEAD_STATUS_LABELS, isFollowUpDue } from "@/lib/leads";
+import { LEAD_SOURCE_LABELS, LEAD_STATUS_LABELS, isFollowUpDue } from "@/lib/leads";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/")({
@@ -241,7 +241,7 @@ function LeadRow({ lead, meta }: { lead: Lead; meta: ReactNode }) {
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Phone className="h-3 w-3 shrink-0" aria-hidden />
             <span className="truncate">
-              {lead.phone || "—"} · {lead.source === "audit" ? "Audit" : "Contact"} ·{" "}
+              {lead.phone || "—"} · {LEAD_SOURCE_LABELS[lead.source]} ·{" "}
               {LEAD_STATUS_LABELS[lead.status]}
             </span>
           </span>

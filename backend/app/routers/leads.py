@@ -23,7 +23,8 @@ def _get_or_404(db: Session, lead_id: str) -> Lead:
 @router.post("", response_model=LeadSchema, response_model_by_alias=True, status_code=201)
 def create_lead(data: LeadCreate, background: BackgroundTasks,
                 db: Session = Depends(get_db)) -> Lead:
-    """Public : alimenté par le formulaire de contact et la demande de déblocage d'audit.
+    """Public : alimenté par le formulaire de contact, la demande de déblocage d'audit et
+    l'inscription au webinaire.
 
     Après la réponse (un échec d'envoi n'affecte jamais le formulaire) : un mail prévient
     l'équipe, un autre confirme la demande à l'étudiant."""

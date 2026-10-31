@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Check, Mail, MessageCircle, Phone, Save } from "lucide-react";
 import { getLead, updateLead } from "@/lib/api/client";
 import type { Lead, LeadStatus, LeadUpdate } from "@/lib/api/types";
-import { LEAD_STATUS_LABELS } from "@/lib/leads";
+import { LEAD_SOURCE_LABELS, LEAD_STATUS_LABELS } from "@/lib/leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -90,7 +90,7 @@ function LeadDetail() {
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-display text-4xl">{lead.name || "Prospect sans nom"}</h1>
           <Badge variant="outline" className="border-border">
-            {lead.source === "audit" ? "Audit" : "Contact"}
+            {LEAD_SOURCE_LABELS[lead.source]}
           </Badge>
           {lead.priority === "high" && (
             <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 dark:text-amber-300">
