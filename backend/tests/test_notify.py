@@ -173,7 +173,7 @@ def test_confirmation_d_inscription_au_webinaire(outbox):
     assert "jeudi 26 novembre 2026 à 20 h (heure de Tunis)" in text
     assert "<b>la veille et une heure avant</b>" in html             # étapes du gabarit
     assert "Le replay et les diapositives" in text
-    assert 'href="https://insightmedics.fr/webinaire"' in html
+    assert 'href="https://www.insightmedics.fr/webinaire"' in html
     assert "48 h" not in text                                    # pas de promesse de rappel
 
 

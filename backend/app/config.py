@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     # Prévenir aussi à chaque test gratuit (en plus des demandes de contact et d'audit).
     notify_on_test: bool = True
     # Adresse publique du site, pour les liens vers l'admin dans les mails.
-    site_url: str = "https://insightmedics.fr"
+    site_url: str = "https://www.insightmedics.fr"  # domaine canonique (le .fr nu redirige)
     # Thèses : logiciel déclaré dans la partie « Analyse statistique » du M&M. Vide = aucun
     # logiciel nommé (la phrase devient une mention [À CONFIRMER] pour l'équipe). Les calculs
     # sont faits par notre moteur (réglages identiques à SPSS) : ne déclarer SPSS que si les

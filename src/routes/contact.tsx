@@ -203,11 +203,12 @@ function ContactPage() {
       .map((id) => SERVICE_OFFERS.find((o) => o.id === id)?.name)
       .filter(Boolean)
       .join(", ");
-    const metaParts = [offersLabel ? `Offres : ${offersLabel}` : null, `Délai : ${urgency}`].filter(
-      Boolean,
-    );
+    const metaParts = [
+      offersLabel ? `Offres : ${offersLabel}` : null,
+      urgency ? `Délai : ${urgency}` : null,
+    ].filter(Boolean);
     const meta = metaParts.join(" | ");
-    const finalMessage = parsed.data.message ? `${meta}\n${parsed.data.message}` : meta;
+    const finalMessage = [meta, parsed.data.message].filter(Boolean).join("\n");
     try {
       await createLead({
         source: "contact",
