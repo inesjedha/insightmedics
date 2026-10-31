@@ -20,6 +20,7 @@ import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as MethodeRouteImport } from './routes/methode'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as TarifsRouteImport } from './routes/tarifs'
+import { Route as WebinaireRouteImport } from './routes/webinaire'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAuditsRouteImport } from './routes/admin.audits'
 import { Route as GuidesIndexRouteImport } from './routes/guides.index'
@@ -85,6 +86,11 @@ const TarifsRoute = TarifsRouteImport.update({
   path: '/tarifs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WebinaireRoute = WebinaireRouteImport.update({
+  id: '/webinaire',
+  path: '/webinaire',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/methode': typeof MethodeRoute
   '/services': typeof ServicesRoute
   '/tarifs': typeof TarifsRoute
+  '/webinaire': typeof WebinaireRoute
   '/admin/audits': typeof AdminAuditsRoute
   '/guides/$slug': typeof GuidesSlugRoute
   '/r/$token': typeof RTokenRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/methode': typeof MethodeRoute
   '/services': typeof ServicesRoute
   '/tarifs': typeof TarifsRoute
+  '/webinaire': typeof WebinaireRoute
   '/admin/audits': typeof AdminAuditsRoute
   '/guides/$slug': typeof GuidesSlugRoute
   '/r/$token': typeof RTokenRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/methode': typeof MethodeRoute
   '/services': typeof ServicesRoute
   '/tarifs': typeof TarifsRoute
+  '/webinaire': typeof WebinaireRoute
   '/admin/audits': typeof AdminAuditsRoute
   '/guides/$slug': typeof GuidesSlugRoute
   '/r/$token': typeof RTokenRoute
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/methode'
     | '/services'
     | '/tarifs'
+    | '/webinaire'
     | '/admin/audits'
     | '/guides/$slug'
     | '/r/$token'
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/methode'
     | '/services'
     | '/tarifs'
+    | '/webinaire'
     | '/admin/audits'
     | '/guides/$slug'
     | '/r/$token'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/methode'
     | '/services'
     | '/tarifs'
+    | '/webinaire'
     | '/admin/audits'
     | '/guides/$slug'
     | '/r/$token'
@@ -277,6 +289,7 @@ export interface RootRouteChildren {
   MethodeRoute: typeof MethodeRoute
   ServicesRoute: typeof ServicesRoute
   TarifsRoute: typeof TarifsRoute
+  WebinaireRoute: typeof WebinaireRoute
   GuidesSlugRoute: typeof GuidesSlugRoute
   RTokenRoute: typeof RTokenRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
@@ -359,6 +372,13 @@ declare module '@tanstack/react-router' {
       path: '/tarifs'
       fullPath: '/tarifs'
       preLoaderRoute: typeof TarifsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/webinaire': {
+      id: '/webinaire'
+      path: '/webinaire'
+      fullPath: '/webinaire'
+      preLoaderRoute: typeof WebinaireRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -459,6 +479,7 @@ const rootRouteChildren: RootRouteChildren = {
   MethodeRoute: MethodeRoute,
   ServicesRoute: ServicesRoute,
   TarifsRoute: TarifsRoute,
+  WebinaireRoute: WebinaireRoute,
   GuidesSlugRoute: GuidesSlugRoute,
   RTokenRoute: RTokenRoute,
   GuidesIndexRoute: GuidesIndexRoute,

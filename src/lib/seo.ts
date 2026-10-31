@@ -3,6 +3,7 @@ import poster16x9 from "@/assets/film/poster-16x9.jpg";
 import { FAQ } from "@/lib/faq";
 import { EXTRA_OFFERS, FULL_AUDIT_PRICE_LABEL, OFFERS } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
+import { WEBINAR } from "@/lib/webinar";
 
 /**
  * Référencement (SEO) et citabilité par les moteurs IA (GEO) : balises de chaque page et
@@ -260,3 +261,32 @@ export const filmLd: JsonLd = {
   inLanguage: "fr",
   publisher: { "@id": ORG_ID },
 };
+
+/** Le webinaire (page /webinaire) : événement en ligne et gratuit, animé par Dr Hamza. */
+export function webinarLd(description: string): JsonLd {
+  const [hamza] = FOUNDERS;
+  const url = absoluteUrl(WEBINAR.path);
+  return {
+    "@type": "Event",
+    name: WEBINAR.title,
+    description,
+    url,
+    startDate: WEBINAR.startDate,
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+    location: { "@type": "VirtualLocation", url },
+    inLanguage: "fr",
+    isAccessibleForFree: true,
+    image: ogImageUrl(),
+    // Nom et URL répétés à côté de l'@id : les validateurs d'événements les lisent ici.
+    organizer: { "@type": "Organization", "@id": ORG_ID, name: siteConfig.name, url: URL },
+    performer: { "@type": "Person", "@id": hamza["@id"], name: hamza.name },
+    offers: {
+      "@type": "Offer",
+      price: 0,
+      priceCurrency: "TND",
+      availability: "https://schema.org/InStock",
+      url,
+    },
+  };
+}

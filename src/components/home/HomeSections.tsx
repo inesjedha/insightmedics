@@ -12,10 +12,41 @@ import { siteConfig } from "@/lib/site-config";
 import hamzaPhoto from "@/assets/team/hamza-ben-kheder.jpg";
 import inesPhoto from "@/assets/team/ines-ben-amor.jpg";
 import { FULL_AUDIT_PRICE_LABEL, OFFERS, getOffer, weeksLabel } from "@/lib/offers";
+import { WEBINAR } from "@/lib/webinar";
 import { ExtraOffersStrip } from "@/components/site/ExtraOffers";
 
 const analyses = getOffer("analyses");
 const these = getOffer("these");
+
+/* ------------------------------------------------------------- Webinaire */
+
+/** Bandeau d'annonce discret au-dessus du hero, tant que le webinaire est à venir. */
+export function WebinarStrip() {
+  return (
+    <Link
+      to={WEBINAR.path}
+      className="group block border-b border-border bg-accent text-accent-foreground hover:bg-accent/70"
+    >
+      <span className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm sm:px-6">
+        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-brand">
+          Webinaire gratuit
+        </span>
+        <span>
+          {/* Sur mobile, la date seule : le bandeau reste sur deux lignes. */}
+          <span className="hidden sm:inline">« {WEBINAR.title} » · </span>
+          {WEBINAR.dateLabel.toLowerCase()} à {WEBINAR.timeLabel}
+        </span>
+        <span className="inline-flex items-center gap-1 font-medium underline underline-offset-4">
+          Je m'inscris
+          <ArrowRight
+            className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
+        </span>
+      </span>
+    </Link>
+  );
+}
 
 /* ------------------------------------------------------------------ Hero */
 

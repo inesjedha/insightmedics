@@ -30,4 +30,14 @@ export const siteConfig = {
   },
   /** WhatsApp de Dr Hamza (numéro public de la page Facebook), format international. */
   whatsapp: "21696389570",
+  /**
+   * Webinaire ouvert aux inscriptions (/webinaire). Nouvelle édition : changer ces deux
+   * valeurs (les libellés de date en découlent, voir lib/webinar.ts), et les réglages
+   * WEBINAR_* du backend, qui écrivent le mail de confirmation.
+   */
+  webinar: {
+    title: "Les stats de ta thèse en 45 minutes",
+    /** Début, avec le décalage de Tunis (UTC+1 toute l'année). */
+    startDate: "2026-11-26T20:00:00+01:00",
+  },
 } as const;
