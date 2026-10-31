@@ -1,13 +1,14 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Field, PhoneField } from "@/components/contact/FormControls";
+import { Field, HoneypotField, PhoneField } from "@/components/contact/FormControls";
 import { createLead } from "@/lib/api/client";
 import type { AuditResult } from "@/lib/api/types";
-import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
+import { useSpamGuard } from "@/lib/anti-spam";
+import { SUBMIT_ERROR, fieldErrors } from "@/lib/forms";
 import { FULL_AUDIT_PRICE_LABEL } from "@/lib/offers";
 
 /** Ancre de la section, ciblée par les boutons « Débloquer » de l'aperçu. */
@@ -31,7 +32,7 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const mountedAtRef = useRef<number>(Date.now());
+  const isSpam = useSpamGuard();
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,7 +40,7 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
     const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
 
     // Anti-spam silencieux : honeypot + soumission trop rapide => faux succès.
-    if (isHoneypotTripped(data[HONEYPOT_FIELD]) || isTooFast(mountedAtRef.current)) {
+    if (isSpam(form)) {
       setSent(true);
       return;
     }
@@ -51,12 +52,7 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
 
     const parsed = unlockSchema.safeParse(data);
     if (!parsed.success) {
-      const fe: Record<string, string> = {};
-      for (const i of parsed.error.issues) {
-        const k = String(i.path[0]);
-        if (!fe[k]) fe[k] = i.message;
-      }
-      setErrors(fe);
+      setErrors(fieldErrors(parsed.error));
       return;
     }
     setErrors({});
@@ -73,9 +69,7 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
       });
       setSent(true);
     } catch {
-      setSubmitError(
-        "L'envoi a échoué. Vérifiez votre connexion et réessayez, ou écrivez-nous directement par email.",
-      );
+      setSubmitError(SUBMIT_ERROR);
     } finally {
       setSending(false);
     }
@@ -127,16 +121,7 @@ export function UnlockRequestForm({ result }: { result: AuditResult }) {
         </div>
       ) : (
         <form onSubmit={onSubmit} className="mt-6 grid gap-5 sm:grid-cols-2" noValidate>
-          {/* Honeypot anti-bot — invisible aux humains */}
-          <input
-            type="text"
-            name={HONEYPOT_FIELD}
-            tabIndex={-1}
-            autoComplete="off"
-            aria-hidden="true"
-            style={honeypotStyle}
-            defaultValue=""
-          />
+          <HoneypotField />
 
           <Field id="name" label="Nom complet">
             <Input

@@ -1,7 +1,8 @@
 import { useId, useState } from "react";
 import type { ReactNode } from "react";
-import { CheckCircle2, Check } from "lucide-react";
+import { AlertCircle, CheckCircle2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -11,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { HONEYPOT_FIELD, honeypotStyle } from "@/lib/anti-spam";
+import { OTHER_CHOICE } from "@/lib/forms";
 import { cn } from "@/lib/utils";
 
 export type ServiceOffer = {
@@ -148,17 +151,110 @@ export function PhoneField({
   );
 }
 
-export function SuccessState({ onReset }: { onReset: () => void }) {
-  const steps = [
-    "Nous vous appelons sous 48 h ouvrées pour comprendre votre projet.",
-    "Nous fixons ensemble le travail à faire, le délai et le prix.",
-    "Nous démarrons dès votre accord et le règlement.",
-  ];
+/** Champ piège anti-robot (voir lib/anti-spam) : invisible aux humains, présent au DOM. */
+export function HoneypotField() {
+  return (
+    <input
+      type="text"
+      name={HONEYPOT_FIELD}
+      tabIndex={-1}
+      autoComplete="off"
+      aria-hidden="true"
+      style={honeypotStyle}
+      defaultValue=""
+    />
+  );
+}
+
+export function RequiredFieldsNote() {
+  return (
+    <p className="text-xs text-muted-foreground">
+      Les champs marqués d'un <span className="text-destructive">*</span> sont obligatoires.
+    </p>
+  );
+}
+
+/** Bandeau d'erreur en tête de formulaire (champs incomplets, envoi en échec). */
+export function FormAlert({ children }: { children: ReactNode }) {
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
+    >
+      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      <span>{children}</span>
+    </div>
+  );
+}
+
+/** Case de consentement obligatoire ; `children` est le texte, lien vers la politique compris. */
+export function ConsentField({
+  id,
+  checked,
+  onCheckedChange,
+  error,
+  children,
+}: {
+  id: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  error?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex items-start gap-3 rounded-md border p-3.5 text-sm transition-colors",
+        error ? "border-destructive bg-destructive/5" : "border-border",
+      )}
+    >
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(v) => onCheckedChange(v === true)}
+        className="mt-0.5"
+      />
+      <span className="leading-relaxed text-foreground/90">
+        <span aria-hidden className="mr-0.5 text-destructive">
+          *
+        </span>
+        {children}
+      </span>
+    </label>
+  );
+}
+
+/** Lien vers la politique de confidentialité, dans un nouvel onglet (le formulaire reste rempli). */
+export function PrivacyLink({ children }: { children: ReactNode }) {
+  return (
+    <a
+      href="/confidentialite"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-brand underline-offset-2 hover:underline"
+    >
+      {children}
+    </a>
+  );
+}
+
+/** Confirmation après envoi : un titre, puis les étapes qui suivent. */
+export function SuccessState({
+  title,
+  steps,
+  resetLabel,
+  onReset,
+}: {
+  title: string;
+  steps: readonly string[];
+  resetLabel: string;
+  onReset: () => void;
+}) {
   return (
     <div role="status" className="flex flex-col items-start gap-5">
       <CheckCircle2 className="h-8 w-8 text-brand" aria-hidden />
       <div>
-        <h2 className="font-display text-4xl">Message bien reçu, merci.</h2>
+        <h2 className="font-display text-4xl text-balance">{title}</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Voici la suite :</p>
       </div>
       <ol className="w-full space-y-3">
@@ -172,7 +268,7 @@ export function SuccessState({ onReset }: { onReset: () => void }) {
         ))}
       </ol>
       <Button variant="outline" onClick={onReset}>
-        Envoyer un autre message
+        {resetLabel}
       </Button>
     </div>
   );
@@ -266,22 +362,56 @@ export function CharCount({ value, max }: { value: string; max: number }) {
   );
 }
 
+/**
+ * Choix unique en pastilles. Avec `onOtherChange`, le choix « Autre » ouvre un champ de
+ * précision (valeur à envoyer : `withOther` de lib/forms). `id` sert aux erreurs et au
+ * focus : le groupe le porte et peut recevoir le focus.
+ */
 export function PillsField({
+  id,
   label,
   options,
   value,
   onChange,
+  required,
+  error,
+  other = "",
+  onOtherChange,
+  otherLabel = "Précisez",
 }: {
+  id?: string;
   label: string;
-  options: string[];
+  options: readonly string[];
   value: string;
   onChange: (v: string) => void;
+  required?: boolean;
+  error?: string;
+  other?: string;
+  onOtherChange?: (v: string) => void;
+  otherLabel?: string;
 }) {
   const labelId = useId();
+  const errorId = id ? `${id}-error` : undefined;
   return (
     <div className="space-y-1.5">
-      <Label id={labelId}>{label}</Label>
-      <div role="radiogroup" aria-labelledby={labelId} className="flex flex-wrap gap-2">
+      <Label id={labelId}>
+        {label}
+        {required && (
+          <span aria-hidden className="ml-1 text-destructive">
+            *
+          </span>
+        )}
+      </Label>
+      <div
+        id={id}
+        role="radiogroup"
+        aria-labelledby={labelId}
+        aria-required={required || undefined}
+        aria-invalid={!!error || undefined}
+        aria-describedby={error ? errorId : undefined}
+        tabIndex={id ? -1 : undefined}
+        className="flex flex-wrap gap-2 focus:outline-none"
+      >
         {options.map((opt) => {
           const selected = opt === value;
           return (
@@ -303,6 +433,21 @@ export function PillsField({
           );
         })}
       </div>
+      {onOtherChange && value === OTHER_CHOICE && (
+        <Input
+          aria-label={otherLabel}
+          maxLength={60}
+          placeholder="Précisez (facultatif)"
+          value={other}
+          onChange={(e) => onOtherChange(e.target.value)}
+          className="mt-1.5"
+        />
+      )}
+      {error && (
+        <p id={errorId} className="text-sm font-medium text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

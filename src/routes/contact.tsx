@@ -1,12 +1,11 @@
 import { breadcrumbLd, pageHead } from "@/lib/seo";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
-import { Send, Loader2, AlertCircle } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Section } from "@/components/site/Section";
 import { PageHero } from "@/components/site/PageHero";
@@ -21,9 +20,14 @@ import {
 } from "@/lib/offers";
 import { siteConfig } from "@/lib/site-config";
 import { createLead } from "@/lib/api/client";
-import { HONEYPOT_FIELD, honeypotStyle, isHoneypotTripped, isTooFast } from "@/lib/anti-spam";
-import { cn } from "@/lib/utils";
+import { useSpamGuard } from "@/lib/anti-spam";
+import { SUBMIT_ERROR, fieldErrors, revealField, withOther } from "@/lib/forms";
 import {
+  ConsentField,
+  FormAlert,
+  HoneypotField,
+  PrivacyLink,
+  RequiredFieldsNote,
   SuccessState,
   FormSection,
   InfoCard,
@@ -116,6 +120,12 @@ const REFERRALS = [
   "Autre",
 ] as const;
 
+const NEXT_STEPS = [
+  "Nous vous appelons sous 48 h ouvrées pour comprendre votre projet.",
+  "Nous fixons ensemble le travail à faire, le délai et le prix.",
+  "Nous démarrons dès votre accord et le règlement.",
+] as const;
+
 const SUBJECT_EXAMPLES = [
   "Thèse rétrospective en cardiologie",
   "Étude de cohorte sur le diabète",
@@ -148,11 +158,7 @@ function ContactPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const mountedAtRef = useRef<number>(0);
-
-  useEffect(() => {
-    mountedAtRef.current = Date.now();
-  }, []);
+  const isSpam = useSpamGuard();
 
   const setValue = (name: FieldName, value: string) => {
     setValues((v) => ({ ...v, [name]: value }));
@@ -166,10 +172,7 @@ function ContactPage() {
     if (submitting) return;
 
     // Anti-spam silencieux : honeypot rempli ou form soumis trop vite => faux succès.
-    const honeypotValue = (
-      formRef.current?.elements.namedItem(HONEYPOT_FIELD) as HTMLInputElement | null
-    )?.value;
-    if (isHoneypotTripped(honeypotValue) || isTooFast(mountedAtRef.current)) {
+    if (isSpam(e.currentTarget)) {
       setSubmitted(true);
       return;
     }
@@ -179,26 +182,16 @@ function ContactPage() {
     const hasConsentError = !consent;
 
     if (hasFieldErrors || hasConsentError) {
-      const fe: FieldErrors = {};
-      if (!parsed.success) {
-        for (const issue of parsed.error.issues) {
-          const k = issue.path[0] as FieldName;
-          if (!fe[k]) fe[k] = issue.message;
-        }
-      }
+      const fe: FieldErrors = parsed.success ? {} : fieldErrors<FieldName>(parsed.error);
       setErrors(fe);
       setConsentError(hasConsentError);
       setShowErrorBanner(true);
       const firstError = Object.keys(fe)[0];
-      if (firstError) {
-        const el = formRef.current?.querySelector<HTMLElement>(`[name="${firstError}"]`);
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        setTimeout(() => el?.focus(), 300);
-      } else if (hasConsentError) {
-        const el = formRef.current?.querySelector<HTMLElement>("#contact-consent");
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        setTimeout(() => el?.focus(), 300);
-      }
+      revealField(
+        formRef.current?.querySelector<HTMLElement>(
+          firstError ? `[name="${firstError}"]` : "#contact-consent",
+        ),
+      );
       return;
     }
     setErrors({});
@@ -225,10 +218,7 @@ function ContactPage() {
         problem: parsed.data.problem,
         objective: parsed.data.objective,
         message: finalMessage,
-        referral:
-          referral === "Autre" && referralOther.trim()
-            ? `Autre : ${referralOther.trim()}`
-            : referral || undefined,
+        referral: withOther(referral, referralOther),
       });
       setSubmitted(true);
       setValues(INITIAL_VALUES);
@@ -238,9 +228,7 @@ function ContactPage() {
       setConsent(false);
     } catch (err) {
       console.error("[contact] submit failed", err);
-      setSubmitError(
-        "L'envoi a échoué. Vérifiez votre connexion et réessayez, ou écrivez-nous directement par email.",
-      );
+      setSubmitError(SUBMIT_ERROR);
     } finally {
       setSubmitting(false);
     }
@@ -263,7 +251,12 @@ function ContactPage() {
           <div className="relative overflow-hidden rounded-md border border-foreground bg-card">
             <div className="relative p-5 sm:p-8 lg:p-10">
               {submitted ? (
-                <SuccessState onReset={() => setSubmitted(false)} />
+                <SuccessState
+                  title="Message bien reçu, merci."
+                  steps={NEXT_STEPS}
+                  resetLabel="Envoyer un autre message"
+                  onReset={() => setSubmitted(false)}
+                />
               ) : (
                 <form
                   ref={formRef}
@@ -272,40 +265,13 @@ function ContactPage() {
                   noValidate
                   aria-busy={submitting}
                 >
-                  {/* Honeypot anti-bot — invisible aux humains */}
-                  <input
-                    type="text"
-                    name={HONEYPOT_FIELD}
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                    style={honeypotStyle}
-                    defaultValue=""
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Les champs marqués d'un <span className="text-destructive">*</span> sont
-                    obligatoires.
-                  </p>
+                  <HoneypotField />
+                  <RequiredFieldsNote />
 
                   {showErrorBanner && (
-                    <div
-                      role="alert"
-                      className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
-                    >
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                      <span>Merci de compléter les champs obligatoires avant l'envoi.</span>
-                    </div>
+                    <FormAlert>Merci de compléter les champs obligatoires avant l'envoi.</FormAlert>
                   )}
-
-                  {submitError && (
-                    <div
-                      role="alert"
-                      className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
-                    >
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                      <span>{submitError}</span>
-                    </div>
-                  )}
+                  {submitError && <FormAlert>{submitError}</FormAlert>}
 
                   <FormSection number={1} title="Vos coordonnées">
                     <div className="grid gap-5 sm:grid-cols-2">
@@ -398,7 +364,7 @@ function ContactPage() {
 
                     <PillsField
                       label="Délai souhaité"
-                      options={[...URGENCIES]}
+                      options={URGENCIES}
                       value={urgency}
                       onChange={setUrgency}
                     />
@@ -469,59 +435,31 @@ function ContactPage() {
                       />
                       <CharCount value={values.message} max={2000} />
                     </Field>
-                    <div className="space-y-3">
-                      <PillsField
-                        label="Comment nous avez-vous connus ? (facultatif)"
-                        options={[...REFERRALS]}
-                        value={referral}
-                        onChange={(v) => setReferral(v === referral ? "" : v)}
-                      />
-                      {referral === "Autre" && (
-                        <Input
-                          aria-label="Précisez comment vous nous avez connus"
-                          maxLength={60}
-                          placeholder="Précisez (facultatif)"
-                          value={referralOther}
-                          onChange={(e) => setReferralOther(e.target.value)}
-                        />
-                      )}
-                    </div>
+                    <PillsField
+                      label="Comment nous avez-vous connus ? (facultatif)"
+                      options={REFERRALS}
+                      value={referral}
+                      onChange={(v) => setReferral(v === referral ? "" : v)}
+                      other={referralOther}
+                      onOtherChange={setReferralOther}
+                      otherLabel="Précisez comment vous nous avez connus"
+                    />
                   </FormSection>
 
                   <div className="space-y-5 border-t border-foreground pt-6">
-                    <label
-                      className={cn(
-                        "flex items-start gap-3 rounded-md border p-3.5 text-sm transition-colors",
-                        consentError ? "border-destructive bg-destructive/5" : "border-border",
-                      )}
+                    <ConsentField
+                      id="contact-consent"
+                      checked={consent}
+                      onCheckedChange={(next) => {
+                        setConsent(next);
+                        if (next) setConsentError(false);
+                      }}
+                      error={consentError}
                     >
-                      <Checkbox
-                        id="contact-consent"
-                        checked={consent}
-                        onCheckedChange={(v) => {
-                          const next = v === true;
-                          setConsent(next);
-                          if (next) setConsentError(false);
-                        }}
-                        className="mt-0.5"
-                      />
-                      <span className="leading-relaxed text-foreground/90">
-                        <span aria-hidden className="mr-0.5 text-destructive">
-                          *
-                        </span>
-                        J'accepte d'être recontacté(e) par {siteConfig.name} au sujet de ma demande
-                        et le traitement de mes données comme décrit dans la{" "}
-                        <a
-                          href="/confidentialite"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-brand underline-offset-2 hover:underline"
-                        >
-                          politique de confidentialité
-                        </a>
-                        .
-                      </span>
-                    </label>
+                      J'accepte d'être recontacté(e) par {siteConfig.name} au sujet de ma demande et
+                      le traitement de mes données comme décrit dans la{" "}
+                      <PrivacyLink>politique de confidentialité</PrivacyLink>.
+                    </ConsentField>
 
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-xs text-muted-foreground sm:max-w-[60%]">
